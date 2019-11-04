@@ -26,6 +26,7 @@ library(lubridate)
 library(readxl)
 ZPD=read_excel('C:/Users/ryan.morse/Desktop/Iomega Drive Backup 20171012/1 RM/JHare data/EcoMon_Plankton_Data_v3_5.xlsx', sheet='Data' , col_names=T) # newest data through 2015; *** NEW FORMAT
 ZPD=read_excel('/home/ryan/1_habitat_analysis_2017/EcoMon_Plankton_Data_v3_6.xlsx', sheet='Data' , col_names=T) 
+ZPD=read_excel('C:/Users/ryan.morse/Desktop/1_habitat_analysis_2017/EcoMon_Plankton_Data_v3_6.xlsx', sheet='Data' , col_names=T)
 dt=as_date(ZPD$date)#, origin = "1899-12-30")
 ichnms=read.csv('C:/Users/ryan.morse/Desktop/Iomega Drive Backup 20171012/1 RM/JHare data/ichthyonames.csv', header = F, stringsAsFactors = F)
 gnms=ichnms[ichnms$V1 %in% nms,] # subset to NE Groundfish
@@ -63,9 +64,30 @@ ich=test[,which(colnames(test)%in% nms)]
 ich$date=test$date
 ich$lat=test$lat
 ich$lon=test$lon
-vars=test[,c('date', 'lat', 'lon', 'station', 'depth', 'sfc_temp', 'sfc_salt', 'btm_temp', 'btm_salt')]
+vars=test[,c('date', 'lat', 'lon', 'station', 'depth', 'sfc_temp', 'sfc_salt', 'btm_temp', 'btm_salt', 'month')]
 
 
+# subset to only positive observations
+df=ich[which(ich$melaeg_100m3 >0),]
+dfv=vars[which(ich$melaeg_100m3>0),]
+dfz=test[which(ich$melaeg_100m3>0),]
+## try fitting gams
+library(mgcv)
+y=log10(df$melaeg_100m3+1) # log haddock
+x=log10(dfz$calfin_100m3+1) #log Calfin
+z=dfv$btm_temp
+Sample_data <- data.frame(y,x)
+g1=gam(df$melaeg_100m3 ~ s(dfz$calfin_100m3), method="REML")
+g1=gam(y~ s(x), method="REML")
+
+g1=gam(y~ s(x)+s(dfv$month, bs='cc', k=10) +s(dfv$btm_temp), method="REML")
+
+ggplot(Sample_data, aes(x, y)) + geom_point() + geom_smooth(method = "gam", formula = y ~s(x))
+
+plot(g1)
+gam.check(g1)
+par(mfrow = c(2,2))
+gam.check(g1)
 # ZPDb=ZPD[,c(seq(1,14,1), seq(290,297,1), seq(106,197,1))] # check to make sure these are correct against 'nms' if data source changes!!!
 ZPDb=ZPD[,c(seq(1,14,1), seq(198,296,1))] # check to make sure these are correct against 'nms' if data source changes!!!
 ZPDb=ZPDb[order(ZPDb$date),]
@@ -132,6 +154,32 @@ for (i in 9:length((nms))){
   points(tt$lon,tt$lat, pch=19)
 }
 dev.off()
+
+## survdat
+sn="SPRING"
+sn="FALL"
+i=155
+test=survdat[which(survdat$SVSPP==i),]
+test=test[which(test$SEASON==sn),]
+test=test[complete.cases(test$LENGTH),]
+barplot(table(test$LENGTH), main=paste(sn, svnms$COMNAME[which(svnms$SVSPP==i)], sep=" "))
+map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="gray70")
+map.axes(las=1)
+points(test$LON, test$LAT, pch=19)
+
+#subset for maturity
+xx=22.3
+test2=test[which(test$LENGTH<xx),]
+map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="gray70")
+map.axes(las=1)
+points(test2$LON, test2$LAT, pch=19)
+test2=test[which(test$LENGTH>xx),]
+map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="gray70")
+map.axes(las=1)
+points(test2$LON, test2$LAT, pch=19)
+
+obl= readRDS('C:/Users/ryan.morse/Desktop/1_habitat_analysis_2017/Obs_data/Obs Data/fishLengths.RDS')
+
 
 ### Area weight sample abundance using 1 degree binned latitudes for aggregation
 setwd("G:/1 RM/JHare data")

@@ -64,23 +64,24 @@ ich=test[,which(colnames(test)%in% nms)]
 ich$date=test$date
 ich$lat=test$lat
 ich$lon=test$lon
-vars=test[,c('date', 'lat', 'lon', 'station', 'depth', 'sfc_temp', 'sfc_salt', 'btm_temp', 'btm_salt', 'month')]
+vars=test[,c('date', 'lat', 'lon', 'station', 'depth', 'sfc_temp', 'sfc_salt', 'btm_temp', 'btm_salt', 'month', 'year')]
 
 
-# subset to only positive observations
+# subset fraction of data for testing/ traiing
+df %>% sample_frac(0.33)
+
 df=ich[which(ich$melaeg_100m3 >0),]
 dfv=vars[which(ich$melaeg_100m3>0),]
 dfz=test[which(ich$melaeg_100m3>0),]
 ## try fitting gams
 library(mgcv)
-y=log10(df$melaeg_100m3+1) # log haddock
+y=log10(df$gadmor_100m3+1) # log haddock
 x=log10(dfz$calfin_100m3+1) #log Calfin
-z=dfv$btm_temp
 Sample_data <- data.frame(y,x)
-g1=gam(df$melaeg_100m3 ~ s(dfz$calfin_100m3), method="REML")
 g1=gam(y~ s(x), method="REML")
-
 g1=gam(y~ s(x)+s(dfv$month, bs='cc', k=10) +s(dfv$btm_temp), method="REML")
+
+g1=gam(log10(df$melaeg_100m3+1)~ s(log10(dfz$calfin_100m3+1))+s(dfv$month, bs='cc', k=12) +s(dfv$btm_temp) + s(log10(dfv$depth+1)), method="REML")
 
 ggplot(Sample_data, aes(x, y)) + geom_point() + geom_smooth(method = "gam", formula = y ~s(x))
 

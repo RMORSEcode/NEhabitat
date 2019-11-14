@@ -29,6 +29,9 @@ ZPD=read_excel('/home/ryan/1_habitat_analysis_2017/EcoMon_Plankton_Data_v3_6.xls
 ZPD=read_excel('C:/Users/ryan.morse/Desktop/1_habitat_analysis_2017/EcoMon_Plankton_Data_v3_6.xlsx', sheet='Data' , col_names=T)
 dt=as_date(ZPD$date)#, origin = "1899-12-30")
 ichnms=read.csv('C:/Users/ryan.morse/Desktop/Iomega Drive Backup 20171012/1 RM/JHare data/ichthyonames.csv', header = F, stringsAsFactors = F)
+nms=c('nofish_100m3',	'urospp_100m3',	'gadmor_100m3',	'melaeg_100m3',
+      'polvir_100m3',	'merbil_100m3',	'sebspp_100m3',	'anaspp_100m3',	'parden_100m3',
+      'pseame_100m3',	'glycyn_100m3',	'scoaqu_100m3',	'lopame_100m3')
 gnms=ichnms[ichnms$V1 %in% nms,] # subset to NE Groundfish
 gnms$V4=gnms$V3
 gnms$V4[8]="Anarhichas lupus"
@@ -73,6 +76,9 @@ df %>% sample_frac(0.33)
 df=ich[which(ich$melaeg_100m3 >0),]
 dfv=vars[which(ich$melaeg_100m3>0),]
 dfz=test[which(ich$melaeg_100m3>0),]
+df=ich
+dfv=vars
+dfz=test
 ## try fitting gams
 library(mgcv)
 y=log10(df$gadmor_100m3+1) # log haddock
@@ -84,6 +90,30 @@ g1=gam(y~ s(x)+s(dfv$month, bs='cc', k=10) +s(dfv$btm_temp), method="REML")
 g1=gam(log10(df$melaeg_100m3+1)~ s(log10(dfz$calfin_100m3+1))+s(dfv$month, bs='cc', k=12) +s(dfv$btm_temp) + s(log10(dfv$depth+1)), method="REML")
 
 ggplot(Sample_data, aes(x, y)) + geom_point() + geom_smooth(method = "gam", formula = y ~s(x))
+
+y=log10(df$gadmor_100m3+1) # log fish sp
+z1=log10(dfz$calfin_100m3+1) #log Calfin
+z2=log10(dfz$pseudo_100m3+1)
+z3=log10(dfz$mlucens_100m3+1)
+z4=log10(dfz$penilia_100m3+1)
+z5=log10(dfz$cham_100m3+1)
+z6=log10(dfz$ctyp_100m3+1)
+z7=log10(dfz$calspp_100m3+1)
+# Sample_data <- data.frame(y,x)
+# g1=gam(df$melaeg_100m3 ~ s(dfz$calfin_100m3), method="REML")
+g1=gam(y~ s(z1), method="REML")
+g1=gam(y~ s(z1)+s(dfv$sfc_temp), method="REML")
+g1=gam(y~ s(z1)+s(dfv$sfc_temp)+s(dfv$sfc_salt), method="REML")
+g1=gam(y~ s(z7)+s(dfv$month, bs='cc', k=10) +s(dfv$btm_temp), method="REML")
+
+g1=gam(y~ s(z1)+s(z2)+s(z3)+s(dfv$sfc_temp), method="REML")
+
+g1=gam(y~ s(z4)+s(z5)+s(z6)+s(dfv$sfc_temp), method="REML")
+
+g1=gam(y~ +s(z2)+s(dfv$lon, dfv$lat)+s(dfv$sfc_temp), family=nb, method="REML")
+
+# ggplot(Sample_data, aes(x, y)) + geom_point() + geom_smooth(method = "gam", formula = y ~s(x))
+
 
 plot(g1)
 gam.check(g1)

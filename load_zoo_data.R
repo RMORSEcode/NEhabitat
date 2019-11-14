@@ -24,6 +24,7 @@ library(maptools)
 library(marmap)
 library(lubridate)
 library(readxl)
+library(mgcv)
 ZPD=read_excel('C:/Users/ryan.morse/Desktop/Iomega Drive Backup 20171012/1 RM/JHare data/EcoMon_Plankton_Data_v3_5.xlsx', sheet='Data' , col_names=T) # newest data through 2015; *** NEW FORMAT
 ZPD=read_excel('/home/ryan/1_habitat_analysis_2017/EcoMon_Plankton_Data_v3_6.xlsx', sheet='Data' , col_names=T) 
 ZPD=read_excel('C:/Users/ryan.morse/Desktop/1_habitat_analysis_2017/EcoMon_Plankton_Data_v3_6.xlsx', sheet='Data' , col_names=T)
@@ -80,7 +81,6 @@ df=ich
 dfv=vars
 dfz=test
 ## try fitting gams
-library(mgcv)
 y=log10(df$gadmor_100m3+1) # log haddock
 x=log10(dfz$calfin_100m3+1) #log Calfin
 Sample_data <- data.frame(y,x)
@@ -110,15 +110,19 @@ g1=gam(y~ s(z1)+s(z2)+s(z3)+s(dfv$sfc_temp), method="REML")
 
 g1=gam(y~ s(z4)+s(z5)+s(z6)+s(dfv$sfc_temp), method="REML")
 
-g1=gam(y~ +s(z2)+s(dfv$lon, dfv$lat)+s(dfv$sfc_temp), family=nb, method="REML")
+g1=gam(y~ +s(z2, k=10)+s(dfv$lon, dfv$lat, k=48)+s(dfv$sfc_temp, k=20), family=nb, method="REML")
+g1=gam(y~ +s(z2, k=10)+s(dfv$lon, dfv$lat, k=48)+s(dfv$sfc_temp, k=20), family="poisson", method="REML")
 
 # ggplot(Sample_data, aes(x, y)) + geom_point() + geom_smooth(method = "gam", formula = y ~s(x))
 
 
 plot(g1)
-gam.check(g1)
-par(mfrow = c(2,2))
-gam.check(g1)
+gam.check(g1) #p values are for the test of the null hypothesis that the basis dimension used is of sufficient size
+summary.gam(g1) #test null hypothesis of a zero effect of the indicated spline
+# par(mfrow = c(2,2))
+
+
+
 # ZPDb=ZPD[,c(seq(1,14,1), seq(290,297,1), seq(106,197,1))] # check to make sure these are correct against 'nms' if data source changes!!!
 ZPDb=ZPD[,c(seq(1,14,1), seq(198,296,1))] # check to make sure these are correct against 'nms' if data source changes!!!
 ZPDb=ZPDb[order(ZPDb$date),]

@@ -57,12 +57,17 @@ ZPD$day=as.numeric(format(dt, '%d'))
 ZPD$lat2=ceiling(ZPD$lat) #use for binning into 1 degree bins for removal of undersampled bins
 ZPD$lon2=floor(ZPD$lon) #use for binning into 1 degree bins for removal of undersampled bins
 
-#keep just records with salinity and temp
+#keep just records with salinity and temp, remove NA from dominant ich and zoo
 test=ZPD[complete.cases(ZPD$sfc_temp),]
 test=test[complete.cases(test$sfc_salt),]
 test=test[complete.cases(test$btm_salt),]
 test=test[complete.cases(test$btm_temp),]
+test=test[complete.cases(test$melaeg_100m3 ),]
+test=test[complete.cases(test$calfin_100m3),]
+test=test[complete.cases(test$ctyp_100m3),]
 barplot(table(test$year))
+
+
 #subset just icthyoplankton of interst
 ich=test[,which(colnames(test)%in% nms)]
 ich$date=test$date
@@ -73,15 +78,30 @@ vars=test[,c('date', 'lat', 'lon', 'station', 'depth', 'sfc_temp', 'sfc_salt', '
 
 # subset fraction of data for testing/ traiing
 df %>% sample_frac(0.33)
-
-df=ich[which(ich$melaeg_100m3 >0),]
-dfv=vars[which(ich$melaeg_100m3>0),]
-dfz=test[which(ich$melaeg_100m3>0),]
+## remove zero presence
+# df=ich[which(ich$melaeg_100m3 >0),]
+# dfv=vars[which(ich$melaeg_100m3>0),]
+# dfz=test[which(ich$melaeg_100m3>0),]
 df=ich
 dfv=vars
 dfz=test
+
+### limit dfz to dominant taxa
+X=20 # criteria to use as minimum percent in samples
+ZPDa=dfz
+ZPDa=ZPDa[!is.na(ZPDa$ich_gear),] # Remove NA in zooplankton rows
+p.a=ZPDa[,15:197]
+p.a[p.a > 0]=1 # presence/absence
+count=colSums(p.a)
+pct=(count/dim(ZPDa)[1])*100
+crit=which(pct>X)
+crit2=crit[31:60]
+ZPDa=ZPDa[c(1:14,crit2+14)] # data limited to taxa occurring in > X percent of samples
+p.a=p.a[,crit2]
+dfz=ZPDa
+
 ## try fitting gams
-y=log10(df$gadmor_100m3+1) # log haddock
+y=log10(df$merbil_100m3+1) 
 x=log10(dfz$calfin_100m3+1) #log Calfin
 Sample_data <- data.frame(y,x)
 g1=gam(y~ s(x), method="REML")
@@ -95,10 +115,10 @@ y=log10(df$gadmor_100m3+1) # log fish sp
 z1=log10(dfz$calfin_100m3+1) #log Calfin
 z2=log10(dfz$pseudo_100m3+1)
 z3=log10(dfz$mlucens_100m3+1)
-z4=log10(dfz$penilia_100m3+1)
+z4=log10(dfz$tlong_100m3+1)
 z5=log10(dfz$cham_100m3+1)
 z6=log10(dfz$ctyp_100m3+1)
-z7=log10(dfz$calspp_100m3+1)
+z7=log10(dfz$calminor_100m3+1)
 # Sample_data <- data.frame(y,x)
 # g1=gam(df$melaeg_100m3 ~ s(dfz$calfin_100m3), method="REML")
 g1=gam(y~ s(z1), method="REML")
@@ -130,7 +150,7 @@ ZPDb=ZPDb[which(ZPDb$year > 1976),] # remove NA data in years prior to 1977
 
 
 #### Select only taxa present in yearly data > x percent of samples
-X=5 # criteria to use as minimum percent in samples
+X=15 # criteria to use as minimum percent in samples
 ZPDa=ZPDb
 ZPDa=ZPDa[!is.na(ZPDa$ich_gear),] # Remove NA in zooplankton rows
 # Reduce to taxa occurrance > x percent in samples

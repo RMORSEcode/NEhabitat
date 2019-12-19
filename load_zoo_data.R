@@ -65,6 +65,8 @@ test=test[complete.cases(test$btm_temp),]
 test=test[complete.cases(test$melaeg_100m3 ),]
 test=test[complete.cases(test$calfin_100m3),]
 test=test[complete.cases(test$ctyp_100m3),]
+test$latbin=round(test$lat/0.25)*0.25
+test$lonbin=round(test$lon/0.25)*0.25
 barplot(table(test$year))
 
 
@@ -73,7 +75,9 @@ ich=test[,which(colnames(test)%in% nms)]
 ich$date=test$date
 ich$lat=test$lat
 ich$lon=test$lon
-vars=test[,c('date', 'lat', 'lon', 'station', 'depth', 'sfc_temp', 'sfc_salt', 'btm_temp', 'btm_salt', 'month', 'year')]
+ich$latbin=round(ich$lat/0.25)*0.25
+ich$lonbin=round(ich$lon/0.25)*0.25
+vars=test[,c('date', 'lat', 'lon', 'latbin', 'lonbin', 'station', 'depth', 'sfc_temp', 'sfc_salt', 'btm_temp', 'btm_salt', 'month', 'year')]
 
 
 # subset fraction of data for testing/ traiing

@@ -13,6 +13,12 @@ length(unique(dat$haulid))
 
 load("C:/Users/ryan.morse/Desktop/1_habitat_analysis_2017/hauls_catch_Dec2017.RData")
 load("C:/Users/ryan.morse/Desktop/1_habitat_analysis_2017/survdat/Survdat.RData")
+# add to survdat
+survdat$latbin=round(survdat$LAT/0.25)*0.25
+survdat$lonbin=round(survdat$LON/0.25)*0.25
+survdat$month=month(survdat$EST_TOWDATE)
+survdat$doy=yday(survdat$EST_TOWDATE)
+
 
 load('/home/ryan/1_habitat_analysis_2017/habitat_ws_20191009.RData')
 
@@ -144,6 +150,40 @@ plot(g1)
 gam.check(g1) #p values are for the test of the null hypothesis that the basis dimension used is of sufficient size
 summary.gam(g1) #test null hypothesis of a zero effect of the indicated spline
 # par(mfrow = c(2,2))
+
+
+
+## Merge data sets, add plus minus time (4days) and lat/long (0.5 degrees)
+library(data.table)
+survdat[, Datetime := as.POSIXct( Datetime, format = "%Y-%m-%d %H:%M:%S") ]
+survdat[, `:=`(Datetime_max = Datetime + 345600,
+               Datetime_min = Datetime - 345600,
+               LAT_max = LAT + 0.25,
+               LAT_min = LAT - 0.25,
+               LON_max = LON + 0.25,
+               LON_min = LON - 0.25) ]
+dfz$LAT=dfz$lat
+dfz$LON=dfz$lon
+dfz=as.data.table(dfz)
+dfz[, Datetime := as.POSIXct( date, format = "%Y-%m-%d %H:%M:%S") ]
+dfz[, `:=`(Datetime_max = Datetime + 345600,
+           Datetime_min = Datetime - 345600,
+           LAT_max = lat + 0.25,
+           LAT_min = lat - 0.25,
+           LON_max = lon + 0.25,
+           LON_min = lon - 0.25) ]
+
+dt3=survdat[ dfz, on = .( Datetime <= Datetime_max, 
+                          Datetime >= Datetime_min, 
+                          LAT <= LAT_max, 
+                          LAT >= LAT_min, 
+                          LON <= LON_max, 
+                          LON >= LON_min ),
+             nomatch = 0L]
+
+# subset on species...
+i=3
+t=dt3[which(dt3$svspp==svnms$SVSPP[i]),]
 
 
 

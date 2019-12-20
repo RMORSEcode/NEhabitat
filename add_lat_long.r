@@ -1,5 +1,8 @@
 library(sp)
 x=readRDS('/home/ryan/1_habitat_analysis_2017/Observer_data/Obs Data/fishLengths.RDS')
+g=readRDS('/home/ryan/1_habitat_analysis_2017/Observer_data/Obs Data/gearTable.RDS')
+gt=g$data
+
 ## remove records without lat long
 x2=x[complete.cases(x$LATHBEG),]
 x2=x2[complete.cases(x2$LONHBEG),]
@@ -25,6 +28,14 @@ x2$LONG=Lon
 # ltbr=seq(from=min(floor(x2$LAT)), by=br, to=max(ceiling(x2$LAT)))
 x2$binlat=round(x2$LAT/0.25)*0.25
 x2$binlon=round(x2$LONG/0.25)*0.25
-  
+# library(data.table)
+# survdat[, Datetime := as.POSIXct( Datetime, format = "%Y-%m-%d %H:%M:%S") ]
+# survdat[, `:=`(Datetime_max = Datetime + 345600,
+#                Datetime_min = Datetime - 345600,
+#                LAT_max = LAT + 0.25,
+#                LAT_min = LAT - 0.25,
+#                LON_max = LON + 0.25,
+#                LON_min = LON - 0.25) ]
+#     
 setwd('/home/ryan/1_habitat_analysis_2017/Observer_data/Obs Data')
 save(x2, file='OBS.Rdata')

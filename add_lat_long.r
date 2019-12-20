@@ -1,6 +1,9 @@
 library(sp)
-x=readRDS('/home/ryan/1_habitat_analysis_2017/Observer_data/Obs Data/fishLengths.RDS')
-g=readRDS('/home/ryan/1_habitat_analysis_2017/Observer_data/Obs Data/gearTable.RDS')
+setwd('C:/Users/ryan.morse/Desktop/1_habitat_analysis_2017/Obs_data/Obs Data')
+setwd('/home/ryan/1_habitat_analysis_2017/Observer_data/Obs Data')
+      
+x=readRDS('fishLengths.RDS')
+g=readRDS('gearTable.RDS')
 gt=g$data
 
 ## remove records without lat long

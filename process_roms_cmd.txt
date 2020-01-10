@@ -7,6 +7,33 @@ do
   echo "##########  $filename  ############"
   fin="RM_${filename}"
   cp $filename $fin
-  ncks -A -v lon_rho,lat_rho,h,angle,mask_rho /home/ryan/roms/NWA_grd.nc $fin
+  ncks -A -v lon_rho,lat_rho,lon_u,lat_u,lon_v,lat_v,h,angle,mask_rho /home/ryan/roms/NWA_grd.nc $fin
   ncks -O -d eta_rho,200,360 -d xi_rho,350,720 -d eta_u,200,360 -d xi_u,350,720 -d eta_v,200,360 -d xi_v,350,720 $fin $fin
 done
+
+
+## Windows (not currently working)
+
+#FILES=/media/ryan/ROMS_pt1/NWA/1981/NWA-SZ.HCob05T_avg_*
+#FILES=E:\NWA\2000\2000\NWA-SZ.HCob05T_avg_*
+#FILES="C:\Users\ryan.morse\Desktop\roms\test\NWA-SZ.HCob05T_avg_*"
+for %f in (.\NWA-SZ.HCob05T_avg_*) do @echo %~nxf 
+do
+  filename="${f##*/}"  # get filename
+  echo "##########  %filename  ############"
+  fin="RM_${filename}"
+  cp $filename $fin
+  ncks -A -v lon_rho,lat_rho,lon_u,lat_u,lon_v,lat_v,h,angle,mask_rho /home/ryan/roms/NWA_grd.nc $fin
+  ncks -O -d eta_rho,200,360 -d xi_rho,350,720 -d eta_u,200,360 -d xi_u,350,720 -d eta_v,200,360 -d xi_v,350,720 $fin $fin
+done
+
+
+#works...
+#files in current dir (with extension ~nxf without extension ~nf)
+for %f in (.\NWA-SZ.HCob05T_avg_*) do @echo %~nxf 
+#files in current and all subdirs:
+for /R %f in (.\NWA-SZ.HCob05T_avg_*) do @echo %f
+
+#does not work
+for %f in (.\NWA-SZ.HCob05T_avg_*) do @echo %~nxf @set NAME=%~nf @echo %NAME%
+

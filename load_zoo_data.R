@@ -22,6 +22,7 @@ survdat$doy=yday(survdat$EST_TOWDATE)
 
 load('/home/ryan/1_habitat_analysis_2017/habitat_ws_20191009.RData')
 
+### add NE Hauls with length data from SDM group
 GF=readRDS('C:/Users/ryan.morse/Documents/GitHub/SDM-convergence/data/jude_groundfish_training.rds')
 
 ### Load EcoMon data - ichthyoplankton for NE Groundfish habitat work ###

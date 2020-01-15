@@ -53,4 +53,25 @@ for /R %f in (.\NWA-SZ.HCob05T_avg_*) do @echo %f
 #does not work
 for %f in (.\NWA-SZ.HCob05T_avg_*) do @echo %~nxf @set NAME=%~nf @echo %NAME%
 
+for %%# in (*.txt) do set "file_name=%%~nx#"
+for %f in (.\NWA-SZ.HCob05T_avg_*) do set "file_name=%~nxf" echo %file_name set "fin=RM_%file_name%" cp %file_name% %fin% ncks -A -v lon_rho,lat_rho,lon_u,lat_u,lon_v,lat_v,h,angle,mask_rho /home/ryan/roms/NWA_grd.nc %fin% ncks -O -d eta_rho,200,360 -d xi_rho,350,720 -d eta_u,200,360 -d xi_u,350,720 -d eta_v,200,360 -d xi_v,350,720 %fin% %fin%
+done
+
+for %f in (.\NWA-SZ.HCob05T_avg_*) do
+set "file_name=%~nxf" echo %file_name
+set "fin=RM_%file_name%"
+cp %file_name% %fin%
+ncks -A -v lon_rho,lat_rho,lon_u,lat_u,lon_v,lat_v,h,angle,mask_rho /home/ryan/roms/NWA_grd.nc %fin%
+ncks -O -d eta_rho,200,360 -d xi_rho,350,720 -d eta_u,200,360 -d xi_u,350,720 -d eta_v,200,360 -d xi_v,350,720 %fin% %fin%
+
+for /R %z in (.\NWA-SZ.HCob05T_avg_*) do echo %~nxz set "file_name=%~nxz" echo %filename% set "fin=RM_%filename" echo %fin%
+
+for /R %z in (.\NWA-SZ.HCob05T_avg_*) do set "file_name=%~nxz" echo %file_name% set "fin=RM_%filename%" echo %fin%
+
+for %q in (C:\Users\ryan.morse\Desktop\roms\test\t1\NWA-SZ.HCob05T_avg_*) do (
+set "file_name=%~nxq"
+echo %file_name%
+set "fin=RM_%file_name%"
+echo %fin%
+)
 

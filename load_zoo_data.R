@@ -4,6 +4,15 @@
 # You can use the haulid to join the tables for the desired species.
 ## see https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0196127
 
+library(maps)
+library(mapdata)
+library(sp)
+library(maptools)
+library(marmap)
+library(lubridate)
+library(readxl)
+library(mgcv)
+library(dplyr)
 
 load("C:/Users/ryan.morse/Desktop/1_habitat_analysis_2017/hauls_catch_Dec2017.RData")
 table(hauls$region)
@@ -22,18 +31,20 @@ survdat$doy=yday(survdat$EST_TOWDATE)
 
 load('/home/ryan/1_habitat_analysis_2017/habitat_ws_20191009.RData')
 
-### add NE Hauls with length data from SDM group
+### add NE Hauls with length data from SDM group and length at maturity from stock assessment reports
 GF=readRDS('C:/Users/ryan.morse/Documents/GitHub/SDM-convergence/data/jude_groundfish_training.rds')
+lmd=read_excel('C:/Users/ryan.morse/Documents/GitHub/NEhabitat/AdultMaturityList.xlsx')
+lmd$spnm=tolower(lmd$Taxon)
+test=strsplit(unique(GF$sppocean), split="_Atl")
+t=data.frame(matrix(unlist(test), nrow=13, byrow=T),stringsAsFactors=FALSE)
+colnames(t)='nm'
+t=left_join(t, lmd, by=c('nm'='spnm'), )
+tt=!duplicated(t$`BTS #`)
+Lm=t[tt,]
+
+
 
 ### Load EcoMon data - ichthyoplankton for NE Groundfish habitat work ###
-library(maps)
-library(mapdata)
-library(sp)
-library(maptools)
-library(marmap)
-library(lubridate)
-library(readxl)
-library(mgcv)
 # ZPD=read_excel('C:/Users/ryan.morse/Desktop/Iomega Drive Backup 20171012/1 RM/JHare data/EcoMon_Plankton_Data_v3_5.xlsx', sheet='Data' , col_names=T) # newest data through 2015; *** NEW FORMAT
 # ZPD=read_excel('/home/ryan/1_habitat_analysis_2017/EcoMon_Plankton_Data_v3_6.xlsx', sheet='Data' , col_names=T) 
 ZPD=read_excel('C:/Users/ryan.morse/Desktop/1_habitat_analysis_2017/EcoMon_Plankton_Data_v3_6.xlsx', sheet='Data' , col_names=T)

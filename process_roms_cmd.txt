@@ -75,3 +75,15 @@ set "fin=RM_%file_name%"
 echo %fin%
 )
 
+## mostly works, just file name is always the last one, so cannot overwrite
+cd C:\Users\ryan.morse\Desktop\roms\test\t1
+echo off
+setlocal EnableDelayedExpansion
+for %A in (C:\Users\ryan.morse\Desktop\roms\test\t1\NWA-SZ.HCob05T_avg_*) do (
+set "file_name=%~nxA"
+echo !file_name!
+set "fin=RM_!file_name!"
+copy %file_name% %fin%
+ncks -O -d eta_rho,200,360 -d xi_rho,350,720 -d eta_u,200,360 -d xi_u,350,720 -d eta_v,200,360 -d xi_v,350,720 %fin% %fin%
+ncks -A -v lon_rho,lat_rho,lon_u,lat_u,lon_v,lat_v,h,angle,mask_rho C:\Users\ryan.morse\Desktop\roms\NWA_grd_small.nc %fin%
+)

@@ -58,9 +58,18 @@ gnms$V4=gnms$V3
 gnms$V4[8]="Anarhichas lupus"
 gnms$V4[7]="Sebastes fasciatus"
 gnms$V4[2]="Urophycis tenuis" #white hake FIX issue with non classified hake larvae - use for both in model
-gnms=data.frame(rbind(as.matrix(gnms), as.matrix(gnms[2,])))
+
+gnms=data.frame(rbind(as.matrix(gnms), as.matrix(gnms[2,])), stringsAsFactors = F)
 gnms$V4[14]="Urophycis chuss" #red hake
 gnms$spp=lapply(gnms$V4, FUN=toupper)
+gnms$spp=toupper(gnms$V4)
+gnms$sp2=tolower(gnms$spp)
+tt=left_join(gnms, lmd, by=c("sp2"="spnm"))
+tt2=!duplicated(tt$`BTS #`)
+Lm2=tt[tt2,]
+Lmf=full_join(Lm, Lm2, by=c("nm"="sp2"))
+# write.csv(Lmf, file='lmf.csv', col.names = T)
+
 
 svspplu=read.csv('C:/Users/ryan.morse/Desktop/1_habitat_analysis_2017/svspp_lookup.csv', stringsAsFactors = F)
 svnms=svspplu[svspplu$SCINAME %in% gnms$spp,]

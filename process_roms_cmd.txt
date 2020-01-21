@@ -27,7 +27,20 @@ do
   ncks -A -v lon_rho,lat_rho,lon_u,lat_u,lon_v,lat_v,h,angle,mask_rho /home/ryan/roms/test2/1/NWA_grd_small.nc $fin
 done
 
-____________________________________________________________________________________
+### JLink Linux machine
+#FILES=/home/ryan/Desktop/romstest/NWA-SZ.HCob05T_avg*
+FILES=/media/ryan/ROMS_pt1/NWA/1985/NWA-SZ.HCob05T_avg*
+for f in $FILES
+do
+  filename="${f##*/}"  # get filename
+  echo "##########  $filename  ############"
+  fin="RM_${filename}"
+  cp $filename $fin
+  #ncks -A -v lon_rho,lat_rho,h,angle,mask_rho /home/ryan/roms/NWA_grd_small.nc $fin
+  ncks -O -d eta_rho,200,360 -d xi_rho,350,720 -d eta_u,200,360 -d xi_u,350,720 -d eta_v,200,360 -d xi_v,350,720 $fin $fin
+  ncks -A -v lon_rho,lat_rho,lon_u,lat_u,lon_v,lat_v,h,angle,mask_rho /home/ryan/Documents/Git/NEhabitat/NWA_grd_small.nc $fin
+done
+________________________________________________________________________________
 ## Windows (not currently working)
 
 #FILES=/media/ryan/ROMS_pt1/NWA/1981/NWA-SZ.HCob05T_avg_*

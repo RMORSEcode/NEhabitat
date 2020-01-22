@@ -33,14 +33,14 @@ load('/home/ryan/1_habitat_analysis_2017/habitat_ws_20191009.RData')
 
 ### add NE Hauls with length data from SDM group and length at maturity from stock assessment reports
 GF=readRDS('C:/Users/ryan.morse/Documents/GitHub/SDM-convergence/data/jude_groundfish_training.rds')
-lmd=read_excel('C:/Users/ryan.morse/Documents/GitHub/NEhabitat/AdultMaturityList.xlsx')
-lmd$spnm=tolower(lmd$Taxon)
-test=strsplit(unique(GF$sppocean), split="_Atl")
-t=data.frame(matrix(unlist(test), nrow=13, byrow=T),stringsAsFactors=FALSE)
-colnames(t)='nm'
-t=left_join(t, lmd, by=c('nm'='spnm'), )
-tt=!duplicated(t$`BTS #`)
-Lm=t[tt,]
+# lmd=read_excel('C:/Users/ryan.morse/Documents/GitHub/NEhabitat/AdultMaturityList.xlsx')
+# lmd$spnm=tolower(lmd$Taxon)
+# test=strsplit(unique(GF$sppocean), split="_Atl")
+# t=data.frame(matrix(unlist(test), nrow=13, byrow=T),stringsAsFactors=FALSE)
+# colnames(t)='nm'
+# t=left_join(t, lmd, by=c('nm'='spnm'), )
+# tt=!duplicated(t$`BTS #`)
+# Lm=t[tt,]
 
 
 
@@ -64,11 +64,12 @@ gnms$V4[14]="Urophycis chuss" #red hake
 gnms$spp=lapply(gnms$V4, FUN=toupper)
 gnms$spp=toupper(gnms$V4)
 gnms$sp2=tolower(gnms$spp)
-tt=left_join(gnms, lmd, by=c("sp2"="spnm"))
-tt2=!duplicated(tt$`BTS #`)
-Lm2=tt[tt2,]
-Lmf=full_join(Lm, Lm2, by=c("nm"="sp2"))
+# tt=left_join(gnms, lmd, by=c("sp2"="spnm"))
+# tt2=!duplicated(tt$`BTS #`)
+# Lm2=tt[tt2,]
+# Lmf=full_join(Lm, Lm2, by=c("nm"="sp2"))
 # write.csv(Lmf, file='lmf.csv', col.names = T)
+Lmf=read_excel('C:/Users/ryan.morse/Documents/GitHub/NEhabitat/Lm_included.xlsx') # read in final length at maturity
 
 
 svspplu=read.csv('C:/Users/ryan.morse/Desktop/1_habitat_analysis_2017/svspp_lookup.csv', stringsAsFactors = F)

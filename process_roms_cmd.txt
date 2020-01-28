@@ -61,7 +61,12 @@ do
 done
 
 
-### testing recursive for second disk
+### testing recursive for second disk drive -> works
+
+  DIR=$(dirname "${f}")
+  echo "Directory is $DIR"
+  echo "filename is ###  $filename  ###"
+
 cd ~/Desktop/romstest
 cd /media/ryan/ROMS_pt2/NWA
 
@@ -70,10 +75,7 @@ for f in $FILES
 do
   filename="${f##*/}"  # get filename
   filepth="${f##%.*}"
-  DIR=$(dirname "${f}")
-  echo "Directory is $DIR"
-  echo "filename is ###  $filename  ###"
-  echo "Full filepath is $filepth"
+  echo "Full filepath is ### $filepth ###"
   fin="RM_${filename}"
   cd ./$DIR
   cp $filename $fin

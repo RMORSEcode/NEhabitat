@@ -305,6 +305,10 @@ points(test2$LON, test2$LAT, pch=19)
 # add observer length data, processed with add_lat_long.r
 # obl= readRDS('C:/Users/ryan.morse/Desktop/1_habitat_analysis_2017/Obs_data/Obs Data/fishLengths.RDS')
 obl=load("/home/ryan/1_habitat_analysis_2017/Observer_data/Obs Data/OBS.Rdata")
+obl=load('C:/Users/ryan.morse/Desktop/1_habitat_analysis_2017/Obs_data/Obs Data/OBS.Rdata')
+obl <- lapply(x2, function(x) as.numeric(as.character(x)))
+obl=data.frame(obl)
+
 
 ### Area weight sample abundance using 1 degree binned latitudes for aggregation
 setwd("G:/1 RM/JHare data")

@@ -42,7 +42,18 @@ GF=readRDS('/home/ryan/Git/SDM-convergence/data/jude_groundfish_training.rds')
 # t=left_join(t, lmd, by=c('nm'='spnm'), )
 # tt=!duplicated(t$`BTS #`)
 # Lm=t[tt,]
-
+# add observer length data, processed with add_lat_long.r
+# obl= readRDS('C:/Users/ryan.morse/Desktop/1_habitat_analysis_2017/Obs_data/Obs Data/fishLengths.RDS')
+obl=load("/home/ryan/1_habitat_analysis_2017/Observer_data/Obs Data/OBS.Rdata")
+obl=load('C:/Users/ryan.morse/Desktop/1_habitat_analysis_2017/Obs_data/Obs Data/OBS.Rdata')
+obl=lapply(x2, function(x) as.numeric(as.character(x)))
+obl=data.frame(obl)
+#nespnms=read.csv('C:/Users/ryan.morse/Documents/GitHub/atneus_RM/specieslist_v15.csv', stringsAsFactors = F)
+nespnms=read.csv('C:/Users/ryan.morse/Documents/GitHub/NEhabitat/NESPP3-SVSPP.csv', stringsAsFactors = F)
+nespnms=read.csv('/home/ryan/Git/NEhabitat/NESPP3-SVSPP.csv', stringsAsFactors = F)
+nespconv=nespnms[,c(1,3)]
+obl=left_join(obl, nespconv, by='NESPP3')
+svnms=left_join(svnms, nespconv, by="SVSPP")
 
 
 ### Load EcoMon data - ichthyoplankton for NE Groundfish habitat work ###
@@ -301,13 +312,6 @@ test2=test[which(test$LENGTH>xx),]
 map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="gray70")
 map.axes(las=1)
 points(test2$LON, test2$LAT, pch=19)
-
-# add observer length data, processed with add_lat_long.r
-# obl= readRDS('C:/Users/ryan.morse/Desktop/1_habitat_analysis_2017/Obs_data/Obs Data/fishLengths.RDS')
-obl=load("/home/ryan/1_habitat_analysis_2017/Observer_data/Obs Data/OBS.Rdata")
-obl=load('C:/Users/ryan.morse/Desktop/1_habitat_analysis_2017/Obs_data/Obs Data/OBS.Rdata')
-obl <- lapply(x2, function(x) as.numeric(as.character(x)))
-obl=data.frame(obl)
 
 
 ### Area weight sample abundance using 1 degree binned latitudes for aggregation

@@ -63,7 +63,6 @@ done
 
 ### testing recursive for second disk drive -> works
 
-  DIR=$(dirname "${f}")
   echo "Directory is $DIR"
   echo "filename is ###  $filename  ###"
 
@@ -73,6 +72,7 @@ cd /media/ryan/ROMS_pt2/NWA
 FILES=*/NWA-SZ.HCob05T_avg*
 for f in $FILES
 do
+  DIR=$(dirname "${f}")
   filename="${f##*/}"  # get filename
   filepth="${f##%.*}"
   echo "Full filepath is ### $filepth ###"

@@ -34,6 +34,17 @@ load('/home/ryan/1_habitat_analysis_2017/habitat_ws_20191009.RData')
 ### add NE Hauls with length data from SDM group and length at maturity from stock assessment reports
 GF=readRDS('C:/Users/ryan.morse/Documents/GitHub/SDM-convergence/data/jude_groundfish_training.rds')
 GF=readRDS('/home/ryan/Git/SDM-convergence/data/jude_groundfish_training.rds')
+GF2=readRDS('C:/Users/ryan.morse/Documents/GitHub/SDM-convergence/data/jude_groundfish_testing.rds')
+GF2=readRDS('/home/ryan/Git/SDM-convergence/data/jude_groundfish_testing.rds')
+GFall=bind_rows(GF, GF2)
+test=strsplit(unique(GF$sppocean), split="_Atl")
+t=data.frame(matrix(unlist(test), nrow=13, byrow=T),stringsAsFactors=FALSE)
+colnames(t)='nm'
+t$gfnm=unique(GF$sppocean)
+t=left_join(t, Lmf, by='nm')
+GFall=left_join(GFall, t[,c(2,5)], by=c("sppocean"="gfnm")) # add BTS numbers to Morley data
+colnames(GFall)[42]="SVSPP"
+
 # lmd=read_excel('C:/Users/ryan.morse/Documents/GitHub/NEhabitat/AdultMaturityList.xlsx')
 # lmd$spnm=tolower(lmd$Taxon)
 # test=strsplit(unique(GF$sppocean), split="_Atl")
@@ -83,10 +94,21 @@ gnms$sp2=tolower(gnms$spp)
 # write.csv(Lmf, file='lmf.csv', col.names = T)
 Lmf=read_excel('C:/Users/ryan.morse/Documents/GitHub/NEhabitat/Lm_included.xlsx') # read in final length at maturity
 Lmf=read_excel('/home/ryan/Git/NEhabitat/Lm_included.xlsx')
-
+colnames(Lmf)[4]="SVSPP"
+colnames(Lmf)[5]="Lm"
 svspplu=read.csv('C:/Users/ryan.morse/Desktop/1_habitat_analysis_2017/svspp_lookup.csv', stringsAsFactors = F)
 svnms=svspplu[svspplu$SCINAME %in% gnms$spp,]
 
+# add juv or adt factor to GFall based on Lmf
+# test1=GFall[c(seq(from=1,to=5000,by=1)),]
+# test1$stg=NA
+# for (j in 1:length(test1$stg)){
+#   test1$stg[j]=ifelse(test1$LENGTH[j]<Lmf$Lm[which(Lmf$SVSPP==test1$SVSPP)], "juv", "adt")
+# }
+GFall$stg=NA
+for (j in 1:length(GFall$stg)){
+  GFall$stg[j]=ifelse(GFall$LENGTH[j]<Lmf$Lm[which(Lmf$SVSPP==GFall$SVSPP)], "juv", "adt")
+}
 
 DOY=yday(dt) #day of year
 month=as.numeric(format(dt, '%m'))

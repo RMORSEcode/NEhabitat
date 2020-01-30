@@ -107,8 +107,22 @@ svnms=svspplu[svspplu$SCINAME %in% gnms$spp,]
 # }
 GFall$stg=NA
 for (j in 1:length(GFall$stg)){
-  GFall$stg[j]=ifelse(GFall$LENGTH[j]<Lmf$Lm[which(Lmf$SVSPP==GFall$SVSPP)], "juv", "adt")
+  GFall$stg[j]=ifelse(GFall$LENGTH[j]<Lmf$Lm[which(Lmf$SVSPP==GFall$SVSPP[j])], "juv", "adt")
 }
+
+GFall$stratum=as.numeric(GFall$stratum)
+test=GFall[with(GFall, order(year,month,stratum)),]
+
+cod=GFall[which(GFall$SVSPP==73),]
+had=GFall[which(GFall$SVSPP==74),]
+red=GFall[which(GFall$SVSPP==155),]
+
+cod.juv=cod[which(cod$stg=="juv" | is.na(cod$stg)),]
+cod.adt=cod[which(cod$stg=="adt" | is.na(cod$stg)),]
+
+had.juv=had[which(had$stg=="juv" | is.na(had$stg)),]
+had.adt=had[which(had$stg=="adt" | is.na(had$stg)),]
+
 
 DOY=yday(dt) #day of year
 month=as.numeric(format(dt, '%m'))

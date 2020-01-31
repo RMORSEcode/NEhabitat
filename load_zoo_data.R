@@ -106,22 +106,25 @@ svnms=svspplu[svspplu$SCINAME %in% gnms$spp,]
 #   test1$stg[j]=ifelse(test1$LENGTH[j]<Lmf$Lm[which(Lmf$SVSPP==test1$SVSPP)], "juv", "adt")
 # }
 GFall$stg=NA
+GFall$season=NA
 for (j in 1:length(GFall$stg)){
   GFall$stg[j]=ifelse(GFall$LENGTH[j]<Lmf$Lm[which(Lmf$SVSPP==GFall$SVSPP[j])], "juv", "adt")
 }
 
 GFall$stratum=as.numeric(GFall$stratum)
-test=GFall[with(GFall, order(year,month,stratum)),]
+GFall=GFall[with(GFall, order(year,month,stratum)),]
+unique(GFall$month)
+GFall$season=NA
+GFall$season=ifelse(GFall$month<7, "SPRING", "FALL")
 
-cod=GFall[which(GFall$SVSPP==73),]
-had=GFall[which(GFall$SVSPP==74),]
-red=GFall[which(GFall$SVSPP==155),]
+### see 20200130_cleaning_survdat_for... in /Git/NEhabitat folder
+# cod=GFall[which(GFall$SVSPP==73),]
+# cod$wt=0.0069*(cod$LENGTH^3.08) # individual wt in grams based on length in cm for cod (fishbase)
+# had=GFall[which(GFall$SVSPP==74),]
+# had$wt=0.0059*(had$LENGTH^3.13) # individual wt in grams based on length in cm for had (fishbase)
+# red=GFall[which(GFall$SVSPP==155),]
+# red$wt=0.018*(red$LENGTH^2.966) # K. Duclos 2015 thesis UNH
 
-cod.juv=cod[which(cod$stg=="juv" | is.na(cod$stg)),]
-cod.adt=cod[which(cod$stg=="adt" | is.na(cod$stg)),]
-
-had.juv=had[which(had$stg=="juv" | is.na(had$stg)),]
-had.adt=had[which(had$stg=="adt" | is.na(had$stg)),]
 
 
 DOY=yday(dt) #day of year

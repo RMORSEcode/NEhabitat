@@ -94,8 +94,8 @@ gnms$sp2=tolower(gnms$spp)
 # write.csv(Lmf, file='lmf.csv', col.names = T)
 Lmf=read_excel('C:/Users/ryan.morse/Documents/GitHub/NEhabitat/Lm_included.xlsx') # read in final length at maturity
 Lmf=read_excel('/home/ryan/Git/NEhabitat/Lm_included.xlsx')
-colnames(Lmf)[4]="SVSPP"
-colnames(Lmf)[5]="Lm"
+# colnames(Lmf)[4]="SVSPP"
+# colnames(Lmf)[5]="Lm"
 svspplu=read.csv('C:/Users/ryan.morse/Desktop/1_habitat_analysis_2017/svspp_lookup.csv', stringsAsFactors = F)
 svnms=svspplu[svspplu$SCINAME %in% gnms$spp,]
 

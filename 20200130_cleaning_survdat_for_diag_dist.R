@@ -194,38 +194,27 @@ allstn$PLOTWT=sdat$PLOTWT[!duplicated(survdat_stations)]
 
 
 ### now reduce to single species, then add back NA for entire record, then split -> adult and juvenile
-cod=sdat[which(sdat$SVSPP==73),]
-cod$wt=0.0069*(cod$LENGTH^3.08) # individual wt in grams based on length in cm for cod (fishbase)
-# test=aggregate(cod$wt, by=list(c(cod$CRUISE6, cod$STATION, cod$STRATUM, cod$YEAR, cod$SVSPP)), FUN=sum)
-# test=cod %>% group_by((cod$CRUISE6, cod$STATION, cod$STRATUM, cod$YEAR, cod$SVSPP)) %>% summarise(wtsum=sum(cod$wt))
-test=cod %>% group_by(CRUISE6,STATION,STRATUM,YEAR) %>% summarise(wtsum=sum(wt, na.rm = T))
-# test2=cod[unique(cod[c("CRUISE6","STATION","STRATUM","YEAR")]),]
+SELFISH=73
+FISHNAME=Lmf$`Common Name`[which(Lmf$SVSPP==SELFISH)]
+
+FISH=sdat[which(sdat$SVSPP==73),]
+# FISH$wt=0.0069*(FISH$LENGTH^3.08) # individual wt in grams based on length in cm for FISH (fishbase)
+FISH$wt=Lmf$a[which(Lmf$SVSPP==SELFISH)]*(FISH$LENGTH^Lmf$b[which(Lmf$SVSPP==SELFISH)]) # individual wt in grams based on length in cm for FISH (fishbase)
+test=FISH %>% group_by(CRUISE6,STATION,STRATUM,YEAR) %>% summarise(wtsum=sum(wt, na.rm = T))
 retvars <- c("CRUISE6","STATION","STRATUM","YEAR")
-survdat_stations <- cod[retvars]
-test2=cod[!duplicated(survdat_stations),]
-# stn <- as.numeric(rownames(survdat_stations)) # get index of unique stations
-# cod=cod[stn,] # this is not working...
-cod=left_join(test2, test)
-# cod$wt=cod$wt/1000
-cod=left_join(allstn, cod) # now has all stations, with NA for stn data where svspp not caught
-table(cod$stg) # check
-unique(cod$SVSPP)
+survdat_stations <- FISH[retvars]
+test2=FISH[!duplicated(survdat_stations),]
+FISH=left_join(test2, test)
+# FISH$wt=FISH$wt/1000
+FISH=left_join(allstn, FISH) # now has all stations, with NA for stn data where svspp not caught
+table(FISH$stg) # check
+unique(FISH$SVSPP)
 
 #now fix NA for LOGBIO, etc NA -> 0
 # x[c("a", "b")][is.na(x[c("a", "b")])] <- 0
 
-cod.juv=cod[which(cod$stg=="juv" | is.na(cod$stg)),]
-cod.adt=cod[which(cod$stg=="adt" | is.na(cod$stg)),]
-
-had=survdat2[which(survdat2$SVSPP==74),]
-had$wt=0.0059*(had$LENGTH^3.13) # individual wt in grams based on length in cm for had (fishbase)
-had.juv=had[which(had$stg=="juv" | is.na(had$stg)),]
-had.adt=had[which(had$stg=="adt" | is.na(had$stg)),]
-
-red=survdat2[which(survdat2$SVSPP==155),]
-red$wt=0.018*(red$LENGTH^2.966) # K. Duclos 2015 thesis UNH
-red.juv=red[which(red$stg=="juv" | is.na(red$stg)),]
-red.adt=red[which(red$stg=="adt" | is.na(red$stg)),]
+FISH.juv=FISH[which(FISH$stg=="juv" | is.na(FISH$stg)),]
+FISH.adt=FISH[which(FISH$stg=="adt" | is.na(FISH$stg)),]
 
 
 
@@ -235,78 +224,6 @@ stage=cod.juv
 stage=cod.adt
 
 
-# read species list  sps.csv
-# sps=read.csv('sps.csv', header = TRUE)
-# # sps=read.csv('C:/Users/ryan.morse/Desktop/for ryan/sps.csv') #updated for NEUS
-# numsps=nrow(sps)
-# 
-# numrecs=nrow(stage)
-# 
-# d = array(data = NA, dim = 150)
-# 
-# 
-# for (j in 1:numrecs) {
-#   
-#   print(numrecs-j)
-#   
-#   
-#   lat1=stage$LAT[j]* radt
-#   long1=stage$LON[j]* radt
-#   for (i in 1:150){
-#     lat2=diag$Latitude[i]* radt
-#     long2=diag$Longitude[i]* radt
-#     d[i] <- acos(sin(lat1)*sin(lat2) + cos(lat1)*cos(lat2) * cos(long2-long1)) * R
-#   }
-#   dindex=which(d==min(d))
-#   
-#   lat1=34.60* radt
-#   long1=-76.53* radt
-#   
-#   lat2=diag$Latitude[dindex]* radt
-#   long2=diag$Longitude[dindex]* radt
-#   stage$ASDIST[j] = acos(sin(lat1)*sin(lat2) + cos(lat1)*cos(lat2) * cos(long2-long1)) * R
-#   
-# }
-# 
-# 
-# 
-# 
-# 
-# # create column for missing depth data intially with depth data
-# stage$MISDEPTH=stage$DEPTH
-# 
-# # find cases with missing depth data
-# missingdepth=which(is.na(stage$DEPTH))
-# 
-# # fill only those records in misdepth with depth from grid
-# for(k in missingdepth){
-#   stage$MISDEPTH[k] = extract(gdepth,cbind(stage$LON[k],stage$LAT[k])) * -1
-# }
-# 
-# 
-# 
-# 
-# 
-# # for (i in 1:numsps){
-# #   print (i)
-#   for(j in min(stage$YEAR):max(stage$YEAR)){
-#     
-#     sumdist=sum(stage$ASDIST[stage$YEAR==j & stage$SVSPP==sps$SVSPP[i]] *stage$PLOTWT[stage$YEAR==j & stage$SVSPP==sps$SVSPP[i]])
-#     lendist=sum(stage$PLOTWT[stage$YEAR==j & stage$SVSPP==sps$SVSPP[i]])
-#     mdist =sumdist / lendist
-#     
-#     sumdepth=sum(stage$MISDEPTH[stage$YEAR==j & stage$SVSPP==sps$SVSPP[i]] *stage$PLOTWT[stage$YEAR==j & stage$SVSPP==sps$SVSPP[i]])
-#     lendepth=sum(stage$PLOTWT[stage$YEAR==j & stage$SVSPP==sps$SVSPP[i]])
-#     mdepth =sumdepth / lendepth
-#     
-#     outline=paste(j,",",sps$SVSPP[i],",",mdist,",",mdepth)
-#     write.table(outline,file="disdepthtest.csv",row.name=F,col.names=F,append=TRUE)
-#   }  
-# # }
-# 
-# # missing depths ???
-# 
-# stage$DEPTH[stage$SVSPP==73 & stage$YEAR==1973]
 
 #_______________________________
 ### below is from EcoMon processing of this type of data ###

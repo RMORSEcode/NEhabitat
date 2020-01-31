@@ -193,9 +193,11 @@ allstn$PLOTWT=sdat$PLOTWT[!duplicated(survdat_stations)]
 # allstn$stg=NA
 
 
-### now reduce to single species, then add back NA for entire record, then split -> adult and juvenile
+### MAKE SELECTIONS FOR FISH SVSPP SEASON AND STAGE ####
 SELFISH=73
 FISHNAME=Lmf$`Common Name`[which(Lmf$SVSPP==SELFISH)]
+selseason="SPRING"
+SELSTG="Juv"
 
 FISH=sdat[which(sdat$SVSPP==73),]
 # FISH$wt=0.0069*(FISH$LENGTH^3.08) # individual wt in grams based on length in cm for FISH (fishbase)
@@ -216,14 +218,15 @@ unique(FISH$SVSPP)
 FISH.juv=FISH[which(FISH$stg=="juv" | is.na(FISH$stg)),]
 FISH.adt=FISH[which(FISH$stg=="adt" | is.na(FISH$stg)),]
 
-
-
 ### NOW do calc for ASDIST, COB, DTC, DPTH ###
 # put in shorter name
-stage=cod.juv
-stage=cod.adt
-
-
+if (SELSTG=="Juv"){
+  stage=FISH.juv
+  }
+elseif (SELSTG=="Adt"){
+  stage=FISH.adt
+  }
+# stage=FISH.adt
 
 #_______________________________
 ### below is from EcoMon processing of this type of data ###
@@ -253,21 +256,14 @@ for(k in missingdepth){
   stage$misdepth[k] = extract(gdepth,cbind(stage$LON[k],stage$LAT[k])) # * -1
 }
 
-# copes=c(9,10,11,13,14,17,19,20,23,29,30,31)
-# KEEP=c(seq(9,31),33,36,40,57) #26 taxa similar to NES regime shift taxa
-# keep.many=seq(9,57) # lots, including original
-
-#For ii species:
-# taxa=ZPDa[,KEEP]
-# taxa=floor(log10(taxa+1))
-selseason="SPRING"
+## split out to season ##
 stage=stage[which(stage$SEASON==selseaon),]
 
 stage$bio=stage$wtsum / stage$AREAPERTOW
 stage$lgbio=floor(log10(stage$bio+1))
 taxa=data.frame(stage$lgbio)
 taxa[is.na(taxa)]=0
-colnames(taxa)="Adt_Cod"
+colnames(taxa)=FISHNAME
 
 
 

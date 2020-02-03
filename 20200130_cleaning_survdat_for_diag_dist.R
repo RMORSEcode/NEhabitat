@@ -291,7 +291,7 @@ for (ii in 1:length(taxa)){
     mlon=sumdistE/lendist
     
     # outline=paste(j,",",colnames(taxa)[ii],",",mdist,",",sdtoc, ',',mdepth, ',',mlat,',',mlon)
-    outline=paste(j,colnames(taxa)[ii],mdist,sdtoc,mdepth,mlat,mlon, sep=",")
+    outline=paste(j,colnames(taxa)[ii],SELSTG,selseason,mdist,sdtoc,mdepth,mlat,mlon, sep=",")
     
     write.table(outline,file=paste(selseaon, "test_dis_depth.csv", sep='_'),row.name=F,col.names=F,append=TRUE)
   }  

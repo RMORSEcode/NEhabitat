@@ -11,7 +11,6 @@ do
   ncks -O -d eta_rho,200,360 -d xi_rho,350,720 -d eta_u,200,360 -d xi_u,350,720 -d eta_v,200,360 -d xi_v,350,720 $fin $fin
 done
 
-
 ### this is the format used for {date >= 1982} 20190110 ###### NOTE 1980 and 1981 will need lon_u(v) and lat_u(v) added
 # changed order to subset then add vars (not much difference on drive, but faster on SSD
 #FILES=/home/ryan/roms/test2/1/NWA-SZ.HCob05T_avg_*
@@ -27,6 +26,17 @@ do
   ncks -O -d eta_rho,200,360 -d xi_rho,350,720 -d eta_u,200,360 -d xi_u,350,720 -d eta_v,200,360 -d xi_v,350,720 $fin $fin
   ncks -A -v lon_rho,lat_rho,lon_u,lat_u,lon_v,lat_v,h,angle,mask_rho /home/ryan/roms/test2/1/NWA_grd_small.nc $fin
 done
+______
+### add {lon_u,lat_u,lon_v,lat_v} to 1980-1981 for already processed files:
+FILES=./RM_NWA-SZ.HCob05T_avg*
+for f in $FILES
+do
+  filename="${f##*/}"  # get filename
+  echo "##########  $filename  ############"
+  ncks -A -v lon_u,lat_u,lon_v,lat_v /home/ryan/roms/test2/1/NWA_grd_small.nc $filename
+done
+_______
+
 
 ### JLink Linux machine
 cd /media/ryan/ROMS_pt1/NWA/1989/

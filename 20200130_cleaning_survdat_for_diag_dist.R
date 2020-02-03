@@ -220,13 +220,13 @@ FISH.adt=FISH[which(FISH$stg=="adt" | is.na(FISH$stg)),]
 
 ### NOW do calc for ASDIST, COB, DTC, DPTH ###
 # put in shorter name
-if (SELSTG=="Juv"){
+
+if(SELSTG=="Juv") {
   stage=FISH.juv
-  }
-elseif (SELSTG=="Adt"){
+} else {
   stage=FISH.adt
-  }
-# stage=FISH.adt
+}
+
 
 #_______________________________
 ### below is from EcoMon processing of this type of data ###
@@ -257,11 +257,13 @@ for(k in missingdepth){
 }
 
 ## split out to season ##
-stage=stage[which(stage$SEASON==selseaon),]
+stagesn=stage[which(stage$SEASON==selseason),]
 
-stage$bio=stage$wtsum / stage$AREAPERTOW
-stage$lgbio=floor(log10(stage$bio+1))
-taxa=data.frame(stage$lgbio)
+
+
+stagesn$bio=stagesn$wtsum / stagesn$AREAPERTOW
+stagesn$lgbio=floor(log10(stagesn$bio+1))
+taxa=data.frame(stagesn$lgbio)
 taxa[is.na(taxa)]=0
 colnames(taxa)=FISHNAME
 
@@ -271,21 +273,21 @@ colnames(taxa)=FISHNAME
 # block to calculate summary final distance of populations
 for (ii in 1:length(taxa)){
   print(colnames(taxa)[ii])
-  for(j in min(stage$YEAR):max(stage$YEAR)){
-    sumdistA=sum(stage$distNC[stage$YEAR==j] *taxa[stage$YEAR==j,ii]) #ASDIST
-    lendist=sum(taxa[stage$YEAR==j,ii])
+  for(j in min(stagesn$YEAR):max(stagesn$YEAR)){
+    sumdistA=sum(stagesn$distNC[stagesn$YEAR==j] *taxa[stagesn$YEAR==j,ii]) #ASDIST
+    lendist=sum(taxa[stagesn$YEAR==j,ii])
     mdist =sumdistA / lendist  
     
-    sumdistB=sum(stage$dtc[stage$YEAR==j] * taxa[stage$YEAR==j,ii]) #DTOC
+    sumdistB=sum(stagesn$dtc[stagesn$YEAR==j] * taxa[stagesn$YEAR==j,ii]) #DTOC
     sdtoc =sumdistB / lendist
     
-    sumdistC=sum(stage$misdepth[stage$YEAR==j] *taxa[stage$YEAR==j, ii]) #Depth
+    sumdistC=sum(stagesn$misdepth[stagesn$YEAR==j] *taxa[stagesn$YEAR==j, ii]) #Depth
     mdepth =sumdistC / lendist
     
-    sumdistD=sum(stage$lat[stage$YEAR==j] * taxa[stage$YEAR==j,ii]) #Lat
+    sumdistD=sum(stagesn$lat[stagesn$YEAR==j] * taxa[stagesn$YEAR==j,ii]) #Lat
     mlat=sumdistD/lendist
     
-    sumdistE=sum(stage$lon[stage$YEAR==j] * taxa[stage$YEAR==j,ii]) #Lon
+    sumdistE=sum(stagesn$lon[stagesn$YEAR==j] * taxa[stagesn$YEAR==j,ii]) #Lon
     mlon=sumdistE/lendist
     
     # outline=paste(j,",",colnames(taxa)[ii],",",mdist,",",sdtoc, ',',mdepth, ',',mlat,',',mlon)

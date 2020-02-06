@@ -194,12 +194,12 @@ allstn$PLOTWT=sdat$PLOTWT[!duplicated(survdat_stations)]
 
 
 ### MAKE SELECTIONS FOR FISH SVSPP SEASON AND STAGE ####
-SELFISH=73
+SELFISH=74
 FISHNAME=Lmf$`Common Name`[which(Lmf$SVSPP==SELFISH)]
-selseason="SPRING"
-SELSTG="Juv"
+selseason="FALL" #"SPRING"|"FALL"
+SELSTG="Juv" #'Adt'|'Juv'
 
-FISH=sdat[which(sdat$SVSPP==73),]
+FISH=sdat[which(sdat$SVSPP==SELFISH),]
 # FISH$wt=0.0069*(FISH$LENGTH^3.08) # individual wt in grams based on length in cm for FISH (fishbase)
 FISH$wt=Lmf$a[which(Lmf$SVSPP==SELFISH)]*(FISH$LENGTH^Lmf$b[which(Lmf$SVSPP==SELFISH)]) # individual wt in grams based on length in cm for FISH (fishbase)
 test=FISH %>% group_by(CRUISE6,STATION,STRATUM,YEAR) %>% summarise(wtsum=sum(wt, na.rm = T))
@@ -272,7 +272,7 @@ colnames(taxa)=FISHNAME
 # setwd('K:/1 RM/2 Plankton Spatial Plots/fish_Kevin')
 # block to calculate summary final distance of populations
 for (ii in 1:length(taxa)){
-  print(colnames(taxa)[ii])
+  print(c(colnames(taxa)[ii], SELSTG, selseason))
   for(j in min(stagesn$YEAR):max(stagesn$YEAR)){
     sumdistA=sum(stagesn$distNC[stagesn$YEAR==j] *taxa[stagesn$YEAR==j,ii]) #ASDIST
     lendist=sum(taxa[stagesn$YEAR==j,ii])

@@ -28,6 +28,9 @@ survdat$lonbin=round(survdat$LON/0.25)*0.25
 survdat$month=month(survdat$EST_TOWDATE)
 survdat$doy=yday(survdat$EST_TOWDATE)
 
+### Add length at maturity data (processed below and added as read-in here)
+Lmf=read_excel('C:/Users/ryan.morse/Documents/GitHub/NEhabitat/Lm_included.xlsx') # read in final length at maturity
+Lmf=read_excel('/home/ryan/Git/NEhabitat/Lm_included.xlsx')
 
 load('/home/ryan/1_habitat_analysis_2017/habitat_ws_20191009.RData')
 
@@ -65,7 +68,11 @@ nespnms=read.csv('/home/ryan/Git/NEhabitat/NESPP3-SVSPP.csv', stringsAsFactors =
 nespconv=nespnms[,c(1,3)]
 obl=left_join(obl, nespconv, by='NESPP3')
 svnms=left_join(svnms, nespconv, by="SVSPP")
-
+test=data.frame(obl[,c("SVSPP", "LENANML","NUMLEN")])
+test=left_join(test, Lmf[,c("SVSPP", "Lm")], by="SVSPP")
+test$stg=ifelse(test$LENANML<test$Lm, "Juv", "Adt")
+obl$stg=test$stg
+rm(test)
 
 ### Load EcoMon data - ichthyoplankton for NE Groundfish habitat work ###
 # ZPD=read_excel('C:/Users/ryan.morse/Desktop/Iomega Drive Backup 20171012/1 RM/JHare data/EcoMon_Plankton_Data_v3_5.xlsx', sheet='Data' , col_names=T) # newest data through 2015; *** NEW FORMAT
@@ -92,8 +99,8 @@ gnms$sp2=tolower(gnms$spp)
 # Lm2=tt[tt2,]
 # Lmf=full_join(Lm, Lm2, by=c("nm"="sp2"))
 # write.csv(Lmf, file='lmf.csv', col.names = T)
-Lmf=read_excel('C:/Users/ryan.morse/Documents/GitHub/NEhabitat/Lm_included.xlsx') # read in final length at maturity
-Lmf=read_excel('/home/ryan/Git/NEhabitat/Lm_included.xlsx')
+# Lmf=read_excel('C:/Users/ryan.morse/Documents/GitHub/NEhabitat/Lm_included.xlsx') # read in final length at maturity
+# Lmf=read_excel('/home/ryan/Git/NEhabitat/Lm_included.xlsx')
 # colnames(Lmf)[4]="SVSPP"
 # colnames(Lmf)[5]="Lm"
 svspplu=read.csv('C:/Users/ryan.morse/Desktop/1_habitat_analysis_2017/svspp_lookup.csv', stringsAsFactors = F)

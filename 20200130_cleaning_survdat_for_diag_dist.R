@@ -25,6 +25,14 @@ for (j in 1:length(survdat$stg)){
 }
 
 
+nespconv=nespnms[,c(1,3)]
+obl=left_join(obl, nespconv, by='NESPP3')
+svnms=left_join(svnms, nespconv, by="SVSPP")
+test=data.frame(obl[,c("SVSPP", "LENANML","NUMLEN")])
+test=left_join(test, Lmf[,c("SVSPP", "Lm")], by="SVSPP")
+test$stg=ifelse(test$LENANML<test$Lm, "Juv", "Adt")
+obl$stg=test$stg
+
 # set wd
 setwd("K:/1 RM/2 Plankton Spatial Plots/fish_Kevin")
 setwd("C:/Users/ryan.morse/Desktop/Iomega Drive Backup 20171012/1 RM/2 Plankton Spatial Plots/fish_Kevin")
@@ -267,13 +275,15 @@ taxa=data.frame(stagesn$lgbio)
 taxa[is.na(taxa)]=0
 colnames(taxa)=FISHNAME
 
-
+out_data=array(NA,c((max(stagesn$YEAR)-min(stagesn$YEAR)+1)*length(taxa),7))
+row_c=0
 
 # setwd('K:/1 RM/2 Plankton Spatial Plots/fish_Kevin')
 # block to calculate summary final distance of populations
 for (ii in 1:length(taxa)){
   print(c(colnames(taxa)[ii], SELSTG, selseason))
   for(j in min(stagesn$YEAR):max(stagesn$YEAR)){
+    row_c=row_c+1 
     sumdistA=sum(stagesn$distNC[stagesn$YEAR==j] *taxa[stagesn$YEAR==j,ii]) #ASDIST
     lendist=sum(taxa[stagesn$YEAR==j,ii])
     mdist =sumdistA / lendist  
@@ -290,9 +300,30 @@ for (ii in 1:length(taxa)){
     sumdistE=sum(stagesn$lon[stagesn$YEAR==j] * taxa[stagesn$YEAR==j,ii]) #Lon
     mlon=sumdistE/lendist
     
-    # outline=paste(j,",",colnames(taxa)[ii],",",mdist,",",sdtoc, ',',mdepth, ',',mlat,',',mlon)
-    outline=paste(j,colnames(taxa)[ii],SELSTG,selseason,mdist,sdtoc,mdepth,mlat,mlon, sep=",")
+    # outline=paste(j,colnames(taxa)[ii],SELSTG,selseason,mdist,sdtoc,mdepth,mlat,mlon, sep=",")
+    # write.table(outline,file=paste(selseaon, "test_dis_depth.csv", sep='_'),row.name=F,col.names=F,append=TRUE)
     
-    write.table(outline,file=paste(selseaon, "test_dis_depth.csv", sep='_'),row.name=F,col.names=F,append=TRUE)
+    out_data[row_c,1]=j
+    out_data[row_c,2]=paste(colnames(taxa)[ii], SELSTG, selseason, sep=" ")
+    out_data[row_c,3]=mdist
+    out_data[row_c,4]=sdtoc
+    out_data[row_c,5]=mdepth
+    out_data[row_c,6]=mlat
+    out_data[row_c,7]=mlon
   }  
 }
+
+out_data=data.frame(out_data)
+
+
+
+names(out_data)[names(out_data)=="X1"] <- "YR"
+names(out_data)[names(out_data)=="X2"] <- "SP"
+names(out_data)[names(out_data)=="X3"] <- "ASD"
+names(out_data)[names(out_data)=="X4"] <- "DTC"
+names(out_data)[names(out_data)=="X5"] <- "DEP"
+names(out_data)[names(out_data)=="X6"] <- "LAT"
+names(out_data)[names(out_data)=="X7"] <- "LON"
+
+
+write.csv(out_data,file=outfile )

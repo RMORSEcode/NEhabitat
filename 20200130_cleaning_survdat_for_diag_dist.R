@@ -8,30 +8,48 @@ library(maptools)
 library(geosphere)
 
 ## Subset survdat to only groundfish species with Length at maturity data
-load("C:/Users/ryan.morse/Downloads/SurvdatBio (3).RData")
-test=survdat.bio$SVSPP %in% Lmf$SVSPP
-survdat.bio2=survdat.bio[test,]
-sort(unique(survdat.bio2$SVSPP)) #verify
-length(unique(survdat.bio2$SVSPP))
+# load("C:/Users/ryan.morse/Downloads/SurvdatBio (3).RData") #loads survdat.bio
+load("C:/Users/ryan.morse/Downloads/survdat_lw.RData") # loads survdat.lw ; from Sean Lucey data into 2019
+test=survdat.lw$SVSPP %in% Lmf$SVSPP
+survdat.lw=survdat.lw[test,]
+sort(unique(survdat.lw$SVSPP)) #verify
+length(unique(survdat.lw$SVSPP))
 
 test=survdat$SVSPP %in% Lmf$SVSPP
 survdat=survdat[test,]
 sort(unique(survdat$SVSPP)) #verify
 length(unique(survdat$SVSPP))
 
-survdat$stg=NA
-for (j in 1:length(survdat$stg)){
-  survdat$stg[j]=ifelse(survdat$LENGTH[j]<Lmf$Lm[which(Lmf$SVSPP==survdat$SVSPP[j])], "juv", "adt")
-}
+## choose surdat and remove older non-length version to avoid confusion
+rm(survdat)
+survdat=survdat.lw
+survdat=survdat.bio
 
 
-nespconv=nespnms[,c(1,3)]
-obl=left_join(obl, nespconv, by='NESPP3')
-svnms=left_join(svnms, nespconv, by="SVSPP")
-test=data.frame(obl[,c("SVSPP", "LENANML","NUMLEN")])
+### loop to split taxa into juvenile or adult using Lm data
+# survdat$stg=NA
+# for (j in 1:length(survdat$stg)){
+#   survdat$stg[j]=ifelse(survdat$LENGTH[j]<Lmf$Lm[which(Lmf$SVSPP==survdat$SVSPP[j])], "juv", "adt")
+# }
+### Better to do this with left_join
+test=data.frame(survdat[,c("SVSPP", "LENGTH")])
+colnames(test)=c("SVSPP", "LENGTH")
 test=left_join(test, Lmf[,c("SVSPP", "Lm")], by="SVSPP")
-test$stg=ifelse(test$LENANML<test$Lm, "Juv", "Adt")
-obl$stg=test$stg
+test$stg=ifelse(test$LENGTH<test$Lm, "Juv", "Adt")
+survdat$stg=test$stg
+rm(test)
+
+### count juv and adult to see if numbers match ABUNDANCE --> they do NOT (unless this is incorrect...)
+test=data.frame(survdat[,c("SVSPP", "CRUISE6","YEAR", "STATION", "STRATUM", "ABUNDANCE", "NUMLEN", "stg")])
+test2=test %>% group_by_at(vars(SVSPP,CRUISE6,STATION, STRATUM,ABUNDANCE,stg)) %>% mutate(sum=n())
+test2=test %>% summarise(NUMLEN)
+
+
+test=left_join(test, Lmf[,c("SVSPP", "Lm")], by="SVSPP")
+test$stg=ifelse(test$LENGTH<test$Lm, "Juv", "Adt")
+survdat$stg=test$stg
+
+
 
 # set wd
 setwd("K:/1 RM/2 Plankton Spatial Plots/fish_Kevin")

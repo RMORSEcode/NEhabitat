@@ -39,10 +39,23 @@ test$stg=ifelse(test$LENGTH<test$Lm, "Juv", "Adt")
 survdat$stg=test$stg
 rm(test)
 
-### count juv and adult to see if numbers match ABUNDANCE --> they do NOT (unless this is incorrect...)
+### count juv and adult to see if numbers match ABUNDANCE 
 test=data.frame(survdat[,c("SVSPP", "CRUISE6","YEAR", "STATION", "STRATUM", "ABUNDANCE", "NUMLEN", "stg")])
-test2=test %>% group_by_at(vars(SVSPP,CRUISE6,STATION, STRATUM,ABUNDANCE,stg)) %>% mutate(sum=n())
-test2=test %>% summarise(NUMLEN)
+# test=data.frame(survdat[1:25,c("SVSPP", "CRUISE6","YEAR", "STATION", "STRATUM", "ABUNDANCE", "NUMLEN", "stg")])
+test2=test %>% group_by_at(vars(SVSPP,CRUISE6,STATION, STRATUM,ABUNDANCE,stg)) %>% mutate(stgsum=sum(NUMLEN))
+
+# ### Checking on above issue...
+# test=survdat[1:25,18:25]
+# sum(test$NUMLEN[test$stg=='Adt'])
+# # [1] 40
+# sum(test$NUMLEN[test$stg=='Juv'])
+# # [1] 12
+# sum(test$NUMLEN) #[test$stg=='Juv'])
+# # [1] 52
+
+
+
+
 
 
 test=left_join(test, Lmf[,c("SVSPP", "Lm")], by="SVSPP")

@@ -40,9 +40,25 @@ survdat$stg=test$stg
 rm(test)
 
 ### count juv and adult to see if numbers match ABUNDANCE 
-test=data.frame(survdat[,c("SVSPP", "CRUISE6","YEAR", "STATION", "STRATUM", "ABUNDANCE", "NUMLEN", "stg")])
+test=data.frame(survdat[,c("SVSPP", "CRUISE6","YEAR", "STATION", "STRATUM", "ABUNDANCE", "BIOMASS","NUMLEN", "WGTLEN", "stg")])
 # test=data.frame(survdat[1:25,c("SVSPP", "CRUISE6","YEAR", "STATION", "STRATUM", "ABUNDANCE", "NUMLEN", "stg")])
-test2=test %>% group_by_at(vars(SVSPP,CRUISE6,STATION, STRATUM,ABUNDANCE,stg)) %>% mutate(stgsum=sum(NUMLEN))
+test2=test %>% group_by_at(vars(SVSPP,CRUISE6,STATION, STRATUM,ABUNDANCE,stg)) %>% mutate(stgsum=sum(NUMLEN), wtsum=sum(WGTLEN))
+survdat$stgsum=test2$stgsum
+survdat$stgwtsum=test2$wtsum
+### now addd up weights for all fish measured, check against biomass, total abundance
+test2=test %>% group_by_at(vars(SVSPP,CRUISE6,STATION, YEAR, STRATUM,ABUNDANCE)) %>% mutate(totlen=sum(NUMLEN), totwgt=sum(WGTLEN))
+test2$abndiff=test2$ABUNDANCE-test2$totlen
+test2$wgtdiff=test2$BIOMASS-test2$totwgt
+
+survdat$totlen=test2$totlen
+survdat$totwgt=test2$totwgt
+survdat$abndiff=survdat$ABUNDANCE - survdat$totlen
+survdat$biodiff=survdat$BIOMASS - survdat$totwgt
+
+
+
+
+
 
 # ### Checking on above issue...
 # test=survdat[1:25,18:25]

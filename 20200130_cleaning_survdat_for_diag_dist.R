@@ -10,6 +10,7 @@ library(geosphere)
 ## Subset survdat to only groundfish species with Length at maturity data
 # load("C:/Users/ryan.morse/Downloads/SurvdatBio (3).RData") #loads survdat.bio
 load("C:/Users/ryan.morse/Downloads/survdat_lw.RData") # loads survdat.lw ; from Sean Lucey data into 2019
+load("/home/ryan/Downloads/survdat_lw.RData")# loads survdat.lw ; from Sean Lucey data into 2019
 test=survdat.lw$SVSPP %in% Lmf$SVSPP
 survdat.lw=survdat.lw[test,]
 sort(unique(survdat.lw$SVSPP)) #verify
@@ -74,7 +75,7 @@ survdat$biodiff=survdat$BIOMASS - survdat$totwgt
 
 
 
-test=left_join(test, Lmf[,c("SVSPP", "Lm")], by="SVSPP")
+test=left_join(survdat, Lmf[,c("SVSPP", "Lm")], by="SVSPP")
 test$stg=ifelse(test$LENGTH<test$Lm, "Juv", "Adt")
 survdat$stg=test$stg
 

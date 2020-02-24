@@ -56,30 +56,22 @@ survdat$abndiff=survdat$ABUNDANCE - survdat$totlen
 survdat$biodiff=survdat$BIOMASS - survdat$totwgt
 
 
+barplot(table(round(survdat$biodiff[(abs(survdat$biodiff>12))],1)))
+y=survdat$SVSPP
+x=abs(survdat$biodiff)
+y=y[x>120]
+x=x[x>120]
+barplot(table(round(y))) #which species have the highest mismatches in biomass
+barplot(table(round(x))) #how many
+
+# now create dataframe with unique tows only, separated by stage
+test=survdat[,c("CRUISE6","STATION","STRATUM","YEAR", "stg")]
+svdtunq=survdat[!duplicated(test),]
 
 
 
 
-# ### Checking on above issue...
-# test=survdat[1:25,18:25]
-# sum(test$NUMLEN[test$stg=='Adt'])
-# # [1] 40
-# sum(test$NUMLEN[test$stg=='Juv'])
-# # [1] 12
-# sum(test$NUMLEN) #[test$stg=='Juv'])
-# # [1] 52
-
-
-
-
-
-
-test=left_join(test, Lmf[,c("SVSPP", "Lm")], by="SVSPP")
-test$stg=ifelse(test$LENGTH<test$Lm, "Juv", "Adt")
-survdat$stg=test$stg
-
-
-
+#### For biomass trends in along shelf distance, depth, distance to the coast ####
 # set wd
 setwd("K:/1 RM/2 Plankton Spatial Plots/fish_Kevin")
 setwd("C:/Users/ryan.morse/Desktop/Iomega Drive Backup 20171012/1 RM/2 Plankton Spatial Plots/fish_Kevin")

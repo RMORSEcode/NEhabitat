@@ -71,13 +71,9 @@ survdat$biodiff=survdat$BIOMASS - survdat$totwgt
 # # [1] 52
 
 
-
-
-
-
-test=left_join(survdat, Lmf[,c("SVSPP", "Lm")], by="SVSPP")
-test$stg=ifelse(test$LENGTH<test$Lm, "Juv", "Adt")
-survdat$stg=test$stg
+# test=left_join(survdat, Lmf[,c("SVSPP", "Lm")], by="SVSPP")
+# test$stg=ifelse(test$LENGTH<test$Lm, "Juv", "Adt")
+# survdat$stg=test$stg
 
 
 

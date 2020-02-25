@@ -64,10 +64,29 @@ x=x[x>120]
 barplot(table(round(y))) #which species have the highest mismatches in biomass
 barplot(table(round(x))) #how many
 
-# now create dataframe with unique tows only, separated by stage
+### now create dataframe with unique tows only, separated by stage
 test=survdat[,c("CRUISE6","STATION","STRATUM","YEAR", "stg")]
 svdtunq=survdat[!duplicated(test),]
+### calc percent of biomass by stage(adt, juv) per unique tow to be applied to BIOMASS for corrected values
+svdtunq$stgwgtpct=round(svdtunq$stgwtsum/svdtunq$totwgt, 2)
+svdtunq$corBIOMASS=svdtunq$stgwgtpct*svdtunq$BIOMASS
+barplot(table(svdtunq$stgwgtpct))
+barplot(table(svdtunq$stgwgtpct[svdtunq$SEASON=='SPRING']))
+barplot(table(svdtunq$stgwgtpct[svdtunq$SEASON=='FALL']))
+barplot(table(svdtunq$stgwgtpct[svdtunq$stgwgtpct<0.99 & svdtunq$SEASON=='FALL']),ylim=c(0,1000), main='FALL')
+barplot(table(svdtunq$stgwgtpct[svdtunq$stgwgtpct<0.99 & svdtunq$SEASON=='SPRING']),ylim=c(0,1000), main='SPRING')
 
+svspp=77
+svdtunq$stgwgtpct[is.na(svdtunq$stgwgtpct)]=0 #[svdtunq$stgwgtpct<0.99 & svdtunq$SEASON=='FALL' & svdtunq$SVSPP==svspp]),]
+
+barplot(table(svdtunq$stgwgtpct[svdtunq$stgwgtpct<0.99 & svdtunq$SEASON=='FALL' & svdtunq$SVSPP==svspp]),ylim=c(0,100), main=paste('FALL ', svspp))
+barplot(table(svdtunq$stgwgtpct[svdtunq$stgwgtpct<0.99 & svdtunq$SEASON=='SPRING' & svdtunq$SVSPP==svspp]),ylim=c(0,100), main=paste('SPRING ', svspp))
+
+
+library(modes)
+bimodality_amplitude(svdtunq$stgwgtpct[svdtunq$stgwgtpct<0.99 & svdtunq$SEASON=='SPRING' & svdtunq$SVSPP==svspp], fig=T)
+bimodality_amplitude(svdtunq$stgwgtpct[svdtunq$stgwgtpct<0.99 & svdtunq$SEASON=='FALL' & svdtunq$SVSPP==svspp], fig=T)
+sum(is.na(svdtunq$stgwgtpct[svdtunq$stgwgtpct<0.99 & svdtunq$SEASON=='FALL' & svdtunq$SVSPP==svspp]))
 
 
 

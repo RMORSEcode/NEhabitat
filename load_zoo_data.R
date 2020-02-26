@@ -13,6 +13,7 @@ library(lubridate)
 library(readxl)
 library(mgcv)
 library(dplyr)
+library(tidyr)
 
 load("C:/Users/ryan.morse/Desktop/1_habitat_analysis_2017/hauls_catch_Dec2017.RData")
 table(hauls$region)
@@ -105,6 +106,10 @@ gnms$sp2=tolower(gnms$spp)
 # colnames(Lmf)[5]="Lm"
 svspplu=read.csv('C:/Users/ryan.morse/Desktop/1_habitat_analysis_2017/svspp_lookup.csv', stringsAsFactors = F)
 svnms=svspplu[svspplu$SCINAME %in% gnms$spp,]
+svnms2=left_join(svnms, gnms, by=c("SCINAME"="spp"))
+svnms$ich=svnms2$V1
+rm(svnms2)
+svnms2=svnms[,c(1,5)]
 
 # add juv or adt factor to GFall based on Lmf
 # test1=GFall[c(seq(from=1,to=5000,by=1)),]
@@ -166,6 +171,11 @@ ich$lon=test$lon
 ich$latbin=round(ich$lat/0.25)*0.25
 ich$lonbin=round(ich$lon/0.25)*0.25
 vars=test[,c('date', 'lat', 'lon', 'latbin', 'lonbin', 'station', 'depth', 'sfc_temp', 'sfc_salt', 'btm_temp', 'btm_salt', 'month', 'year')]
+## add SVSPP and stage to ich, thransform to long format
+ich$stg="ich"
+ich=select(ich, -c(nofish_100m3)) #drop nofish (all zeros)
+ichlong=ich %>% gather(ichsp, abundance, urospp_100m3:lopame_100m3)
+ichlong=left_join(ichlong, svnms2, by=c("ichsp"="ich"))
 
 
 # subset fraction of data for testing/ traiing
@@ -191,6 +201,10 @@ crit2=crit[31:60]
 ZPDa=ZPDa[c(1:14,crit2+14)] # data limited to taxa occurring in > X percent of samples
 p.a=p.a[,crit2]
 dfz=ZPDa
+x=colnames(p.a)
+dfz2=dfz[,colnames(dfz) %in% x]
+
+
 
 ## try fitting gams
 y=log10(df$merbil_100m3+1) 

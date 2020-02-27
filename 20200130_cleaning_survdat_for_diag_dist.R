@@ -66,11 +66,17 @@ barplot(table(round(y))) #which species have the highest mismatches in biomass
 barplot(table(round(x))) #how many
 
 ### now create dataframe with unique tows only, separated by stage
-test=survdat[,c("CRUISE6","STATION","STRATUM","YEAR", "stg")]
+test=survdat[,c("CRUISE6","STATION","STRATUM","YEAR", "SVSPP", "stg")] # needs SVSPP...
 svdtunq=survdat[!duplicated(test),]
 ### calc percent of biomass by stage(adt, juv) per unique tow to be applied to BIOMASS for corrected values
 svdtunq$stgwgtpct=round(svdtunq$stgwtsum/svdtunq$totwgt, 2)
 svdtunq$corBIOMASS=svdtunq$stgwgtpct*svdtunq$BIOMASS
+
+svdunqadt=svdtunq %>% filter(stg=="Adt") %>% 
+  select(-(LENGTH:SIZECAT)) %>% 
+  select(-(CATCHSEX))
+  spread(SVSPP, ABUNDANCE:corBIOMASS)
+
 barplot(table(svdtunq$stgwgtpct))
 barplot(table(svdtunq$stgwgtpct[svdtunq$SEASON=='SPRING']))
 barplot(table(svdtunq$stgwgtpct[svdtunq$SEASON=='FALL']))
@@ -89,7 +95,55 @@ bimodality_amplitude(svdtunq$stgwgtpct[svdtunq$stgwgtpct<0.99 & svdtunq$SEASON==
 bimodality_amplitude(svdtunq$stgwgtpct[svdtunq$stgwgtpct<0.99 & svdtunq$SEASON=='FALL' & svdtunq$SVSPP==svspp], fig=T)
 sum(is.na(svdtunq$stgwgtpct[svdtunq$stgwgtpct<0.99 & svdtunq$SEASON=='FALL' & svdtunq$SVSPP==svspp]))
 
+### create date and binned lat lon for mathching to other surveys
+svdate=data.frame(month(survdat$EST_TOWDATE))
+colnames(svdate)[1]='M'
+svdate$Y=year(survdat$EST_TOWDATE)
+svdate$D=day(survdat$EST_TOWDATE)
+# svdate$lat=survdat$LAT
+# svdate$lon=survdat$LON
+svdate$lonbin=round(survdat$LON/0.5)*0.5 ## half degree
+svdate$latbin=round(survdat$LAT/0.5)*0.5
+svdate$doy=as.numeric(strftime(survdat$EST_TOWDATE, format = "%j"))
+svdate$sdoy=svdate$doy-8
+svdate$ldoy=svdate$doy+8
+svdate$index=seq(from=1, to=length(svdate$M), by=1)
 
+
+## get index of unique stations from survdat, apply to long format svdate with index
+retvars <- c("CRUISE6","STATION","STRATUM","YEAR")
+sdq=survdat[,retvars]
+sdq$index=seq(from=1, to=length(survdat$YEAR), by=1)
+survdat_stations <- survdat[retvars] 
+sdq2=sdq[!duplicated(survdat_stations),] # just keep retvars
+svdate2=svdate[sdq2$index,]
+
+#clean up svdate to match zooplankton
+svdate2=svdate2[which(svdate2$Y>1976),]
+
+tt=fuzzy_left_join(svdate2, dfzdate, by=c("lonbin"="lonbin", "latbin"="latbin", "Y"="Y", "sdoy"="doy", "ldoy"="doy"), 
+                   +                    match_fun=list(`==`,`==`,`==`,`<=`,`>=`))
+
+
+
+# library(geosphere)
+# distm(c(lon1, lat1), c(lon2, lat2), fun = distHaversine)
+
+### now for zoo and ich data
+dfzdate=data.frame(year(dfz$date))
+colnames(dfzdate)[1]='Y'
+dfzdate$M=month(dfz$date)
+dfzdate$D=day(dfz$date)
+dfzdate$doy=as.numeric(strftime(dfz$date, format = "%j"))
+dfzdate$lonbin=round(dfz$lon/.5)*0.5
+dfzdate$latbin=round(dfz$lat/.5)*0.5
+dfzdate$index=seq(from=1, to=length(dfz$date), by=1) #add index of original order just to keep track before sorting on time
+dfzdate=dfzdate[order(dfzdate$Y, dfzdate$doy),]
+
+
+library(fuzzyjoin)
+tt=fuzzy_left_join(svdate, dfzdate, by=c("lonbin"="lonbin", "latbin"="latbin", "Y"="Y", "sdoy"="doy", "ldoy"="doy"), 
+                   match_fun=list(`==`,`==`,`==`,`<=`,`>=`))
 
 #### For biomass trends in along shelf distance, depth, distance to the coast ####
 # set wd

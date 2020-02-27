@@ -189,7 +189,7 @@ dfv=vars
 dfz=test
 
 ### limit dfz to dominant taxa
-X=20 # criteria to use as minimum percent in samples
+X=40 # criteria to use as minimum percent in samples
 ZPDa=dfz
 ZPDa=ZPDa[!is.na(ZPDa$ich_gear),] # Remove NA in zooplankton rows
 p.a=ZPDa[,15:197]
@@ -197,13 +197,13 @@ p.a[p.a > 0]=1 # presence/absence
 count=colSums(p.a)
 pct=(count/dim(ZPDa)[1])*100
 crit=which(pct>X)
-crit2=crit[31:58]
+crit2=crit[((length(crit)/2)+1):length(crit)] # select just data/100m3 for abundance
 ZPDa=ZPDa[c(1:14,crit2+14)] # data limited to taxa occurring in > X percent of samples
 p.a=p.a[,crit2]
 dfz=ZPDa
 x=colnames(p.a)
-dfz2=dfz[,colnames(dfz) %in% x]
-
+dfz2=dfz[,colnames(dfz) %in% x] #just zooplankton (not sure if this is needed)
+dfzlong=dfz %>% gather(zoosp, N100m3, ctyp_100m3:euph_100m3) # wide to long
 
 
 ## try fitting gams

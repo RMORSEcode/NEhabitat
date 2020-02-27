@@ -131,14 +131,19 @@ tt=fuzzy_left_join(svdate2, dfzdate, by=c("lonbin"="lonbin", "latbin"="latbin", 
 
 ### now for zoo and ich data
 dfzdate=data.frame(year(dfz$date))
-colnames(dfzdate)[1]='Y'
-dfzdate$M=month(dfz$date)
-dfzdate$D=day(dfz$date)
-dfzdate$doy=as.numeric(strftime(dfz$date, format = "%j"))
-dfzdate$lonbin=round(dfz$lon/.5)*0.5
-dfzdate$latbin=round(dfz$lat/.5)*0.5
-dfzdate$index=seq(from=1, to=length(dfz$date), by=1) #add index of original order just to keep track before sorting on time
-dfzdate=dfzdate[order(dfzdate$Y, dfzdate$doy),]
+colnames(dfzdate)[1]='zY'
+dfzdate$zM=month(dfz$date)
+dfzdate$zD=day(dfz$date)
+dfzdate$zdoy=as.numeric(strftime(dfz$date, format = "%j"))
+dfzdate$zlonbin=round(dfz$lon/.5)*0.5
+dfzdate$zlatbin=round(dfz$lat/.5)*0.5
+dfzdate$zindex=seq(from=1, to=length(dfz$date), by=1) #add index of original order just to keep track before sorting on time
+dfzdate=dfzdate[order(dfzdate$zY, dfzdate$zdoy),]
+dfzdate$zsdoy=dfzdate$zdoy
+dfzdate$zldoy=dfzdate$zdoy
+
+# try merge and filter
+ttx=merge(svdate2, dfzdate, all=T)
 
 
 library(fuzzyjoin)

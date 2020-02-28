@@ -121,10 +121,6 @@ svdate2=svdate[sdq2$index,]
 #clean up svdate to match zooplankton
 svdate2=svdate2[which(svdate2$Y>1976),]
 
-tt=fuzzy_left_join(svdate2, dfzdate, by=c("lonbin"="lonbin", "latbin"="latbin", "Y"="Y", "sdoy"="doy", "ldoy"="doy"), 
-                   +                    match_fun=list(`==`,`==`,`==`,`<=`,`>=`))
-
-
 
 # library(geosphere)
 # distm(c(lon1, lat1), c(lon2, lat2), fun = distHaversine)
@@ -142,7 +138,7 @@ dfzdate=dfzdate[order(dfzdate$Y, dfzdate$doy),]
 
 
 library(fuzzyjoin)
-tt=fuzzy_left_join(svdate, dfzdate, by=c("lonbin"="lonbin", "latbin"="latbin", "Y"="Y", "sdoy"="doy", "ldoy"="doy"), 
+tt=fuzzy_left_join(svdate2, dfzdate, by=c("lonbin"="lonbin", "latbin"="latbin", "Y"="Y", "sdoy"="doy", "ldoy"="doy"), 
                    match_fun=list(`==`,`==`,`==`,`<=`,`>=`))
 
 #### For biomass trends in along shelf distance, depth, distance to the coast ####

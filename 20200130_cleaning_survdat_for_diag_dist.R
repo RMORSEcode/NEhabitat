@@ -83,7 +83,7 @@ barplot(table(svdtunq$stgwgtpct[svdtunq$SEASON=='FALL']))
 barplot(table(svdtunq$stgwgtpct[svdtunq$stgwgtpct<0.99 & svdtunq$SEASON=='FALL']),ylim=c(0,1000), main='FALL')
 barplot(table(svdtunq$stgwgtpct[svdtunq$stgwgtpct<0.99 & svdtunq$SEASON=='SPRING']),ylim=c(0,1000), main='SPRING')
 
-svspp=77
+svspp=73
 svdtunq$stgwgtpct[is.na(svdtunq$stgwgtpct)]=0 #[svdtunq$stgwgtpct<0.99 & svdtunq$SEASON=='FALL' & svdtunq$SVSPP==svspp]),]
 
 barplot(table(svdtunq$stgwgtpct[svdtunq$stgwgtpct<0.99 & svdtunq$SEASON=='FALL' & svdtunq$SVSPP==svspp]),ylim=c(0,100), main=paste('FALL ', svspp))
@@ -91,8 +91,9 @@ barplot(table(svdtunq$stgwgtpct[svdtunq$stgwgtpct<0.99 & svdtunq$SEASON=='SPRING
 
 
 library(modes)
-bimodality_amplitude(svdtunq$stgwgtpct[svdtunq$stgwgtpct<0.99 & svdtunq$SEASON=='SPRING' & svdtunq$SVSPP==svspp], fig=T)
-bimodality_amplitude(svdtunq$stgwgtpct[svdtunq$stgwgtpct<0.99 & svdtunq$SEASON=='FALL' & svdtunq$SVSPP==svspp], fig=T)
+# restricting to <0.99 was masking adult population. Can check on change over years...
+bimodality_amplitude(svdtunq$stgwgtpct[svdtunq$SEASON=='SPRING' & svdtunq$SVSPP==svspp], fig=T)
+bimodality_amplitude(svdtunq$stgwgtpct[svdtunq$SEASON=='FALL' & svdtunq$SVSPP==svspp], fig=T)
 sum(is.na(svdtunq$stgwgtpct[svdtunq$stgwgtpct<0.99 & svdtunq$SEASON=='FALL' & svdtunq$SVSPP==svspp]))
 
 ### create date and binned lat lon for mathching to other surveys
@@ -118,8 +119,8 @@ survdat_stations <- survdat[retvars]
 sdq2=sdq[!duplicated(survdat_stations),] # just keep retvars
 svdate2=svdate[sdq2$index,]
 
-#clean up svdate to match zooplankton
-svdate2=svdate2[which(svdate2$Y>1976),]
+#clean up svdate to match zooplankton and Chl
+svdate2=svdate2[which(svdate2$Y>1997),]
 
 tt=fuzzy_left_join(svdate2, dfzdate, by=c("lonbin"="lonbin", "latbin"="latbin", "Y"="Y", "sdoy"="doy", "ldoy"="doy"), 
                    +                    match_fun=list(`==`,`==`,`==`,`<=`,`>=`))
@@ -143,11 +144,12 @@ dfzdate$zsdoy=dfzdate$zdoy
 dfzdate$zldoy=dfzdate$zdoy
 
 # try merge and filter
-ttx=merge(svdate2, dfzdate, all=T)
+dfzdate2=dfzdate[which(dfzdate$zY>1997),]
+ttx=merge(svdate2, dfzdate2, all=T)
 
 
 library(fuzzyjoin)
-tt=fuzzy_left_join(svdate, dfzdate, by=c("lonbin"="lonbin", "latbin"="latbin", "Y"="Y", "sdoy"="doy", "ldoy"="doy"), 
+tt=fuzzy_left_join(svdate2, dfzdate2, by=c("lonbin"="lonbin", "latbin"="latbin", "Y"="Y", "sdoy"="doy", "ldoy"="doy"), 
                    match_fun=list(`==`,`==`,`==`,`<=`,`>=`))
 
 #### For biomass trends in along shelf distance, depth, distance to the coast ####
@@ -214,17 +216,20 @@ strata_used=c(CoreOffshoreStrata,CoreInshore73to12)
 
 # find records to keep based on core strata
 rectokeep=survdat$STRATUM %in% strata_used
+rectokeep=svdtunq$STRATUM %in% strata_used
 
 #table(rectokeep)
 # add rec to keep to survdat
 survdat2=cbind(survdat,rectokeep)
+# survdat2=cbind(svdtunq,rectokeep)
 
 # delete record form non-core strata
 survdat2=survdat2[rectokeep,]
+survdat2=svdtunq[rectokeep,]
 
 # trim the data.... to prepare to find stations only
 retvars <- c("CRUISE6","STATION","STRATUM","YEAR")
-survdat_stations <- survdat2[retvars]  		
+survdat_stations <- survdat2[retvars]  
 # unique reduces to a record per tow
 survdat_stations <- unique(survdat_stations)
 
@@ -235,6 +240,8 @@ survdat_stations <- unique(survdat_stations)
 
 # add field with rounded BIOMASS scaler used to adjust distributions
 survdat2$LOGBIO <- round(log10(survdat2$BIOMASS *10+10))
+survdat2$LOGBIO <- round(log10(survdat2$corBIOMASS *10+10))
+
 # take a look go from 1 to 5?
 table(survdat2$LOGBIO)
 

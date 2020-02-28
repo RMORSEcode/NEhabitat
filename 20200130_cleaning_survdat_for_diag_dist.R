@@ -6,6 +6,9 @@ require(raster)
 library(sp)
 library(maptools)
 library(geosphere)
+library(lubridate)
+library(dplyr)
+library(tidyr)
 
 ## Subset survdat to only groundfish species with Length at maturity data
 # load("C:/Users/ryan.morse/Downloads/SurvdatBio (3).RData") #loads survdat.bio
@@ -448,3 +451,38 @@ names(out_data)[names(out_data)=="X7"] <- "LON"
 
 
 write.csv(out_data,file=outfile )
+
+#### plotting ASD, DTC, Z, etc
+setwd("C:/Users/ryan.morse/Documents/GitHub/NEhabitat")
+df=read.csv('SPRING_test_dis_depth.csv', check.names = F, stringsAsFactors = F, col.names = c('Year', 'Species', 'Stg', 'Season', 'ASD', 'DTC', 'Z', 'Lat', 'Lon'))
+library(dplyr)
+i=unique(df$Species)
+j=unique(df$Season)
+k=unique(df$Stg)
+
+l=1 #1 for Cod
+m=1 #1 for Spring
+n=1 #1 for Adt, 2 for Juv
+
+pal <- colorRampPalette(c("blue", "yellow", "red"))
+# colr=pal(48)
+ss=df[which(df$Species==i[l] & df$Season==j[m] & df$Stg==k[n]),] # ss=filter(df, df$Species==i[l], df$Season==j[m], df$Stg==k[n])
+colr=pal(length(ss$Year)) #make sure colors are correct length
+
+## Plot ASD
+plot(x=ss$Year,y=ss$ASD,pch=16,col=colr,main=paste('ASD ', i[l], j[m], k[n]))
+lines(x=ss$Year,y=ss$ASD,col = "gray50")
+points(x=ss$Year,y=ss$ASD,pch=16,col=colr)
+## DTC
+plot(x=ss$Year,y=ss$DTC,pch=16,col=colr, main=paste('DTC ', i[l], j[m], k[n]))
+lines(x=ss$Year,y=ss$DTC,col = "gray50")
+points(x=ss$Year,y=ss$DTC,pch=16,col=colr)
+## Depth
+plot(x=ss$Year,y=ss$Z,pch=16,col=colr, main=paste('Z ', i[l], j[m], k[n]))
+lines(x=ss$Year,y=ss$Z,col = "gray50")
+points(x=ss$Year,y=ss$Z,pch=16,col=colr)
+## Lat Lon
+#Lat Lon
+plot(x=ss$Lon,y=ss$Lat,pch=16,col=colr, main=paste('Loc ', i[l], j[m], k[n]))
+lines(x=ss$Lon,y=ss$Lat,col = "gray50")
+points(x=ss$Lon,y=ss$Lat,pch=16,col=colr)

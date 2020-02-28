@@ -5,6 +5,7 @@ require(raster)
 # require(ncdf)
 library(sp)
 library(maptools)
+library(marmap)
 library(geosphere)
 library(lubridate)
 library(dplyr)
@@ -77,7 +78,7 @@ svdtunq$corBIOMASS=svdtunq$stgwgtpct*svdtunq$BIOMASS
 
 svdunqadt=svdtunq %>% filter(stg=="Adt") %>% 
   select(-(LENGTH:SIZECAT)) %>% 
-  select(-(CATCHSEX))
+  select(-(CATCHSEX)) %>% 
   spread(SVSPP, ABUNDANCE:corBIOMASS)
 
 barplot(table(svdtunq$stgwgtpct))
@@ -454,15 +455,16 @@ write.csv(out_data,file=outfile )
 
 #### plotting ASD, DTC, Z, etc
 setwd("C:/Users/ryan.morse/Documents/GitHub/NEhabitat")
+nesbath=getNOAA.bathy(lon1=-77,lon2=-65,lat1=35,lat2=45, resolution=10, keep=F)
 df=read.csv('SPRING_test_dis_depth.csv', check.names = F, stringsAsFactors = F, col.names = c('Year', 'Species', 'Stg', 'Season', 'ASD', 'DTC', 'Z', 'Lat', 'Lon'))
 library(dplyr)
 i=unique(df$Species)
 j=unique(df$Season)
 k=unique(df$Stg)
 
-l=1 #1 for Cod
-m=1 #1 for Spring
-n=1 #1 for Adt, 2 for Juv
+l=2 #1 for Cod, 2 Haddock, etc
+m=2 #1 for Spring
+n=2 #1 for Adt, 2 for Juv
 
 pal <- colorRampPalette(c("blue", "yellow", "red"))
 # colr=pal(48)
@@ -484,5 +486,12 @@ points(x=ss$Year,y=ss$Z,pch=16,col=colr)
 ## Lat Lon
 #Lat Lon
 plot(x=ss$Lon,y=ss$Lat,pch=16,col=colr, main=paste('Loc ', i[l], j[m], k[n]))
+lines(x=ss$Lon,y=ss$Lat,col = "gray50")
+points(x=ss$Lon,y=ss$Lat,pch=16,col=colr)
+
+# map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="gray70")
+map("worldHires", xlim=c(-72,-65),ylim=c(40,45), fill=T,border=0,col="gray70")
+map.axes(las=1)
+plot(nesbath,deep=-100, shallow=-100, step=1,add=T,lwd=1,col="gray80",lty=1)
 lines(x=ss$Lon,y=ss$Lat,col = "gray50")
 points(x=ss$Lon,y=ss$Lat,pch=16,col=colr)

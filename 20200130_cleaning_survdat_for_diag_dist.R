@@ -124,7 +124,7 @@ sdq2=sdq[!duplicated(survdat_stations),] # just keep retvars
 svdate2=svdate[sdq2$index,]
 
 #clean up svdate to match zooplankton and Chl
-svdate2=svdate2[which(svdate2$Y>1997),]
+svdate2=svdate2[which(svdate2$Y<=1997),]
 
 
 # library(geosphere)
@@ -143,15 +143,22 @@ dfzdate=dfzdate[order(dfzdate$zY, dfzdate$zdoy),]
 dfzdate$zsdoy=dfzdate$zdoy
 dfzdate$zldoy=dfzdate$zdoy
 
-# try merge and filter
-dfzdate2=dfzdate[which(dfzdate$zY>1997),]
-ttx=merge(svdate2, dfzdate2, all=T)
-
-
+# try merge and filter (did this in 2 parts, before and after 1998, took long time...)
+dfzdate2=dfzdate[which(dfzdate$zY<=1997),]
+# ttx=merge(svdate2, dfzdate2, all=T)
+colnames(dfzdate2)
+colnames(svdate2)
+# ttx=left_join(svdate2, dfzdate2, by=c("lonbin"="zlonbin", "latbin"="zlatbin", "Y"="zY", "sdoy"="zdoy", "ldoy"="zdoy"))
+### this works, just takes a long time
 library(fuzzyjoin)
-tt=fuzzy_left_join(svdate2, dfzdate2, by=c("lonbin"="lonbin", "latbin"="latbin", "Y"="Y", "sdoy"="doy", "ldoy"="doy"), 
+tt=fuzzy_left_join(svdate2, dfzdate2, by=c("lonbin"="zlonbin", "latbin"="zlatbin", "Y"="zY", "sdoy"="zdoy", "ldoy"="zdoy"), 
                    match_fun=list(`==`,`==`,`==`,`<=`,`>=`))
+tt2=tt[complete.cases(tt$zY),]
+# merge 2 dataframes together
+dmrg=rbind(tt3, tt2)
 
+fish1=survdat[dmrg$index,]
+zoo1=dfz[dmrg$zindex,]
 #### For biomass trends in along shelf distance, depth, distance to the coast ####
 # set wd
 setwd("K:/1 RM/2 Plankton Spatial Plots/fish_Kevin")

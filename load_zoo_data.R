@@ -79,6 +79,7 @@ rm(test)
 # ZPD=read_excel('C:/Users/ryan.morse/Desktop/Iomega Drive Backup 20171012/1 RM/JHare data/EcoMon_Plankton_Data_v3_5.xlsx', sheet='Data' , col_names=T) # newest data through 2015; *** NEW FORMAT
 # ZPD=read_excel('/home/ryan/1_habitat_analysis_2017/EcoMon_Plankton_Data_v3_6.xlsx', sheet='Data' , col_names=T) 
 ZPD=read_excel('C:/Users/ryan.morse/Desktop/1_habitat_analysis_2017/EcoMon_Plankton_Data_v3_6.xlsx', sheet='Data' , col_names=T)
+ZPD=read_excel('/home/ryan/1_habitat_analysis_2017/EcoMon_Plankton_Data_v3_6.xlsx', sheet='Data', col_names = T)
 dt=as_date(ZPD$date)#, origin = "1899-12-30")
 ichnms=read.csv('C:/Users/ryan.morse/Desktop/Iomega Drive Backup 20171012/1 RM/JHare data/ichthyonames.csv', header = F, stringsAsFactors = F)
 nms=c('nofish_100m3',	'urospp_100m3',	'gadmor_100m3',	'melaeg_100m3',
@@ -139,14 +140,15 @@ GFall$season=ifelse(GFall$month<7, "SPRING", "FALL")
 
 
 
-DOY=yday(dt) #day of year
-month=as.numeric(format(dt, '%m'))
-year=as.numeric(format(dt, '%Y'))
-ZPD$year=year
-ZPD$month=month
+ZPD$DOY=yday(ZPD$date) #day of year
+# month=as.numeric(format(dt, '%m'))
+# year=as.numeric(format(dt, '%Y'))
+ZPD$year=year(ZPD$date)
+ZPD$month=month(ZPD$date)
 ZPD$dt=dt
-ZPD$DOY=DOY
-ZPD$day=as.numeric(format(dt, '%d'))
+# ZPD$DOY=DOY
+# ZPD$day=as.numeric(format(dt, '%d'))
+ZPD$day=day(ZPD$date)
 ZPD$lat2=ceiling(ZPD$lat) #use for binning into 1 degree bins for removal of undersampled bins
 ZPD$lon2=floor(ZPD$lon) #use for binning into 1 degree bins for removal of undersampled bins
 

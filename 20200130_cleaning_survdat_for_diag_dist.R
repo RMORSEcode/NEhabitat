@@ -124,7 +124,7 @@ sdq2=sdq[!duplicated(survdat_stations),] # just keep retvars
 svdate2=svdate[sdq2$index,]
 
 #clean up svdate to match zooplankton and Chl
-svdate2=svdate2[which(svdate2$Y<=1997),]
+svdate2=svdate2[which(svdate2$Y>2017),]
 
 
 # library(geosphere)
@@ -144,7 +144,7 @@ dfzdate$zsdoy=dfzdate$zdoy
 dfzdate$zldoy=dfzdate$zdoy
 
 # try merge and filter (did this in 2 parts, before and after 1998, took long time...)
-dfzdate2=dfzdate[which(dfzdate$zY<=1997),]
+dfzdate2=dfzdate[which(dfzdate$zY>2017),]
 # ttx=merge(svdate2, dfzdate2, all=T)
 colnames(dfzdate2)
 colnames(svdate2)
@@ -160,7 +160,7 @@ dmrg=rbind(tt3, tt2)
 ## now subset original dataframes before joining together
 fish1=survdat[dmrg$index,]
 zoo1=dfz[dmrg$zindex,]
-
+ich1=ich[dmrg$zindex,]
 
 
 #### For biomass trends in along shelf distance, depth, distance to the coast ####

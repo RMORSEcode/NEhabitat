@@ -5,7 +5,11 @@ require(raster)
 # require(ncdf)
 library(sp)
 library(maptools)
+library(marmap)
 library(geosphere)
+library(lubridate)
+library(dplyr)
+library(tidyr)
 
 ## Subset survdat to only groundfish species with Length at maturity data
 # load("C:/Users/ryan.morse/Downloads/SurvdatBio (3).RData") #loads survdat.bio
@@ -74,7 +78,7 @@ svdtunq$corBIOMASS=svdtunq$stgwgtpct*svdtunq$BIOMASS
 
 svdunqadt=svdtunq %>% filter(stg=="Adt") %>% 
   select(-(LENGTH:SIZECAT)) %>% 
-  select(-(CATCHSEX))
+  select(-(CATCHSEX)) %>% 
   spread(SVSPP, ABUNDANCE:corBIOMASS)
 
 barplot(table(svdtunq$stgwgtpct))
@@ -120,11 +124,7 @@ sdq2=sdq[!duplicated(survdat_stations),] # just keep retvars
 svdate2=svdate[sdq2$index,]
 
 #clean up svdate to match zooplankton and Chl
-svdate2=svdate2[which(svdate2$Y>1997),]
-
-tt=fuzzy_left_join(svdate2, dfzdate, by=c("lonbin"="lonbin", "latbin"="latbin", "Y"="Y", "sdoy"="doy", "ldoy"="doy"), 
-                   +                    match_fun=list(`==`,`==`,`==`,`<=`,`>=`))
-
+svdate2=svdate2[which(svdate2$Y<=1997),]
 
 
 # library(geosphere)
@@ -143,15 +143,22 @@ dfzdate=dfzdate[order(dfzdate$zY, dfzdate$zdoy),]
 dfzdate$zsdoy=dfzdate$zdoy
 dfzdate$zldoy=dfzdate$zdoy
 
-# try merge and filter
-dfzdate2=dfzdate[which(dfzdate$zY>1997),]
-ttx=merge(svdate2, dfzdate2, all=T)
-
-
+# try merge and filter (did this in 2 parts, before and after 1998, took long time...)
+dfzdate2=dfzdate[which(dfzdate$zY<=1997),]
+# ttx=merge(svdate2, dfzdate2, all=T)
+colnames(dfzdate2)
+colnames(svdate2)
+# ttx=left_join(svdate2, dfzdate2, by=c("lonbin"="zlonbin", "latbin"="zlatbin", "Y"="zY", "sdoy"="zdoy", "ldoy"="zdoy"))
+### this works, just takes a long time
 library(fuzzyjoin)
-tt=fuzzy_left_join(svdate2, dfzdate2, by=c("lonbin"="lonbin", "latbin"="latbin", "Y"="Y", "sdoy"="doy", "ldoy"="doy"), 
+tt=fuzzy_left_join(svdate2, dfzdate2, by=c("lonbin"="zlonbin", "latbin"="zlatbin", "Y"="zY", "sdoy"="zdoy", "ldoy"="zdoy"), 
                    match_fun=list(`==`,`==`,`==`,`<=`,`>=`))
+tt2=tt[complete.cases(tt$zY),]
+# merge 2 dataframes together
+dmrg=rbind(tt3, tt2)
 
+fish1=survdat[dmrg$index,]
+zoo1=dfz[dmrg$zindex,]
 #### For biomass trends in along shelf distance, depth, distance to the coast ####
 # set wd
 setwd("K:/1 RM/2 Plankton Spatial Plots/fish_Kevin")
@@ -452,3 +459,46 @@ names(out_data)[names(out_data)=="X7"] <- "LON"
 
 
 write.csv(out_data,file=outfile )
+
+#### plotting ASD, DTC, Z, etc
+setwd("C:/Users/ryan.morse/Documents/GitHub/NEhabitat")
+nesbath=getNOAA.bathy(lon1=-77,lon2=-65,lat1=35,lat2=45, resolution=10, keep=F)
+df=read.csv('SPRING_test_dis_depth.csv', check.names = F, stringsAsFactors = F, col.names = c('Year', 'Species', 'Stg', 'Season', 'ASD', 'DTC', 'Z', 'Lat', 'Lon'))
+library(dplyr)
+i=unique(df$Species)
+j=unique(df$Season)
+k=unique(df$Stg)
+
+l=2 #1 for Cod, 2 Haddock, etc
+m=2 #1 for Spring
+n=2 #1 for Adt, 2 for Juv
+
+pal <- colorRampPalette(c("blue", "yellow", "red"))
+# colr=pal(48)
+ss=df[which(df$Species==i[l] & df$Season==j[m] & df$Stg==k[n]),] # ss=filter(df, df$Species==i[l], df$Season==j[m], df$Stg==k[n])
+colr=pal(length(ss$Year)) #make sure colors are correct length
+
+## Plot ASD
+plot(x=ss$Year,y=ss$ASD,pch=16,col=colr,main=paste('ASD ', i[l], j[m], k[n]))
+lines(x=ss$Year,y=ss$ASD,col = "gray50")
+points(x=ss$Year,y=ss$ASD,pch=16,col=colr)
+## DTC
+plot(x=ss$Year,y=ss$DTC,pch=16,col=colr, main=paste('DTC ', i[l], j[m], k[n]))
+lines(x=ss$Year,y=ss$DTC,col = "gray50")
+points(x=ss$Year,y=ss$DTC,pch=16,col=colr)
+## Depth
+plot(x=ss$Year,y=ss$Z,pch=16,col=colr, main=paste('Z ', i[l], j[m], k[n]))
+lines(x=ss$Year,y=ss$Z,col = "gray50")
+points(x=ss$Year,y=ss$Z,pch=16,col=colr)
+## Lat Lon
+#Lat Lon
+plot(x=ss$Lon,y=ss$Lat,pch=16,col=colr, main=paste('Loc ', i[l], j[m], k[n]))
+lines(x=ss$Lon,y=ss$Lat,col = "gray50")
+points(x=ss$Lon,y=ss$Lat,pch=16,col=colr)
+
+# map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="gray70")
+map("worldHires", xlim=c(-72,-65),ylim=c(40,45), fill=T,border=0,col="gray70")
+map.axes(las=1)
+plot(nesbath,deep=-100, shallow=-100, step=1,add=T,lwd=1,col="gray80",lty=1)
+lines(x=ss$Lon,y=ss$Lat,col = "gray50")
+points(x=ss$Lon,y=ss$Lat,pch=16,col=colr)

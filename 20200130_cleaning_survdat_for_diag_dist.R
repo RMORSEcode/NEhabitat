@@ -157,8 +157,12 @@ tt2=tt[complete.cases(tt$zY),]
 # merge 2 dataframes together
 dmrg=rbind(tt3, tt2)
 
+## now subset original dataframes before joining together
 fish1=survdat[dmrg$index,]
 zoo1=dfz[dmrg$zindex,]
+
+
+
 #### For biomass trends in along shelf distance, depth, distance to the coast ####
 # set wd
 setwd("K:/1 RM/2 Plankton Spatial Plots/fish_Kevin")

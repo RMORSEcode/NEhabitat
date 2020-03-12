@@ -100,6 +100,10 @@ bimodality_amplitude(svdtunq$stgwgtpct[svdtunq$SEASON=='SPRING' & svdtunq$SVSPP=
 bimodality_amplitude(svdtunq$stgwgtpct[svdtunq$SEASON=='FALL' & svdtunq$SVSPP==svspp], fig=T)
 sum(is.na(svdtunq$stgwgtpct[svdtunq$stgwgtpct<0.99 & svdtunq$SEASON=='FALL' & svdtunq$SVSPP==svspp]))
 
+### change survdat long to wide
+svdwide=pivot_wider(names_from=SVSPP, values_from = )
+
+
 ### create date and binned lat lon for mathching to other surveys
 svdate=data.frame(month(survdat$EST_TOWDATE))
 colnames(svdate)[1]='M'
@@ -116,7 +120,7 @@ svdate$index=seq(from=1, to=length(svdate$M), by=1)
 
 
 ## get index of unique stations from survdat, apply to long format svdate with index
-retvars <- c("CRUISE6","STATION","STRATUM","YEAR")
+retvars <- c("CRUISE6","STATION","STRATUM","YEAR", "SVSPP")
 sdq=survdat[,retvars]
 sdq$index=seq(from=1, to=length(survdat$YEAR), by=1)
 survdat_stations <- survdat[retvars] 
@@ -162,6 +166,18 @@ fish1=survdat[dmrg$index,]
 zoo1=dfz[dmrg$zindex,]
 ich1=ich[dmrg$zindex,]
 
+# Create index to merge on
+fish1$mrgidx=seq(from=1, to=length(fish1$YEAR), by=1)
+zoo1$mrgidx=fish1$mrgidx
+ich1$mrgidx=fish1$mrgidx
+FData=merge(fish1, ich1, by="mrgidx")
+FData=merge(FData, zoo1, by="mrgidx")
+FData2=FData %>% select(-mrgidx, -lat.x, -lat.y, -lon.x, -lon.y, -date.x, -cruise_name, -station, -depth, -sfc_temp, 
+                        -sfc_salt, -btm_temp, -btm_salt, -volume_1m2, -time, -date.x, -date.y)
+
+
+library(rfUtilities)
+trymc=multi.collinear(FData,n=99, na.rm=T)
 
 #### For biomass trends in along shelf distance, depth, distance to the coast ####
 # set wd

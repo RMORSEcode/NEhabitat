@@ -151,6 +151,7 @@ svdate$index=seq(from=1, to=length(svdate$M), by=1)
 #clean up svdate to match zooplankton and Chl
 svdate2=svdate[which(svdate$Y>1976),]
 svdate3=svdate2[which(svdate2$Y<1997),]
+svdate4=svdate2[which(svdate2$Y>1996),]
 
 
 # library(geosphere)
@@ -171,6 +172,8 @@ dfzdate$zldoy=dfzdate$zdoy
 
 # try merge and filter (did this in 2 parts, before and after 1998, took long time...)
 dfzdate2=dfzdate[which(dfzdate$zY<1997),]
+dfzdate3=dfzdate[which(dfzdate$zY>1996),]
+
 # ttx=merge(svdate2, dfzdate2, all=T)
 colnames(dfzdate2)
 colnames(svdate2)
@@ -181,6 +184,10 @@ library(fuzzyjoin)
                    # match_fun=list(`==`,`==`,`==`,`<=`,`>=`))
 tt=fuzzy_left_join(svdate3, dfzdate2, by=c("lonbin"="zlonbin", "latbin"="zlatbin", "Y"="zY", "sdoy"="zdoy", "ldoy"="zdoy"), 
                    match_fun=list(`==`,`==`,`==`,`<=`,`>=`))
+save(tt, file="survdat_zoo_merge_1977_1996.Rda")
+tt2=fuzzy_left_join(svdate4, dfzdate3, by=c("lonbin"="zlonbin", "latbin"="zlatbin", "Y"="zY", "sdoy"="zdoy", "ldoy"="zdoy"), 
+                   match_fun=list(`==`,`==`,`==`,`<=`,`>=`))
+save(tt2, file="survdat_zoo_merge_1997_2019.Rda")
 
 tt2=tt[complete.cases(tt$zY),]
 # merge 2 dataframes together

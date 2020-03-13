@@ -45,20 +45,12 @@ survdat$stg=test$stg
 rm(test)
 
 ### count juv and adult to see if numbers match ABUNDANCE 
-test=data.frame(survdat[,c("SVSPP", "CRUISE6","YEAR", "STATION", "STRATUM", "ABUNDANCE", "BIOMASS","NUMLEN", "WGTLEN", "stg")])
-# test=data.frame(survdat[1:25,c("SVSPP", "CRUISE6","YEAR", "STATION", "STRATUM", "ABUNDANCE", "NUMLEN", "stg")])
-test2=test %>% group_by_at(vars(SVSPP,CRUISE6,STATION, STRATUM,ABUNDANCE,stg)) %>% mutate(stgsum=sum(NUMLEN), wtsum=sum(WGTLEN))
-survdat$stgsum=test2$stgsum
-survdat$stgwtsum=test2$wtsum
+survdat=survdat %>% group_by_at(vars(SVSPP,CRUISE6,STATION,STRATUM,ABUNDANCE,stg)) %>% mutate(stgsum=sum(NUMLEN), stgwtsum=sum(WGTLEN))
 ### now addd up weights for all fish measured, check against biomass, total abundance
-test2=test %>% group_by_at(vars(SVSPP,CRUISE6,STATION, YEAR, STRATUM,ABUNDANCE)) %>% mutate(totlen=sum(NUMLEN), totwgt=sum(WGTLEN))
-test2$abndiff=test2$ABUNDANCE-test2$totlen
-test2$wgtdiff=test2$BIOMASS-test2$totwgt
-
-survdat$totlen=test2$totlen
-survdat$totwgt=test2$totwgt
-survdat$abndiff=survdat$ABUNDANCE - survdat$totlen
-survdat$biodiff=survdat$BIOMASS - survdat$totwgt
+survdat=survdat %>% group_by_at(vars(SVSPP,CRUISE6,STATION,STRATUM,ABUNDANCE)) %>% mutate(totlen=sum(NUMLEN), totwgt=sum(WGTLEN), abndiff=ABUNDANCE-totlen, biodiff=BIOMASS-totwgt)
+### now add corrected biomass and abundance to account for any missing staged values (eg. for large hauls)
+survdat=survdat %>% group_by_at(vars(SVSPP,CRUISE6,STATION,STRATUM,ABUNDANCE, stg)) %>%
+  mutate(stgpctabn=stgsum/totlen, stgpctwgt=stgwtsum/totwgt, corABN=round(stgpctabn*ABUNDANCE,digits = 0), corBIO=round(stgpctwgt*BIOMASS, digits=2))
 
 
 barplot(table(round(survdat$biodiff[(abs(survdat$biodiff>12))],1)))

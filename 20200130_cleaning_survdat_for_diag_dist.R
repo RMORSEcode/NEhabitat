@@ -191,22 +191,31 @@ save(tt2, file="survdat_zoo_merge_1997_2019.Rda")
 
 tt2=tt[complete.cases(tt$zY),]
 # merge 2 dataframes together
-dmrg=rbind(tt3, tt2)
+dmrg=rbind(tt, tt2)
+save(dmrg, file='final_merged_survdat_zoo_1977_2018.Rda')
 
 ## now subset original dataframes before joining together
-fish1=survdat[dmrg$index,]
+fish1.bio=svdwide.bio[dmrg$index,]
+fish1.abn=svdwide.abn[dmrg$index,]
 zoo1=dfz[dmrg$zindex,]
 ich1=ich[dmrg$zindex,]
 
 # Create index to merge on
-fish1$mrgidx=seq(from=1, to=length(fish1$YEAR), by=1)
-zoo1$mrgidx=fish1$mrgidx
-ich1$mrgidx=fish1$mrgidx
-FData=merge(fish1, ich1, by="mrgidx")
+fish1.bio$mrgidx=seq(from=1, to=length(fish1.bio$YEAR), by=1)
+fish1.abn$mrgidx=seq(from=1, to=length(fish1.abn$YEAR), by=1)
+zoo1$mrgidx=fish1.bio$mrgidx
+ich1$mrgidx=fish1.bio$mrgidx
+## choose 1
+# FData=merge(fish1.bio, ich1, by="mrgidx")
+FData=merge(fish1.abn, ich1, by="mrgidx")
+##
 FData=merge(FData, zoo1, by="mrgidx")
-FData2=FData %>% select(-mrgidx, -lat.x, -lat.y, -lon.x, -lon.y, -date.x, -cruise_name, -station, -depth, -sfc_temp, 
+FData.bio=FData %>% select(-mrgidx, -lat.x, -lat.y, -lon.x, -lon.y, -date.x, -cruise_name, -station, -depth, -sfc_temp, 
                         -sfc_salt, -btm_temp, -btm_salt, -volume_1m2, -time, -date.x, -date.y)
-
+FData.abn=FData %>% select(-mrgidx, -lat.x, -lat.y, -lon.x, -lon.y, -date.x, -cruise_name, -station, -depth, -sfc_temp, 
+                           -sfc_salt, -btm_temp, -btm_salt, -volume_1m2, -time, -date.x, -date.y)
+save(FData.bio, file="Final_merged_fish_corBIO_Zoo_Ich.Rda")
+save(FData.abn, file="Final_merged_fish_corABN_Zoo_Ich.Rda")
 
 library(rfUtilities)
 trymc=multi.collinear(FData,n=99, na.rm=T)

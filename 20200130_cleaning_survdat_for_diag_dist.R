@@ -94,7 +94,7 @@ svdtunq=survdat[!duplicated(test),]
 # sum(is.na(svdtunq$stgwgtpct[svdtunq$stgwgtpct<0.99 & svdtunq$SEASON=='FALL' & svdtunq$SVSPP==svspp]))
 
 ### change survdat long to wide, select biomass based (corBIO) or abundance based (corABN) ###
-# svdtunq=ungroup(svdtunq) #not needed
+svdtunq=ungroup(svdtunq) #not needed
 svdwide.bio=svdtunq %>% select(SVSPP, stg, CRUISE6, STATION, STRATUM,SVVESSEL,YEAR,EST_TOWDATE, SEASON,LAT,LON,DEPTH,
                            SURFTEMP,BOTTEMP,SURFSALIN,BOTSALIN,corBIO) %>%
   pivot_wider(names_from=c(SVSPP, stg), values_from = corBIO, values_fill = list(corBIO=0))
@@ -104,9 +104,9 @@ svdwide.abn=svdtunq %>% select(SVSPP, stg, CRUISE6, STATION, STRATUM,SVVESSEL,YE
   pivot_wider(names_from=c(SVSPP, stg), values_from = corABN, values_fill = list(corABN=0))
 
 #remove column names with 'x_NA'
-svdwide.bio=svdwide%>% select(-`72_NA`, -`73_NA`, -`74_NA`,-`75_NA`,-`76_NA`,-`77_NA`,-`101_NA`,-`102_NA`,-`103_NA`,-`105_NA`,
+svdwide.bio=svdwide.bio%>% select(-`72_NA`, -`73_NA`, -`74_NA`,-`75_NA`,-`76_NA`,-`77_NA`,-`101_NA`,-`102_NA`,-`103_NA`,-`105_NA`,
                           -`106_NA`,-`107_NA`,-`108_NA`,-`155_NA`,-`193_NA`,-`197_NA`)
-svdwide.abn=svdwide%>% select(-`72_NA`, -`73_NA`, -`74_NA`,-`75_NA`,-`76_NA`,-`77_NA`,-`101_NA`,-`102_NA`,-`103_NA`,-`105_NA`,
+svdwide.abn=svdwide.abn%>% select(-`72_NA`, -`73_NA`, -`74_NA`,-`75_NA`,-`76_NA`,-`77_NA`,-`101_NA`,-`102_NA`,-`103_NA`,-`105_NA`,
                               -`106_NA`,-`107_NA`,-`108_NA`,-`155_NA`,-`193_NA`,-`197_NA`)
 save(svdwide.bio, file='unique_wide_format_corBIO_by_stage.Rda')
 save(svdwide.abn, file='unique_wide_format_corABN_by_stage.Rda')

@@ -53,71 +53,100 @@ survdat=survdat %>% group_by_at(vars(SVSPP,CRUISE6,STATION,STRATUM,ABUNDANCE, st
   mutate(stgpctabn=stgsum/totlen, stgpctwgt=stgwtsum/totwgt, corABN=round(stgpctabn*ABUNDANCE,digits = 0), corBIO=round(stgpctwgt*BIOMASS, digits=2))
 
 
-barplot(table(round(survdat$biodiff[(abs(survdat$biodiff>12))],1)))
-y=survdat$SVSPP
-x=abs(survdat$biodiff)
-y=y[x>120]
-x=x[x>120]
-barplot(table(round(y))) #which species have the highest mismatches in biomass
-barplot(table(round(x))) #how many
+# barplot(table(round(survdat$biodiff[(abs(survdat$biodiff>12))],1)))
+# y=survdat$SVSPP
+# x=abs(survdat$biodiff)
+# y=y[x>120]
+# x=x[x>120]
+# barplot(table(round(y))) #which species have the highest mismatches in biomass
+# barplot(table(round(x))) #how many
 
 ### now create dataframe with unique tows only, separated by stage
 test=survdat[,c("CRUISE6","STATION","STRATUM","YEAR", "SVSPP", "stg")] # needs SVSPP...
 svdtunq=survdat[!duplicated(test),]
 ### calc percent of biomass by stage(adt, juv) per unique tow to be applied to BIOMASS for corrected values
-svdtunq$stgwgtpct=round(svdtunq$stgwtsum/svdtunq$totwgt, 2)
-svdtunq$corBIOMASS=svdtunq$stgwgtpct*svdtunq$BIOMASS
+# svdtunq$stgwgtpct=round(svdtunq$stgwtsum/svdtunq$totwgt, 2)
+# svdtunq$corBIOMASS=svdtunq$stgwgtpct*svdtunq$BIOMASS
 
-svdunqadt=svdtunq %>% filter(stg=="Adt") %>% 
-  select(-(LENGTH:SIZECAT)) %>% 
-  select(-(CATCHSEX)) %>% 
-  spread(SVSPP, ABUNDANCE:corBIOMASS)
+## not working yet
+# svdunqadt=svdtunq %>% filter(stg=="Adt") %>% 
+#   select(-(LENGTH:SIZECAT)) %>% 
+#   select(-(CATCHSEX)) %>% 
+#   spread(SVSPP, ABUNDANCE:corBIO)
 
-barplot(table(svdtunq$stgwgtpct))
-barplot(table(svdtunq$stgwgtpct[svdtunq$SEASON=='SPRING']))
-barplot(table(svdtunq$stgwgtpct[svdtunq$SEASON=='FALL']))
-barplot(table(svdtunq$stgwgtpct[svdtunq$stgwgtpct<0.99 & svdtunq$SEASON=='FALL']),ylim=c(0,1000), main='FALL')
-barplot(table(svdtunq$stgwgtpct[svdtunq$stgwgtpct<0.99 & svdtunq$SEASON=='SPRING']),ylim=c(0,1000), main='SPRING')
+# barplot(table(svdtunq$stgwgtpct))
+# barplot(table(svdtunq$stgwgtpct[svdtunq$SEASON=='SPRING']))
+# barplot(table(svdtunq$stgwgtpct[svdtunq$SEASON=='FALL']))
+# barplot(table(svdtunq$stgwgtpct[svdtunq$stgwgtpct<0.99 & svdtunq$SEASON=='FALL']),ylim=c(0,1000), main='FALL')
+# barplot(table(svdtunq$stgwgtpct[svdtunq$stgwgtpct<0.99 & svdtunq$SEASON=='SPRING']),ylim=c(0,1000), main='SPRING')
+# 
+# svspp=73
+# svdtunq$stgwgtpct[is.na(svdtunq$stgwgtpct)]=0 #[svdtunq$stgwgtpct<0.99 & svdtunq$SEASON=='FALL' & svdtunq$SVSPP==svspp]),]
+# 
+# barplot(table(svdtunq$stgwgtpct[svdtunq$stgwgtpct<0.99 & svdtunq$SEASON=='FALL' & svdtunq$SVSPP==svspp]),ylim=c(0,100), main=paste('FALL ', svspp))
+# barplot(table(svdtunq$stgwgtpct[svdtunq$stgwgtpct<0.99 & svdtunq$SEASON=='SPRING' & svdtunq$SVSPP==svspp]),ylim=c(0,100), main=paste('SPRING ', svspp))
+# 
+# 
+# library(modes)
+# # restricting to <0.99 was masking adult population. Can check on change over years...
+# bimodality_amplitude(svdtunq$stgwgtpct[svdtunq$SEASON=='SPRING' & svdtunq$SVSPP==svspp], fig=T)
+# bimodality_amplitude(svdtunq$stgwgtpct[svdtunq$SEASON=='FALL' & svdtunq$SVSPP==svspp], fig=T)
+# sum(is.na(svdtunq$stgwgtpct[svdtunq$stgwgtpct<0.99 & svdtunq$SEASON=='FALL' & svdtunq$SVSPP==svspp]))
 
-svspp=73
-svdtunq$stgwgtpct[is.na(svdtunq$stgwgtpct)]=0 #[svdtunq$stgwgtpct<0.99 & svdtunq$SEASON=='FALL' & svdtunq$SVSPP==svspp]),]
+### change survdat long to wide, select biomass based (corBIO) or abundance based (corABN) ###
+# svdtunq=ungroup(svdtunq) #not needed
+svdwide.bio=svdtunq %>% select(SVSPP, stg, CRUISE6, STATION, STRATUM,SVVESSEL,YEAR,EST_TOWDATE, SEASON,LAT,LON,DEPTH,
+                           SURFTEMP,BOTTEMP,SURFSALIN,BOTSALIN,corBIO) %>%
+  pivot_wider(names_from=c(SVSPP, stg), values_from = corBIO, values_fill = list(corBIO=0))
 
-barplot(table(svdtunq$stgwgtpct[svdtunq$stgwgtpct<0.99 & svdtunq$SEASON=='FALL' & svdtunq$SVSPP==svspp]),ylim=c(0,100), main=paste('FALL ', svspp))
-barplot(table(svdtunq$stgwgtpct[svdtunq$stgwgtpct<0.99 & svdtunq$SEASON=='SPRING' & svdtunq$SVSPP==svspp]),ylim=c(0,100), main=paste('SPRING ', svspp))
+svdwide.abn=svdtunq %>% select(SVSPP, stg, CRUISE6, STATION, STRATUM,SVVESSEL,YEAR,EST_TOWDATE, SEASON,LAT,LON,DEPTH,
+                               SURFTEMP,BOTTEMP,SURFSALIN,BOTSALIN,corABN) %>%
+  pivot_wider(names_from=c(SVSPP, stg), values_from = corABN, values_fill = list(corABN=0))
 
-
-library(modes)
-# restricting to <0.99 was masking adult population. Can check on change over years...
-bimodality_amplitude(svdtunq$stgwgtpct[svdtunq$SEASON=='SPRING' & svdtunq$SVSPP==svspp], fig=T)
-bimodality_amplitude(svdtunq$stgwgtpct[svdtunq$SEASON=='FALL' & svdtunq$SVSPP==svspp], fig=T)
-sum(is.na(svdtunq$stgwgtpct[svdtunq$stgwgtpct<0.99 & svdtunq$SEASON=='FALL' & svdtunq$SVSPP==svspp]))
-
-### change survdat long to wide
-svdwide=pivot_wider(names_from=SVSPP, values_from = )
-
+#remove column names with 'x_NA'
+svdwide.bio=svdwide%>% select(-`72_NA`, -`73_NA`, -`74_NA`,-`75_NA`,-`76_NA`,-`77_NA`,-`101_NA`,-`102_NA`,-`103_NA`,-`105_NA`,
+                          -`106_NA`,-`107_NA`,-`108_NA`,-`155_NA`,-`193_NA`,-`197_NA`)
+svdwide.abn=svdwide%>% select(-`72_NA`, -`73_NA`, -`74_NA`,-`75_NA`,-`76_NA`,-`77_NA`,-`101_NA`,-`102_NA`,-`103_NA`,-`105_NA`,
+                              -`106_NA`,-`107_NA`,-`108_NA`,-`155_NA`,-`193_NA`,-`197_NA`)
+save(svdwide.bio, file='unique_wide_format_corBIO_by_stage.Rda')
+save(svdwide.abn, file='unique_wide_format_corABN_by_stage.Rda')
 
 ### create date and binned lat lon for mathching to other surveys
-svdate=data.frame(month(survdat$EST_TOWDATE))
+# svdate=data.frame(month(survdat$EST_TOWDATE))
+# colnames(svdate)[1]='M'
+# svdate$Y=year(survdat$EST_TOWDATE)
+# svdate$D=day(survdat$EST_TOWDATE)
+# # svdate$lat=survdat$LAT
+# # svdate$lon=survdat$LON
+# svdate$lonbin=round(survdat$LON/0.5)*0.5 ## half degree
+# svdate$latbin=round(survdat$LAT/0.5)*0.5
+# svdate$doy=as.numeric(strftime(survdat$EST_TOWDATE, format = "%j"))
+# svdate$sdoy=svdate$doy-8
+# svdate$ldoy=svdate$doy+8
+# svdate$index=seq(from=1, to=length(svdate$M), by=1)
+
+### use wide, unique vals to merge with zoo and ich
+svdate=data.frame(month(svdwide.bio$EST_TOWDATE))
 colnames(svdate)[1]='M'
-svdate$Y=year(survdat$EST_TOWDATE)
-svdate$D=day(survdat$EST_TOWDATE)
+svdate$Y=year(svdwide.bio$EST_TOWDATE)
+svdate$D=day(svdwide.bio$EST_TOWDATE)
 # svdate$lat=survdat$LAT
 # svdate$lon=survdat$LON
-svdate$lonbin=round(survdat$LON/0.5)*0.5 ## half degree
-svdate$latbin=round(survdat$LAT/0.5)*0.5
-svdate$doy=as.numeric(strftime(survdat$EST_TOWDATE, format = "%j"))
+svdate$lonbin=round(svdwide.bio$LON/0.5)*0.5 ## half degree
+svdate$latbin=round(svdwide.bio$LAT/0.5)*0.5
+svdate$doy=as.numeric(strftime(svdwide.bio$EST_TOWDATE, format = "%j"))
 svdate$sdoy=svdate$doy-8
 svdate$ldoy=svdate$doy+8
 svdate$index=seq(from=1, to=length(svdate$M), by=1)
 
 
 ## get index of unique stations from survdat, apply to long format svdate with index
-retvars <- c("CRUISE6","STATION","STRATUM","YEAR", "SVSPP")
-sdq=survdat[,retvars]
-sdq$index=seq(from=1, to=length(survdat$YEAR), by=1)
-survdat_stations <- survdat[retvars] 
-sdq2=sdq[!duplicated(survdat_stations),] # just keep retvars
-svdate2=svdate[sdq2$index,]
+# retvars <- c("CRUISE6","STATION","STRATUM","YEAR", "SVSPP")
+# sdq=survdat[,retvars]
+# sdq$index=seq(from=1, to=length(survdat$YEAR), by=1)
+# survdat_stations <- survdat[retvars] 
+# sdq2=sdq[!duplicated(survdat_stations),] # just keep retvars
+# svdate2=svdate[sdq2$index,]
 
 #clean up svdate to match zooplankton and Chl
 svdate2=svdate2[which(svdate2$Y>2017),]

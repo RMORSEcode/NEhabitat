@@ -149,7 +149,8 @@ svdate$index=seq(from=1, to=length(svdate$M), by=1)
 # svdate2=svdate[sdq2$index,]
 
 #clean up svdate to match zooplankton and Chl
-svdate2=svdate2[which(svdate2$Y>2017),]
+svdate2=svdate[which(svdate$Y>1976),]
+svdate3=svdate2[which(svdate2$Y<1997),]
 
 
 # library(geosphere)
@@ -169,15 +170,18 @@ dfzdate$zsdoy=dfzdate$zdoy
 dfzdate$zldoy=dfzdate$zdoy
 
 # try merge and filter (did this in 2 parts, before and after 1998, took long time...)
-dfzdate2=dfzdate[which(dfzdate$zY>2017),]
+dfzdate2=dfzdate[which(dfzdate$zY<1997),]
 # ttx=merge(svdate2, dfzdate2, all=T)
 colnames(dfzdate2)
 colnames(svdate2)
 # ttx=left_join(svdate2, dfzdate2, by=c("lonbin"="zlonbin", "latbin"="zlatbin", "Y"="zY", "sdoy"="zdoy", "ldoy"="zdoy"))
 ### this works, just takes a long time
 library(fuzzyjoin)
-tt=fuzzy_left_join(svdate2, dfzdate2, by=c("lonbin"="zlonbin", "latbin"="zlatbin", "Y"="zY", "sdoy"="zdoy", "ldoy"="zdoy"), 
+# tt=fuzzy_left_join(svdate2, dfzdate2, by=c("lonbin"="zlonbin", "latbin"="zlatbin", "Y"="zY", "sdoy"="zdoy", "ldoy"="zdoy"), 
+                   # match_fun=list(`==`,`==`,`==`,`<=`,`>=`))
+tt=fuzzy_left_join(svdate3, dfzdate2, by=c("lonbin"="zlonbin", "latbin"="zlatbin", "Y"="zY", "sdoy"="zdoy", "ldoy"="zdoy"), 
                    match_fun=list(`==`,`==`,`==`,`<=`,`>=`))
+
 tt2=tt[complete.cases(tt$zY),]
 # merge 2 dataframes together
 dmrg=rbind(tt3, tt2)

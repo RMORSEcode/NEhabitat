@@ -176,8 +176,11 @@ colnames(svdate2)
 # ttx=left_join(svdate2, dfzdate2, by=c("lonbin"="zlonbin", "latbin"="zlatbin", "Y"="zY", "sdoy"="zdoy", "ldoy"="zdoy"))
 ### this works, just takes a long time
 library(fuzzyjoin)
-tt=fuzzy_left_join(svdate2, dfzdate2, by=c("lonbin"="zlonbin", "latbin"="zlatbin", "Y"="zY", "sdoy"="zdoy", "ldoy"="zdoy"), 
+# tt=fuzzy_left_join(svdate2, dfzdate2, by=c("lonbin"="zlonbin", "latbin"="zlatbin", "Y"="zY", "sdoy"="zdoy", "ldoy"="zdoy"), 
+                   # match_fun=list(`==`,`==`,`==`,`<=`,`>=`))
+tt=fuzzy_left_join(svdate, dfzdate, by=c("lonbin"="zlonbin", "latbin"="zlatbin", "Y"="zY", "sdoy"="zdoy", "ldoy"="zdoy"), 
                    match_fun=list(`==`,`==`,`==`,`<=`,`>=`))
+
 tt2=tt[complete.cases(tt$zY),]
 # merge 2 dataframes together
 dmrg=rbind(tt3, tt2)

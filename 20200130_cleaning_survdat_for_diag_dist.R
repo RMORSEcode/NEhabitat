@@ -151,6 +151,7 @@ svdate$index=seq(from=1, to=length(svdate$M), by=1)
 #clean up svdate to match zooplankton and Chl
 svdate2=svdate[which(svdate$Y>1976),]
 svdate3=svdate2[which(svdate2$Y<1997),]
+svdate4=svdate2[which(svdate2$Y>1996),]
 
 
 # library(geosphere)
@@ -171,6 +172,8 @@ dfzdate$zldoy=dfzdate$zdoy
 
 # try merge and filter (did this in 2 parts, before and after 1998, took long time...)
 dfzdate2=dfzdate[which(dfzdate$zY<1997),]
+dfzdate3=dfzdate[which(dfzdate$zY>1996),]
+
 # ttx=merge(svdate2, dfzdate2, all=T)
 colnames(dfzdate2)
 colnames(svdate2)
@@ -181,25 +184,38 @@ library(fuzzyjoin)
                    # match_fun=list(`==`,`==`,`==`,`<=`,`>=`))
 tt=fuzzy_left_join(svdate3, dfzdate2, by=c("lonbin"="zlonbin", "latbin"="zlatbin", "Y"="zY", "sdoy"="zdoy", "ldoy"="zdoy"), 
                    match_fun=list(`==`,`==`,`==`,`<=`,`>=`))
+save(tt, file="survdat_zoo_merge_1977_1996.Rda")
+tt2=fuzzy_left_join(svdate4, dfzdate3, by=c("lonbin"="zlonbin", "latbin"="zlatbin", "Y"="zY", "sdoy"="zdoy", "ldoy"="zdoy"), 
+                   match_fun=list(`==`,`==`,`==`,`<=`,`>=`))
+save(tt2, file="survdat_zoo_merge_1997_2019.Rda")
 
 tt2=tt[complete.cases(tt$zY),]
 # merge 2 dataframes together
-dmrg=rbind(tt3, tt2)
+dmrg=rbind(tt, tt2)
+save(dmrg, file='final_merged_survdat_zoo_1977_2018.Rda')
 
 ## now subset original dataframes before joining together
-fish1=survdat[dmrg$index,]
+fish1.bio=svdwide.bio[dmrg$index,]
+fish1.abn=svdwide.abn[dmrg$index,]
 zoo1=dfz[dmrg$zindex,]
 ich1=ich[dmrg$zindex,]
 
 # Create index to merge on
-fish1$mrgidx=seq(from=1, to=length(fish1$YEAR), by=1)
-zoo1$mrgidx=fish1$mrgidx
-ich1$mrgidx=fish1$mrgidx
-FData=merge(fish1, ich1, by="mrgidx")
+fish1.bio$mrgidx=seq(from=1, to=length(fish1.bio$YEAR), by=1)
+fish1.abn$mrgidx=seq(from=1, to=length(fish1.abn$YEAR), by=1)
+zoo1$mrgidx=fish1.bio$mrgidx
+ich1$mrgidx=fish1.bio$mrgidx
+## choose 1
+# FData=merge(fish1.bio, ich1, by="mrgidx")
+FData=merge(fish1.abn, ich1, by="mrgidx")
+##
 FData=merge(FData, zoo1, by="mrgidx")
-FData2=FData %>% select(-mrgidx, -lat.x, -lat.y, -lon.x, -lon.y, -date.x, -cruise_name, -station, -depth, -sfc_temp, 
+FData.bio=FData %>% select(-mrgidx, -lat.x, -lat.y, -lon.x, -lon.y, -date.x, -cruise_name, -station, -depth, -sfc_temp, 
                         -sfc_salt, -btm_temp, -btm_salt, -volume_1m2, -time, -date.x, -date.y)
-
+FData.abn=FData %>% select(-mrgidx, -lat.x, -lat.y, -lon.x, -lon.y, -date.x, -cruise_name, -station, -depth, -sfc_temp, 
+                           -sfc_salt, -btm_temp, -btm_salt, -volume_1m2, -time, -date.x, -date.y)
+save(FData.bio, file="Final_merged_fish_corBIO_Zoo_Ich.Rda")
+save(FData.abn, file="Final_merged_fish_corABN_Zoo_Ich.Rda")
 
 library(rfUtilities)
 trymc=multi.collinear(FData,n=99, na.rm=T)

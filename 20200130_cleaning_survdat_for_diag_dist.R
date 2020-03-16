@@ -189,7 +189,8 @@ tt2=fuzzy_left_join(svdate4, dfzdate3, by=c("lonbin"="zlonbin", "latbin"="zlatbi
                    match_fun=list(`==`,`==`,`==`,`<=`,`>=`))
 save(tt2, file="survdat_zoo_merge_1997_2019.Rda")
 
-tt2=tt[complete.cases(tt$zY),]
+# tt2=tt[complete.cases(tt$zY),]
+tt2$index=seq(from=13952, to=(13951+length(tt2$M)), by=1)
 # merge 2 dataframes together
 dmrg=rbind(tt, tt2)
 save(dmrg, file='final_merged_survdat_zoo_1977_2018.Rda')
@@ -197,7 +198,7 @@ save(dmrg, file='final_merged_survdat_zoo_1977_2018.Rda')
 ## now subset original dataframes before joining together
 fish1.bio=svdwide.bio[dmrg$index,]
 fish1.abn=svdwide.abn[dmrg$index,]
-zoo1=dfz[dmrg$zindex,]
+zoo1=dfz2[dmrg$zindex,]
 ich1=ich[dmrg$zindex,]
 
 # Create index to merge on
@@ -206,14 +207,20 @@ fish1.abn$mrgidx=seq(from=1, to=length(fish1.abn$YEAR), by=1)
 zoo1$mrgidx=fish1.bio$mrgidx
 ich1$mrgidx=fish1.bio$mrgidx
 ## choose 1
-# FData=merge(fish1.bio, ich1, by="mrgidx")
+FData=merge(fish1.bio, ich1, by="mrgidx")
 FData=merge(fish1.abn, ich1, by="mrgidx")
 ##
 FData=merge(FData, zoo1, by="mrgidx")
-FData.bio=FData %>% select(-mrgidx, -lat.x, -lat.y, -lon.x, -lon.y, -date.x, -cruise_name, -station, -depth, -sfc_temp, 
-                        -sfc_salt, -btm_temp, -btm_salt, -volume_1m2, -time, -date.x, -date.y)
-FData.abn=FData %>% select(-mrgidx, -lat.x, -lat.y, -lon.x, -lon.y, -date.x, -cruise_name, -station, -depth, -sfc_temp, 
-                           -sfc_salt, -btm_temp, -btm_salt, -volume_1m2, -time, -date.x, -date.y)
+# FData.bio=FData %>% select(-mrgidx, -lat.x, -lat.y, -lon.x, -lon.y, -date.x, -cruise_name, -station, -depth, -sfc_temp, 
+                        # -sfc_salt, -btm_temp, -btm_salt, -volume_1m2, -time, -date.x, -date.y)
+# FData.abn=FData %>% select(-mrgidx, -lat.x, -lat.y, -lon.x, -lon.y, -date.x, -cruise_name, -station, -depth, -sfc_temp, 
+#                            -sfc_salt, -btm_temp, -btm_salt, -volume_1m2, -time, -date.x, -date.y)
+FData.bio=FData %>% select(-mrgidx, -lon, -lat, -date, -latbin, -lonbin)
+FData.abn=FData %>% select(-mrgidx, -lon, -lat, -date, -latbin, -lonbin)
+
+FData.bio=FData
+FData.abn=FData
+
 save(FData.bio, file="Final_merged_fish_corBIO_Zoo_Ich.Rda")
 save(FData.abn, file="Final_merged_fish_corABN_Zoo_Ich.Rda")
 

@@ -224,6 +224,49 @@ FData.abn=FData
 save(FData.bio, file="Final_merged_fish_corBIO_Zoo_Ich.Rda")
 save(FData.abn, file="Final_merged_fish_corABN_Zoo_Ich.Rda")
 
+# except ITS NOT CORRECT....
+### troubleshooting....###
+unique(FData.bio$YEAR) ## 1977-2019, 1963-1976 WTF
+x=unique(dmrg$Y)
+y=unique(dmrg$zY)
+z=seq(1977,2018,1) # years that SHOULD be included
+x[!(x %in% y)] # survdat not in zoo
+# [1] 1983 1984 1986 1987 1988 1989 1995 1996 # survdat not in zoo
+z[!(z %in% x)] # missing from survdat
+# [1] 1997 1998 2018 # missing from survdat
+z[!(z %in% y)] # missing from zoo
+# [1] 1983 1984 1986 1987 1988 1989 1995 1996 1997 1998 2018 # missing from zoo merged with survdat
+
+
+### check svdwide for order?
+x=unique(svdwide.bio$YEAR) 
+z=seq(1963,2019,1) # years that should be included
+z[!(z %in% x)]
+# numeric(0)
+
+## OK.... so check svdate....
+z=seq(1977,2019,1) # years that should be included
+# y=unique(svdate$Y)# survdat
+y=unique(svdate2$Y)# survdat
+z[!(z %in% y)]
+# numeric(0)
+
+## OK..., check dfzdate for zoo
+x=unique(dfzdate$zY) #zoo
+z=seq(1977,2018,1)
+z[!(z %in% x)] # missing from zoo
+# [1] 1995 1996 1997 1998 ### problem 1
+
+## check tt and tt2
+z=seq(1977,2018,1)
+x=unique(tt$Y)
+x2=unique(tt2$Y)
+x3=c(x,x2)
+z[!(z %in% x3)] # missing from zoo
+
+### found error -> taking complete.cases in 'load_zoo_data.R' dropped zoo from 1995-1998
+# fixed and updated code, but now have to rerun fuzzy join
+
 library(rfUtilities)
 trymc=multi.collinear(FData,n=99, na.rm=T)
 

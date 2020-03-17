@@ -153,13 +153,20 @@ ZPD$lat2=ceiling(ZPD$lat) #use for binning into 1 degree bins for removal of und
 ZPD$lon2=floor(ZPD$lon) #use for binning into 1 degree bins for removal of undersampled bins
 
 #keep just records with salinity and temp, remove NA from dominant ich and zoo
-test=ZPD[complete.cases(ZPD$sfc_temp),]
-test=test[complete.cases(test$sfc_salt),]
-test=test[complete.cases(test$btm_salt),]
-test=test[complete.cases(test$btm_temp),]
-test=test[complete.cases(test$melaeg_100m3 ),]
+# test=ZPD[complete.cases(ZPD$sfc_temp),]
+# test=test[complete.cases(test$sfc_salt),]
+# test=test[complete.cases(test$btm_salt),]
+# test=test[complete.cases(test$btm_temp),]
+# test=test[complete.cases(test$melaeg_100m3 ),]
+# test=test[complete.cases(test$calfin_100m3),] ###  these 2 choices cause a gap 1995-1998 in the data!
+# test=test[complete.cases(test$ctyp_100m3),] ###  these 2 choices cause a gap 1995-1998 in the data!
+# test$latbin=round(test$lat/0.25)*0.25
+# test$lonbin=round(test$lon/0.25)*0.25
+# barplot(table(test$year))
+### Note, the above section unintentionally dropped data, for instance when zoo were not collected on ich cruises (1995-1998)
+### better to keep zoo and ich and fill in S, T from other sources.
+test=ZPD[complete.cases(ZPD$melaeg_100m3 ),]
 test=test[complete.cases(test$calfin_100m3),]
-test=test[complete.cases(test$ctyp_100m3),]
 test$latbin=round(test$lat/0.25)*0.25
 test$lonbin=round(test$lon/0.25)*0.25
 barplot(table(test$year))
@@ -181,7 +188,7 @@ ichlong=left_join(ichlong, svnms2, by=c("ichsp"="ich"))
 
 
 # subset fraction of data for testing/ traiing
-df %>% sample_frac(0.33)
+# df %>% sample_frac(0.33)
 ## remove zero presence
 # df=ich[which(ich$melaeg_100m3 >0),]
 # dfv=vars[which(ich$melaeg_100m3>0),]

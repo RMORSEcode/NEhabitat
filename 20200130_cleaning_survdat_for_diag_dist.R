@@ -149,10 +149,13 @@ svdate$index=seq(from=1, to=length(svdate$M), by=1)
 # svdate2=svdate[sdq2$index,]
 
 #clean up svdate to match zooplankton and Chl
-svdate2=svdate[which(svdate$Y>1976),]
-svdate3=svdate2[which(svdate2$Y<1997),]
-svdate4=svdate2[which(svdate2$Y>1996),]
+svdate2=svdate[which(svdate$Y>=1977 & svdate$Y<1986),]
 
+svdate3=svdate[which(svdate$Y>=1987 & svdate$Y<1996),]
+
+svdate4=svdate[which(svdate$Y>=1997 & svdate$Y<2006),]
+
+svdate5=svdate[which(svdate$Y>=2007 & svdate$Y<2019),]
 
 # library(geosphere)
 # distm(c(lon1, lat1), c(lon2, lat2), fun = distHaversine)
@@ -170,9 +173,17 @@ dfzdate=dfzdate[order(dfzdate$zY, dfzdate$zdoy),]
 dfzdate$zsdoy=dfzdate$zdoy
 dfzdate$zldoy=dfzdate$zdoy
 
+dfzdate2=dfzdate[which(dfzdate$zY>=1977 & dfzdate$zY<1986),]
+
+dfzdate3=dfzdate[which(dfzdate$zY>=1987 & dfzdate$zY<1996),]
+
+dfzdate4=dfzdate[which(dfzdate$zY>=1997 & dfzdate$zY<2006),]
+
+dfzdate5=dfzdate[which(dfzdate$zY>=2007 & dfzdate$zY<2019),]
+
 # try merge and filter (did this in 2 parts, before and after 1998, took long time...)
-dfzdate2=dfzdate[which(dfzdate$zY<1997),]
-dfzdate3=dfzdate[which(dfzdate$zY>1996),]
+# dfzdate2=dfzdate[which(dfzdate$zY<1997),]
+# dfzdate3=dfzdate[which(dfzdate$zY>1996),]
 
 # ttx=merge(svdate2, dfzdate2, all=T)
 colnames(dfzdate2)
@@ -180,14 +191,17 @@ colnames(svdate2)
 # ttx=left_join(svdate2, dfzdate2, by=c("lonbin"="zlonbin", "latbin"="zlatbin", "Y"="zY", "sdoy"="zdoy", "ldoy"="zdoy"))
 ### this works, just takes a long time
 library(fuzzyjoin)
-# tt=fuzzy_left_join(svdate2, dfzdate2, by=c("lonbin"="zlonbin", "latbin"="zlatbin", "Y"="zY", "sdoy"="zdoy", "ldoy"="zdoy"), 
-                   # match_fun=list(`==`,`==`,`==`,`<=`,`>=`))
-tt=fuzzy_left_join(svdate3, dfzdate2, by=c("lonbin"="zlonbin", "latbin"="zlatbin", "Y"="zY", "sdoy"="zdoy", "ldoy"="zdoy"), 
+tt=fuzzy_left_join(svdate2, dfzdate2, by=c("lonbin"="zlonbin", "latbin"="zlatbin", "Y"="zY", "sdoy"="zdoy", "ldoy"="zdoy"),
                    match_fun=list(`==`,`==`,`==`,`<=`,`>=`))
-save(tt, file="survdat_zoo_merge_1977_1996.Rda")
-tt2=fuzzy_left_join(svdate4, dfzdate3, by=c("lonbin"="zlonbin", "latbin"="zlatbin", "Y"="zY", "sdoy"="zdoy", "ldoy"="zdoy"), 
+tt2=fuzzy_left_join(svdate3, dfzdate3, by=c("lonbin"="zlonbin", "latbin"="zlatbin", "Y"="zY", "sdoy"="zdoy", "ldoy"="zdoy"), 
                    match_fun=list(`==`,`==`,`==`,`<=`,`>=`))
-save(tt2, file="survdat_zoo_merge_1997_2019.Rda")
+tt3=fuzzy_left_join(svdate4, dfzdate4, by=c("lonbin"="zlonbin", "latbin"="zlatbin", "Y"="zY", "sdoy"="zdoy", "ldoy"="zdoy"), 
+                   match_fun=list(`==`,`==`,`==`,`<=`,`>=`))
+tt4=fuzzy_left_join(svdate5, dfzdate5, by=c("lonbin"="zlonbin", "latbin"="zlatbin", "Y"="zY", "sdoy"="zdoy", "ldoy"="zdoy"), 
+                    match_fun=list(`==`,`==`,`==`,`<=`,`>=`))
+
+# save(tt, file="survdat_zoo_merge_1977_1996.Rda")
+# save(tt2, file="survdat_zoo_merge_1997_2019.Rda")
 
 # tt2=tt[complete.cases(tt$zY),]
 tt2$index=seq(from=13952, to=(13951+length(tt2$M)), by=1)

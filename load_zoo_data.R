@@ -166,7 +166,7 @@ ZPD$lon2=floor(ZPD$lon) #use for binning into 1 degree bins for removal of under
 ### Note, the above section unintentionally dropped data, for instance when zoo were not collected on ich cruises (1995-1998)
 ### better to keep zoo and ich and fill in S, T from other sources.
 test=ZPD[complete.cases(ZPD$melaeg_100m3 ),]
-test=test[complete.cases(test$calfin_100m3),]
+# test=test[complete.cases(test$calfin_100m3),]
 test$latbin=round(test$lat/0.25)*0.25
 test$lonbin=round(test$lon/0.25)*0.25
 barplot(table(test$year))
@@ -203,7 +203,7 @@ ZPDa=dfz
 ZPDa=ZPDa[!is.na(ZPDa$ich_gear),] # Remove NA in zooplankton rows
 p.a=ZPDa[,15:197]
 p.a[p.a > 0]=1 # presence/absence
-count=colSums(p.a)
+count=colSums(p.a, na.rm=T)
 pct=(count/dim(ZPDa)[1])*100
 crit=which(pct>X)
 crit2=crit[((length(crit)/2)+1):length(crit)] # select just data/100m3 for abundance
@@ -212,7 +212,7 @@ p.a=p.a[,crit2]
 dfz=ZPDa
 x=colnames(p.a)
 dfz2=dfz[,colnames(dfz) %in% x] #just zooplankton (not sure if this is needed)
-dfzlong=dfz %>% gather(zoosp, N100m3, ctyp_100m3:euph_100m3) # wide to long
+dfzlong=dfz %>% gather(zoosp, N100m3, ctyp_100m3:chaeto_100m3) # wide to long
 
 
 ## try fitting gams

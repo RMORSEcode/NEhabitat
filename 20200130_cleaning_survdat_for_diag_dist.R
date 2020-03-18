@@ -149,13 +149,17 @@ svdate$index=seq(from=1, to=length(svdate$M), by=1)
 # svdate2=svdate[sdq2$index,]
 
 #clean up svdate to match zooplankton and Chl
-svdate2=svdate[which(svdate$Y>=1977 & svdate$Y<1986),]
+svdate1=svdate[which(svdate$Y>1976 & svdate$Y<1982),]
 
-svdate3=svdate[which(svdate$Y>=1987 & svdate$Y<1996),]
+svdate2=svdate[which(svdate$Y>1981 & svdate$Y<1987),]
 
-svdate4=svdate[which(svdate$Y>=1997 & svdate$Y<2006),]
+svdate3=svdate[which(svdate$Y>1986 & svdate$Y<1997),]
 
-svdate5=svdate[which(svdate$Y>=2007 & svdate$Y<2019),]
+svdate4=svdate[which(svdate$Y>1996 & svdate$Y<2006),]
+
+svdate5=svdate[which(svdate$Y>2005 & svdate$Y<2012),]
+
+svdate6=svdate[which(svdate$Y>2011 & svdate$Y<2020),]
 
 # library(geosphere)
 # distm(c(lon1, lat1), c(lon2, lat2), fun = distHaversine)
@@ -173,13 +177,17 @@ dfzdate=dfzdate[order(dfzdate$zY, dfzdate$zdoy),]
 dfzdate$zsdoy=dfzdate$zdoy
 dfzdate$zldoy=dfzdate$zdoy
 
-dfzdate2=dfzdate[which(dfzdate$zY>=1977 & dfzdate$zY<1986),]
+dfzdate1=dfzdate[which(dfzdate$zY>1976 & dfzdate$zY<1982),]
 
-dfzdate3=dfzdate[which(dfzdate$zY>=1987 & dfzdate$zY<1996),]
+dfzdate2=dfzdate[which(dfzdate$zY>1981 & dfzdate$zY<1987),]
 
-dfzdate4=dfzdate[which(dfzdate$zY>=1997 & dfzdate$zY<2006),]
+dfzdate3=dfzdate[which(dfzdate$zY>1986 & dfzdate$zY<1997),]
 
-dfzdate5=dfzdate[which(dfzdate$zY>=2007 & dfzdate$zY<2019),]
+dfzdate4=dfzdate[which(dfzdate$zY>1996 & dfzdate$zY<2006),]
+
+dfzdate5=dfzdate[which(dfzdate$zY>2005 & dfzdate$zY<2012),]
+
+dfzdate6=dfzdate[which(dfzdate$zY>2011 & dfzdate$zY<2020),]
 
 # try merge and filter (did this in 2 parts, before and after 1998, took long time...)
 # dfzdate2=dfzdate[which(dfzdate$zY<1997),]
@@ -191,7 +199,9 @@ colnames(svdate2)
 # ttx=left_join(svdate2, dfzdate2, by=c("lonbin"="zlonbin", "latbin"="zlatbin", "Y"="zY", "sdoy"="zdoy", "ldoy"="zdoy"))
 ### this works, just takes a long time
 library(fuzzyjoin)
-tt=fuzzy_left_join(svdate2, dfzdate2, by=c("lonbin"="zlonbin", "latbin"="zlatbin", "Y"="zY", "sdoy"="zdoy", "ldoy"="zdoy"),
+tt=fuzzy_left_join(svdate1, dfzdate1, by=c("lonbin"="zlonbin", "latbin"="zlatbin", "Y"="zY", "sdoy"="zdoy", "ldoy"="zdoy"),
+                    match_fun=list(`==`,`==`,`==`,`<=`,`>=`))
+tt1=fuzzy_left_join(svdate2, dfzdate2, by=c("lonbin"="zlonbin", "latbin"="zlatbin", "Y"="zY", "sdoy"="zdoy", "ldoy"="zdoy"),
                    match_fun=list(`==`,`==`,`==`,`<=`,`>=`))
 tt2=fuzzy_left_join(svdate3, dfzdate3, by=c("lonbin"="zlonbin", "latbin"="zlatbin", "Y"="zY", "sdoy"="zdoy", "ldoy"="zdoy"), 
                    match_fun=list(`==`,`==`,`==`,`<=`,`>=`))
@@ -199,21 +209,27 @@ tt3=fuzzy_left_join(svdate4, dfzdate4, by=c("lonbin"="zlonbin", "latbin"="zlatbi
                    match_fun=list(`==`,`==`,`==`,`<=`,`>=`))
 tt4=fuzzy_left_join(svdate5, dfzdate5, by=c("lonbin"="zlonbin", "latbin"="zlatbin", "Y"="zY", "sdoy"="zdoy", "ldoy"="zdoy"), 
                     match_fun=list(`==`,`==`,`==`,`<=`,`>=`))
-
+tt5=fuzzy_left_join(svdate6, dfzdate6, by=c("lonbin"="zlonbin", "latbin"="zlatbin", "Y"="zY", "sdoy"="zdoy", "ldoy"="zdoy"), 
+                    match_fun=list(`==`,`==`,`==`,`<=`,`>=`))
 # save(tt, file="survdat_zoo_merge_1977_1996.Rda")
 # save(tt2, file="survdat_zoo_merge_1997_2019.Rda")
 
 # tt2=tt[complete.cases(tt$zY),]
-tt2$index=seq(from=13952, to=(13951+length(tt2$M)), by=1)
+# tt2$index=seq(from=13952, to=(13951+length(tt2$M)), by=1)
 # merge 2 dataframes together
-dmrg=rbind(tt, tt2)
-save(dmrg, file='final_merged_survdat_zoo_1977_2018.Rda')
+dmrg=rbind(tt, tt1)
+dmrg1=rbind(dmrg, tt2)
+dmrg2=rbind(dmrg1, tt3)
+dmrg3=rbind(dmrg2, tt4)
+dmrg4=rbind(dmrg3, tt5)
+
+save(dmrg4, file='updated_final_merged_survdat_zoo_1977_2018.Rda')
 
 ## now subset original dataframes before joining together
-fish1.bio=svdwide.bio[dmrg$index,]
-fish1.abn=svdwide.abn[dmrg$index,]
-zoo1=dfz2[dmrg$zindex,]
-ich1=ich[dmrg$zindex,]
+fish1.bio=svdwide.bio[dmrg4$index,]
+fish1.abn=svdwide.abn[dmrg4$index,]
+zoo1=dfz2[dmrg4$zindex,]
+ich1=ich[dmrg4$zindex,]
 
 # Create index to merge on
 fish1.bio$mrgidx=seq(from=1, to=length(fish1.bio$YEAR), by=1)
@@ -222,35 +238,35 @@ zoo1$mrgidx=fish1.bio$mrgidx
 ich1$mrgidx=fish1.bio$mrgidx
 ## choose 1
 FData=merge(fish1.bio, ich1, by="mrgidx")
-FData=merge(fish1.abn, ich1, by="mrgidx")
-##
 FData=merge(FData, zoo1, by="mrgidx")
+FData.bio=FData
+save(FData.bio, file="Final_merged_fish_corBIO_Zoo_Ich.Rda")
 # FData.bio=FData %>% select(-mrgidx, -lat.x, -lat.y, -lon.x, -lon.y, -date.x, -cruise_name, -station, -depth, -sfc_temp, 
                         # -sfc_salt, -btm_temp, -btm_salt, -volume_1m2, -time, -date.x, -date.y)
 # FData.abn=FData %>% select(-mrgidx, -lat.x, -lat.y, -lon.x, -lon.y, -date.x, -cruise_name, -station, -depth, -sfc_temp, 
 #                            -sfc_salt, -btm_temp, -btm_salt, -volume_1m2, -time, -date.x, -date.y)
-FData.bio=FData %>% select(-mrgidx, -lon, -lat, -date, -latbin, -lonbin)
-FData.abn=FData %>% select(-mrgidx, -lon, -lat, -date, -latbin, -lonbin)
-
-FData.bio=FData
+# FData.bio=FData %>% select(-mrgidx, -lon, -lat, -date, -latbin, -lonbin)
+# FData.abn=FData %>% select(-mrgidx, -lon, -lat, -date, -latbin, -lonbin)
+FData=merge(fish1.abn, ich1, by="mrgidx")
+FData=merge(FData, zoo1, by="mrgidx")
 FData.abn=FData
-
-save(FData.bio, file="Final_merged_fish_corBIO_Zoo_Ich.Rda")
 save(FData.abn, file="Final_merged_fish_corABN_Zoo_Ich.Rda")
 
 # except ITS NOT CORRECT....
 ### troubleshooting....###
 unique(FData.bio$YEAR) ## 1977-2019, 1963-1976 WTF
-x=unique(dmrg$Y)
-y=unique(dmrg$zY)
+# x=unique(dmrg$Y)
+# y=unique(dmrg$zY)
 z=seq(1977,2018,1) # years that SHOULD be included
-x[!(x %in% y)] # survdat not in zoo
-# [1] 1983 1984 1986 1987 1988 1989 1995 1996 # survdat not in zoo
-z[!(z %in% x)] # missing from survdat
-# [1] 1997 1998 2018 # missing from survdat
-z[!(z %in% y)] # missing from zoo
-# [1] 1983 1984 1986 1987 1988 1989 1995 1996 1997 1998 2018 # missing from zoo merged with survdat
+z[!(z %in% unique(FData.bio$YEAR))]
+# [1] 1981 1986 1996
 
+# x[!(x %in% y)] # survdat not in zoo
+# [1] 1983 1984 1986 1987 1988 1989 1995 1996 # survdat not in zoo
+# z[!(z %in% x)] # missing from survdat
+# [1] 1997 1998 2018 # missing from survdat
+# z[!(z %in% y)] # missing from zoo
+# [1] 1983 1984 1986 1987 1988 1989 1995 1996 1997 1998 2018 # missing from zoo merged with survdat
 
 ### check svdwide for order?
 x=unique(svdwide.bio$YEAR) 

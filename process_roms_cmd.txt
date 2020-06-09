@@ -229,5 +229,47 @@ for DIR in {1980..2014}; do
   cd ..
 done
 
+_________________________________________________________
+### 20200329 checking on subsetted grid file (missed 2 dim vars) ###
+# subset grd_small to include eta_psi, eta_vert, and xi...
+cd /home/ryan/roms/test2/1
+ncks -O -d eta_rho,200,360 -d xi_rho,350,720 -d eta_u,200,360 -d xi_u,350,720 -d eta_v,200,360 -d xi_v,350,720 -d eta_psi,200,360 -d xi_psi,350,720 -d eta_vert,200,360 -d xi_vert,350,720 NWA_grd.nc NWA_grd_small_update.nc
+#
+ncdump -c NWA_grd_small_update.nc > smallupdate.cdf
+# then reprocess a file with new subsetted grid file:
+#    /home/ryan/roms/test2/NWA-SZ.HCob05T_avg_2000-12-15.nc
+# and compare it to the previous file in dir:
+#    /home/ryan/roms/test2/RM_NWA-SZ.HCob05T_avg_2000-12-15.nc
+# to see if the subset messed with values
+
+cd /home/ryan/roms/test2/
+FILES=NWA-SZ.HCob05T_avg_2000-12-15.nc
+for f in $FILES
+do
+  DIR=$(dirname "${f}")
+  filename="${f##*/}"  # get filename
+  filepth="${f##%.*}"
+  echo "Full filepath is ### $filepth ###"
+  fin="RM2_${filename}"
+  #cd ./$DIR
+  cp $filename $fin
+  ncks -O -d eta_rho,200,360 -d xi_rho,350,720 -d eta_u,200,360 -d xi_u,350,720 -d eta_v,200,360 -d xi_v,350,720 $fin $fin
+  ncks -A -v lon_rho,lat_rho,lon_u,lat_u,lon_v,lat_v,h,angle,mask_rho /home/ryan/roms/test2/NWA_grd_small_update.nc $fin
+done
+
+ncks: INFO nco_fl_open() reports current extended filetype = NC_FORMAT_HDF5 does not equal previous extended filetype = NC_FORMAT_NC3. This is expected when NCO is instructed to convert filetypes, i.e., to read from one type and write to another. And when NCO generates grids or templates (which are always netCDF3) when the input file is netCDF4. It is also expected when multi-file operators receive files known to be of different types. However, it could also indicate an unexpected change in input dataset type of which the user should be cognizant.
+
+conda activate FERRET
+pyferret
+use RM2_NWA-SZ.HCob05T_avg_2000-12-15.nc
+fill/levels=(0,20,.25)/L=1/K=40 temp, lon_rho,lat_rho
+use RM_NWA-SZ.HCob05T_avg_2000-12-15.nc
+fill/levels=(0,20,.25)/L=1/K=40 temp, lon_rho,lat_rho
+-> IDENTICAL saved as Cobalt_RM2_20001215.png and Cobalt_RM_20001215.png; respectively.
+
+
+
+
+
 
 

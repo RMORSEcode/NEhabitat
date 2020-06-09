@@ -1,0 +1,548 @@
+---
+title: "HGAM notes"
+output:
+  html_document:
+    df_print: paged
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
+
+```{r}
+library(mgcv)
+library(gratia)
+library(car)
+library(MASS)
+library(stringr)
+library(tidyr)
+library(lubridate)
+library(raster)
+library(ROCR)
+library(dplyr)
+
+load('/home/ryan/Git/NEhabitat/Final_merged_fish_corABN_Zoo_Ich.Rda') # Biomass
+load('/home/ryan/Git/NEhabitat/Final_merged_fish_corABN_Zoo_Ich.Rda') # Abundance
+### update colnames for ichythoplankton ### Note: urospp assigned to 76 (WHK) but is not distinguishable from 77 (RHK)
+# colnames(FData.bio[50:61])
+# [1] "urospp_100m3" "gadmor_100m3" "melaeg_100m3" "polvir_100m3" "merbil_100m3" "sebspp_100m3"
+# [7] "anaspp_100m3" "parden_100m3" "pseame_100m3" "glycyn_100m3" "scoaqu_100m3" "lopame_100m3"
+colnames(FData.bio)[50:61]=c("76_ich", "73_ich", "74_ich", "75_ich", "72_ich", "155_ich", "192_ich", "103_ich","106_ich","107_ich", "108_ich", "197_ich")
+colnames(FData.abn)[50:61]=c("76_ich", "73_ich", "74_ich", "75_ich", "72_ich", "155_ich", "192_ich", "103_ich","106_ich","107_ich", "108_ich", "197_ich")
+```
+
+Add variables from rasters to both biomass and numbers database
+```{r}
+### extract from rasters at fish points
+locs=FData.abn[,c('LON', 'LAT')]
+coordinates(locs) <- ~LON+LAT
+mypoints = SpatialPoints(locs,proj4string = CRS("+init=epsg:4326"))
+# myproj = CRS(masked.raster)
+# points.proj = spTransform(mypoints, myproj)
+load('/home/ryan/Git/NEhabitat/rast_phi_fraction.rdata') 
+## convert phi (with negative vals) size to mm
+phi=masked.raster
+phi2mm=calc(phi, fun=function(x){2^-x})
+plot(phi2mm)
+FData.abn$grnszmm = extract(phi2mm, mypoints)
+FData.bio$grnszmm = extract(phi2mm, mypoints)
+load('/home/ryan/Git/NEhabitat/rast_mud_fraction.rdata')
+FData.abn$mud_pct = extract(masked.raster, mypoints)
+FData.bio$mud_pct = extract(masked.raster, mypoints)
+load('/home/ryan/Git/NEhabitat/rast_sand_fraction.rdata')
+FData.abn$sand_pct = extract(masked.raster, mypoints)
+FData.bio$sand_pct = extract(masked.raster, mypoints)
+# load('/home/ryan/Git/NEhabitat/rast_gdepth.rdata')
+# FData.abn$gdepth = extract(masked.raster, mypoints) # odd scale neg vals start at 1000m
+load('/home/ryan/Git/NEhabitat/rast_rugosity.rdata')
+rug=masked.raster
+mmin=cellStats(rug, 'min')
+mmax=cellStats(rug, 'max')
+rugscl=calc(rug, fun=function(x){(x-mmin)/(mmax-mmin)}) # rescale from -4:2 -> 0:1
+# FData.abn$rug = extract(masked.raster, mypoints)
+# FData.bio$rug = extract(masked.raster, mypoints)
+plot(masked.raster, xlim=c(-80,-60), ylim=c(36,48))
+plot(rugscl)
+FData.abn$rug = extract(rugscl, mypoints)
+FData.bio$rug = extract(rugscl, mypoints)
+```
+
+Select season for GAMs
+```{r}
+#slctseason="SPRING" #"FALL"
+slctseason="SPRING"
+
+```
+
+Subset the formatted data for a single species to use in models (need to update manually as these are column names)
+```{r}
+### select data
+fish=FData.abn %>% dplyr::select(YEAR, SEASON, LAT:BOTTEMP, `73_Adt`, `73_Juv`, `73_ich`, calfin_100m3:rug)
+fish$MONTH=month(FData.abn$EST_TOWDATE)
+fish=fish[complete.cases(fish),]
+fish$`73_ich`=ceiling(fish$`73_ich`) # make integer from numbers per 100 m/3
+
+### Need to make data frame wide -> long with just species of interest...
+# e.g.: df %>% pivot_longer(c(x, y, z), names_to = "key", values_to = "value")
+# pivot_longer(data, cols, names_to = "name", names_prefix = NULL,
+#              names_sep = NULL, names_pattern = NULL, names_ptypes = list(),
+#              names_repair = "check_unique", values_to = "value",
+#              values_drop_na = FALSE, values_ptypes = list())
+fish2=fish %>% pivot_longer(c(`73_Adt`, `73_Juv`, `73_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Number")
+fish2$Stg=factor(fish2$Stg, ordered=F)
+table(fish2$MONTH)
+
+## log transform plankton
+fish3=fish2
+logd=fish3[,8:17]
+logd=log10(logd+1)
+fish3[,8:17]=logd
+```
+
+Now set up traing and testing data; split data sets
+1) Train model w/ data through 1999, predict 2000-2018
+2) Train 1977-2011, predict 2012-2018
+3) Train 1977-2012, predict 2013-2018
+4) Train 1977-2014, predict 2015-2018
+
+Select Season and Fish species
+```{r}
+# Training/testing year split
+dat.split.year<- 1999
+```
+
+```{r}
+## select season and split training/testing; Change to Presence-Absence for fish Numbers
+fish5=fish3[which(fish3$SEASON==slctseason),]
+fish4<- fish5 %>%
+  filter(., YEAR <= dat.split.year) %>%
+  mutate(., "pa" = ifelse(Number > 0, 1, 0))
+dat.test<- fish5 %>%
+  filter(., YEAR > dat.split.year) %>%
+  mutate(., "pa" = ifelse(Number > 0, 1, 0),
+         "pred.id" = paste("ID.", seq(from = 1, to = nrow(.), by = 1), sep = ""))
+
+```
+Do likewise for biomass data, to be combined with PA later for final model
+
+```{r}
+### select data
+fish.b=FData.bio %>% dplyr::select(YEAR, SEASON, LAT:BOTTEMP, `73_Adt`, `73_Juv`, `73_ich`, calfin_100m3:rug)
+fish.b$MONTH=month(FData.bio$EST_TOWDATE)
+fish.b=fish.b[complete.cases(fish.b),]
+```
+
+For positive logbiomass model need to update the ichthyoplankton from (numbers per 100 m^3) to biomass
+From: Penglase et al. (2013) DOI: 10.7717/peerj.20
+Cod avg of experiments w/ good and poor diet: mean dry weight of fish 5-30days = 0.25 mg DW
+mg->kg = x* 1e-6
+https://www.int-res.com/articles/meps/32/m032p229.pdf -> 1 mg wet weight avg
+```{r}
+# transform numbers per 100_m3 to KG using above conversions
+fish.b$`73_ich`=fish.b$`73_ich`*1e-6
+#fish.b$`73_ich`=ceiling(fish.b$`73_ich`*1e-6)
+fish2.b=fish.b %>% pivot_longer(c(`73_Adt`, `73_Juv`, `73_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Biomass")
+fish2.b$Stg=factor(fish2.b$Stg, ordered=F)
+
+## log transform plankton
+fish3.b=fish2.b
+logd.b=fish3.b[,8:17]
+logd.b=log10(logd.b+1)
+fish3.b[,8:17]=logd.b
+
+# Split into testing and training data
+fish5.b=fish3.b[which(fish3.b$SEASON==slctseason),]
+fish4.b<- fish5.b %>%
+  filter(., YEAR <= dat.split.year) %>%
+  filter(., Biomass >0) %>%
+  mutate(., "logbio"=log10(Biomass+1))
+dat.b.test<- fish5.b %>%
+  filter(., YEAR > dat.split.year) %>%
+  filter(., Biomass >0) %>%
+  mutate(., "logbio"=log10(Biomass+1)) %>%
+  mutate(.,"pred.id" = paste("ID.", seq(from = 1, to = nrow(.), by = 1), sep = ""))
+
+```
+
+
+checking variables 
+
+```{r}
+### check histograms of vars
+test=fish4[which(fish4$Number>0),]
+hist(test$Number[which(test$Stg=='ich')])
+hist(test$Number[which(test$Stg=='Juv')])
+hist(test$Number[which(test$Stg=='Adt')])
+
+levs=seq(from=min(fish4$BOTTEMP), to=max(fish4$BOTTEMP), by=0.2)
+barplot(table(factor(fish4$BOTTEMP, levels=levs)))
+
+levs=seq(from=min(fish4$DEPTH), to=max(fish4$DEPTH), by=1)
+barplot(table(factor(fish4$DEPTH, levels=levs)))
+
+# check on zooplankton and... remove outliers(?)
+hist(fish4$pseudo_100m3)
+levs=sort(unique(fish4$pseudo_100m3))
+levs2=levs[2:length(levs)]
+barplot(table(factor(fish4$pseudo_100m3, levels=levs2)))
+summary(fish4$pseudo_100m3)
+#outliers...
+test=rev(sort(fish4$pseudo_100m3))
+barplot(test[1:1000])
+which(test<500000)[1]
+
+hist(fish4$grnszmm)
+hist(fish4$rug)
+```
+
+Now use Pederson et al (2019) as a model to format models:
+
+1. A single common smoother for all observations; We will refer to this as model *G*, as it only has a Global smoother.
+2. A global smoother plus group-level smoothers that have the same wiggliness. We will refer to this as model *GS* (for Global smoother with individual effects that have a Shared penalty)
+3. A global smoother plus group-level smoothers with differing wiggliness. We will refer to this as model *GI* (for Global smoother with individual effects that have Individual penalties)
+4. Group-specific smoothers without a global smoother, but with all smoothers having the same wiggliness. We will refer to this as model *S*.
+5. Group-specific smoothers with different wiggliness. We will refer to this as model *I*. 
+
+1) Model G: single global smoother for all stages
+model fish on CO2 format
+
+```{r}
+# CO2_modG <- gam(log(uptake) ~s(log(conc), k=5, bs="tp") + s(Plant_uo, k=12, bs="re"), data=CO2, method="REML", family="gaussian")
+```      
+Try binomial distribution and check model
+```{r}
+fish_modG = gam(pa ~s(BOTTEMP, k=20, bs="tp") +s(SURFTEMP, k=20, bs='tp') + s(DEPTH, k=10, bs="tp") + s(Stg, k=4, bs='re') + s(pseudo_100m3, k=20, bs="cr") + s(grnszmm, k=10, bs='tp') + s(rug, k=20, bs='tp'), data=fish4, method = "REML", family="binomial")
+```
+
+```{r}
+par(mfrow=c(2,2))
+gam.check(fish_modG)
+plot(fish_modG, shade=T, rug=T, scale=0)
+#print(paste0("AIC value is: ", AIC(fish_modG)))
+```
+
+Pres/Abs -> binomial residuals still not quite right, try tweedie dist
+
+```{r}
+fish_modG2 = gam(pa ~s(BOTTEMP, k=20, bs="tp") +s(SURFTEMP, k=20, bs='tp') + s(DEPTH, k=10, bs="tp") + s(Stg, k=4, bs='re') + s(pseudo_100m3, k=20, bs="cr") + s(grnszmm, k=10, bs='tp') + s(rug, k=20, bs='tp'), data=fish4, method = "REML", family="tw")
+par(mfrow=c(2,2))
+gam.check(fish_modG2)
+plot(fish_modG2, scale=0, rug=T, shade=T)
+#print(paste0("AIC value is: ", AIC(fish_modG2)))
+```
+
+Try quasi-poisson distrubution
+```{r}
+fish_modG3 = gam(pa ~s(BOTTEMP, k=20, bs="tp") +s(SURFTEMP, k=20, bs='tp') + s(DEPTH, k=10, bs="tp") + s(Stg, k=4, bs='re') + s(pseudo_100m3, k=20, bs="cr") + s(grnszmm, k=10, bs='tp') + s(rug, k=20, bs='tp'), data=fish4, method = "REML", family="quasipoisson")
+
+gam.check(fish_modG3)
+summary(fish_modG3)
+plot(fish_modG3, scale=0, rug=T, shade=T)
+```
+# Compare AIC 
+```{r}
+logLik(fish_modG, REML=L)
+#[1] 'log Lik.' -8967.005 (df=47.6554)
+logLik(fish_modG2, REML=L)
+#[1] 'log Lik.' -13125 (df=43.56689)
+logLik(fish_modG3, REML=L)
+#[1] 'log Lik.' NA (df=51.14369)
+```
+
+```{r}
+fish_modG$aic
+"[1] 18017.5"
+fish_modG2$aic
+"[1] 26325.86"
+fish_modG3$aic
+"[1] NA"
+```
+
+Add latitude and longitude as interaction terms to 'Fish_modG'
+```{r}
+fish_modG4 = gam(pa ~ s(LON, LAT) + s(BOTTEMP, k=20, bs="tp") +s(SURFTEMP, k=20, bs='tp') + s(DEPTH, k=10, bs="tp") + s(Stg, k=4, bs='re') + s(pseudo_100m3, k=20, bs="cr") + s(grnszmm, k=10, bs='tp') + s(rug, k=20, bs='tp'), data=fish4, method = "REML", family="binomial")
+
+gam.check(fish_modG4)
+fish_modG4$aic
+draw(fish_modG4)
+# [1] 16241.43
+pred.test=predict(fish_modG4,dat.test,type='response')                  # make prediction for test set
+preds.obs=data.frame(pred.test=pred.test,dat.test$pa)           # data frame of preds and obs   
+colnames(preds.obs)=c("predicted","observed")
+plotROC(preds.obs$observed,preds.obs$predicted, colorize = TRUE)
+```
+
+Now run predicitons and get AUC from ROC
+```{r}
+pred.test=predict(fish_modG4,dat.test,type='response')                  # make prediction for test set
+preds.obs=data.frame(pred.test=pred.test,dat.test$pa)           # data frame of preds and obs   
+colnames(preds.obs)=c("predicted","observed")
+
+saveAUC <- function(truth, predicted, ...){
+  pred <- prediction(as.vector(abs(predicted)), as.vector(truth))    
+  roc <- performance(pred,"tpr","fpr")
+  auc <- performance(pred,"auc")
+  #plot(roc, ...)
+  #abline(a=0, b= 1)
+  return(auc@y.values)
+}
+
+plotROC <- function(truth, predicted, ...){
+  pred <- prediction(as.vector(abs(predicted)), as.vector(truth))    
+  roc <- performance(pred,"tpr","fpr")
+  auc <- performance(pred,"auc")
+  plot(roc, ...)
+  abline(a=0, b= 1)
+  print(auc@y.values)
+}
+```
+
+Get AUC and plot ROC
+```{r}
+# plotROC(preds.obs$dat.test,preds.obs$pred.test, colorize = TRUE)
+plotROC(preds.obs$observed,preds.obs$predicted, colorize = TRUE)
+
+```
+
+TRY above model using soap film smoother on Lat an Lon
+m2 <- gam(-depth ~ s(os_x, os_y, bs = "so", xt = list(bnd = bound)),data = depth, method = "REML", knots = knots)
+```{r}
+# Create soap film boundary for fitting GAMs
+library("rgdal")
+gdepth=raster('/home/ryan/Desktop/nes_bath_data.nc', band=1)
+gdepth[gdepth>0]=NA
+gdepth[gdepth< -500]=NA
+outline <- read.csv("/home/ryan/Desktop/Final_NES_shelf_shape.csv")
+outl.crd=sp::coordinates(cbind(outline$longitude, outline$latitude))
+
+### change to UTM
+# cord.dec = SpatialPoints(cbind(outline$longitude, outline$latitude), proj4string=CRS("+proj=longlat"))
+# cord.UTM <- spTransform(cord.dec, CRS("+proj=utm +zone=19 +datum=WGS84"))
+xym <- cbind(outline$longitude, outline$latitude)
+p = sp::Polygon(xym)
+ps = sp::Polygons(list(p),1)
+sps = sp::SpatialPolygons(list(ps))
+# plot(sps)
+proj4string(sps) = CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
+sps2=spTransform(sps, CRS("+proj=utm +zone=19 +datum=WGS84"))
+
+## coordinates of boundary
+sps2@polygons[[1]]@Polygons[[1]]@coords
+
+### create boundary and knots within
+bound <- list(list(x = sps2@polygons[[1]]@Polygons[[1]]@coords[,1], y = sps2@polygons[[1]]@Polygons[[1]]@coords[,2], f = rep(0, nrow(outl.crd))))
+# bound <- list(list(x = outl.crd[,1], y = outl.crd[,2], f = rep(0, nrow(outl.crd))))
+
+N <- 15
+gx <- seq(min(sps2@polygons[[1]]@Polygons[[1]]@coords[,1]), max(sps2@polygons[[1]]@Polygons[[1]]@coords[,1]), len = N)
+gy <- seq(min(sps2@polygons[[1]]@Polygons[[1]]@coords[,2]), max(sps2@polygons[[1]]@Polygons[[1]]@coords[,2]), len = N)
+gp <- expand.grid(gx, gy)
+gp=gp[-132,] # remove bad point?
+names(gp) <- c("x","y")
+knots <- gp[with(gp, inSide(bound, x, y)), ]
+names(knots) <- c("Eastings", "Northings")
+names(bound[[1]]) <- c("Eastings", "Northings", "f")
+# plot(bound[[1]]$Eastings, bound[[1]]$Northings, type='l', asp=1); points(knots, add=T, col='red')
+
+
+## subset data to outline
+# fish4pts=sp::coordinates(cbind(fish4$LON, fish4$LAT))
+fish4pts=SpatialPoints(cbind(fish4$LON, fish4$LAT),proj4string=CRS("+proj=longlat"))
+fish4pts=spTransform(fish4pts, CRS("+proj=utm +zone=19 +datum=WGS84"))
+# fish4.in <- fish4pts[with(fish4pts, inSide(cord.UTM, x, y)), ]
+fish4.in=sp::over(fish4pts, sps2)
+# fish4.in=fish4pts[cord.UTM]
+fish4.sub=fish4
+fish4.sub$Northings=fish4pts@coords[,2]
+fish4.sub$Eastings=fish4pts@coords[,1]
+fish4.sub=fish4.sub[complete.cases(fish4.in),]
+
+
+#check that smoother makes sense
+source("/home/ryan/Git/soap_checker/soap_check.R")
+soap_check(bound)
+# check for bad boundary knots
+source("/home/ryan/Git/soap_checker/autocrunch.R")
+crunch_ind <- autocruncher(bound, knots, k=30, xname="x", yname="y")
+```
+Now model with soap film smoother
+
+```{r}
+# fish_modG4b = gam(pa ~ s(Eastings, Northings, bs = "so", xt = list(bnd =bound)), data=fish4.sub, method = "REML", knots=knots, family="binomial")
+## Error in crunch.knots(ret$G, knots, x0, y0, dx, dy) : knot 15 is on or outside boundary
+## > knots[15,] 22, 28
+##          LON     LAT
+## 124 84391.21 4481040
+knots=knots[-15,]
+knots=knots[-22,]
+knots=knots[-28,]
+# knots=knots[-26,]
+
+fish_modG4b = gam(pa ~ s(Eastings, Northings, bs = "so", xt = list(bnd = bound)) + s(BOTTEMP, k=20, bs="tp") +s(SURFTEMP, k=20, bs='tp') + s(DEPTH, k=10, bs="tp") + s(Stg, k=4, bs='fs') + s(pseudo_100m3, k=20, bs="cr") + s(grnszmm, k=10, bs='tp') + s(rug, k=20, bs='tp'), data=fish4.sub, method = "REML", knots=knots, family="binomial")
+
+fish_modG4b$aic
+summary(fish_modG4b)$dev.expl
+dat.test.pts=SpatialPoints(cbind(dat.test$LON, dat.test$LAT),proj4string=CRS("+proj=longlat"))
+dat.test.pts=spTransform(dat.test.pts, CRS("+proj=utm +zone=19 +datum=WGS84"))
+dat.test$Northings=dat.test.pts@coords[,2]
+dat.test$Eastings=dat.test.pts@coords[,1]
+pred.test=predict(fish_modG4b,dat.test,type='response')                  # make prediction for test set
+preds.obs=data.frame(pred.test=pred.test,dat.test$pa)           # data frame of preds and obs   
+colnames(preds.obs)=c("predicted","observed")
+plotROC(preds.obs$observed,preds.obs$predicted, colorize = TRUE) # Get AUC
+
+# change bound to use LAT LON, rerun
+bound <- list(list(x = outl.crd[,1], y = outl.crd[,2], f = rep(0, nrow(outl.crd))))
+N <- 15
+gx <- seq(min(outl.crd[,1]), max(outl.crd[,1]), len = N)
+gy <- seq(min(outl.crd[,2]), max(outl.crd[,2]), len = N)
+gp <- expand.grid(gx, gy)
+names(gp) <- c("x","y")
+knots <- gp[with(gp, inSide(bound, x, y)), ]
+names(knots) <- c("LON", "LAT")
+names(bound[[1]]) <- c("LON", "LAT", "f")
+xym <- cbind(outline$longitude, outline$latitude)
+p = sp::Polygon(xym)
+ps = sp::Polygons(list(p),1)
+sps = sp::SpatialPolygons(list(ps))
+proj4string(sps) = CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
+fish4pts=SpatialPoints(cbind(fish4$LON, fish4$LAT),proj4string=CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"))
+fish4.in=sp::over(fish4pts, sps)
+fish4.sub=fish4
+fish4.sub=fish4.sub[complete.cases(fish4.in),]
+
+## remove knots on the boundary
+knots=knots[-22,]
+knots=knots[-20,]
+
+fish_modG4bll = gam(pa ~ s(LON, LAT, bs = "so", xt = list(bnd = bound)) + s(BOTTEMP, k=20, bs="tp") +s(SURFTEMP, k=20, bs='tp') + s(DEPTH, k=10, bs="tp") + s(Stg, k=4, bs='fs') + s(pseudo_100m3, k=20, bs="cr") + s(grnszmm, k=10, bs='tp') + s(rug, k=20, bs='tp'), data=fish4.sub, method = "REML", knots=knots, family="binomial")
+
+fish_modG4bll$aic
+summary(fish_modG4bll)$dev.expl
+pred.test=predict(fish_modG4bll,dat.test,type='response')                  # make prediction for test set
+preds.obs=data.frame(pred.test=pred.test,dat.test$pa)           # data frame of preds and obs   
+colnames(preds.obs)=c("predicted","observed")
+plotROC(preds.obs$observed,preds.obs$predicted, colorize = TRUE)
+
+draw(fish_modG4b)
+```
+
+
+Try reducing model with Gam.select
+```{r}
+# fish_modG5 = gam(pa ~ s(LAT, LON) + s(BOTTEMP, k=20, bs="tp") +s(SURFTEMP, k=20, bs='tp') + s(DEPTH, k=10, bs="tp") + s(Stg, k=4, bs='re') + s(pseudo_100m3, k=20, bs="cr") + s(grnszmm, k=10, bs='tp') + s(rug, k=20, bs='tp'), data=fish4, method = "REML", family="binomial", select=T)
+
+# fish_modG5
+# Note, all variables retained -> keep model as is.
+
+# remove grain size due to messed up area in SCS with high boulder percent
+
+# fish_modG5 = gam(pa ~ s(LON, LAT) + s(BOTTEMP, k=20, bs="tp") +s(SURFTEMP, k=20, bs='tp') + s(DEPTH, k=10, bs="tp") + s(Stg, k=4, bs='re') + s(pseudo_100m3, k=20, bs="cr") +  s(rug, k=20, bs='tp'), data=fish4, method = "REML", family="binomial") #, select=T)
+
+# gam.check(fish_modG5)
+# AIC(fish_modG5, fish_modG4) # keep grnszmm in model for now
+# summary(fish_modG5)
+```
+
+Now model log biomass (positive only), then combine PA and biomass models for final version
+```{r}
+# Log positive biomass model, only observations that were present are including when fitting this second stage of the model.
+fish_modG4_bio = gam(logbio ~ s(LON, LAT) + s(BOTTEMP, k=20, bs="tp") +s(SURFTEMP, k=20, bs='tp') + s(DEPTH, k=20, bs="tp") + s(Stg, k=4, bs='re') + s(pseudo_100m3, k=20, bs="cr") + s(grnszmm, k=10, bs='tp') + s(rug, k=20, bs='tp'), data=fish4.b, method = "REML", family="gaussian")
+
+
+
+fish_modG4b_bio = gam(logbio ~ s(LON, LAT) + s(BOTTEMP, k=20, bs="tp") +s(SURFTEMP, k=20, bs='tp') + s(DEPTH, k=20, bs="tp") + s(Stg, k=4, bs='re') + s(pseudo_100m3, k=20, bs="cr") + s(grnszmm, k=10, bs='tp') + s(rug, k=20, bs='tp'), data=fish4.b, method = "REML", family="gaussian")
+
+gam.check(fish_modG4_bio)
+summary(fish_modG4_bio)
+draw(fish_modG4_bio)
+
+fish_modG4_bio$aic
+summary(fish_modG4_bio)$dev.expl
+
+```
+
+
+Now predict biomass (much reduced field 4799 obs from 19146) 
+Note that ROCR currently supports only evaluation of binary classification tasks.
+```{r}
+pred.test.bio=predict(fish_modG4_bio,dat.b.test,type='response')          # make prediction for test set
+preds.bio.test=data.frame(pred.gam=(10^pred.test.bio)-1,true.bio=(10^dat.b.test$logbio)-1)
+#plotROC(preds.bio.test$true.bio,preds.bio.test$pred.gam, colorize = TRUE)
+```
+
+Combine the predictions from the two stages to get overall predicted biomass
+```{r}
+pred.df.pa<- dat.test %>%
+  dplyr::select(pred.id, LAT, LON, YEAR, MONTH, Stg, Number, pa)
+pred.df.pa$predicted.prob.presence<- pred.test
+
+pred.df.pa<- dat.test %>%
+  dplyr::select(pred.id, LAT, LON, YEAR, MONTH, Stg, Number, pa)
+pred.df.pa$predicted.prob.presence<- pred.test
+
+# Combine the predictions from the two stages to get overall predicted biomass
+pred.df.pa<- dat.test %>%
+  select(pred.id, haulid, lat, lon, year, month, wtcpue, logwtcpue, presenceabsence, wtcpue, logwtcpue)
+pred.df.pa$predicted.prob.presence<- pa.pred
+
+pred.df.logbio<- dat.pred.bio %>%
+  select(pred.id, haulid, lat, lon, year, month)
+pred.df.logbio$predicted.logbio<- logbio.pred
+
+pred.df<- pred.df.pa %>%
+  left_join(., pred.df.logbio) %>%
+  mutate(., predicted.bio = predicted.prob.presence * exp(predicted.logbio))
+
+```
+
+GS model: Y~ s(conc) +s(conc, plant)
+```{r}
+fish_modGS4 = gam(pa ~ s(LON, LAT) + s(BOTTEMP, Stg, k=20, bs="fs") +s(SURFTEMP, Stg, k=20, bs='fs') + s(DEPTH, Stg, k=10, bs="fs") + s(pseudo_100m3, Stg, k=20, bs="fs") + s(grnszmm, Stg, k=10, bs='fs') + s(rug, Stg, k=20, bs='fs'), data=fish4, method = "REML", family="binomial") #, select=T)
+
+fish_modGS4b = gam(pa ~ te(LON, LAT, Stg, bs = c("tp", "tp", "fs")) + s(BOTTEMP, Stg, k = 10, bs = "fs") + s(SURFTEMP, Stg, k = 10, bs = "fs") + s(DEPTH, Stg, k = 10, bs = "fs") + s(pseudo_100m3, Stg, k = 10, bs = "fs") + s(grnszmm, Stg, k = 10, bs = "fs") + s(rug, Stg, k = 10, bs = "fs")data=fish4, method = "REML", family="binomial") 
+  
+fish_modGS4c =  gam(pa ~ ti(LON, LAT, Stg, bs=c('fs')) + s(BOTTEMP, Stg, k=10, bs="fs") +s(SURFTEMP, Stg, k=10, bs='fs') + s(DEPTH, Stg, k=10, bs="fs") + s(pseudo_100m3, Stg, k=10, bs="fs") + s(grnszmm, Stg, k=10, bs='fs') + s(rug, Stg, k=10, bs='fs'), data=fish4, method = "REML", family="binomial")
+
+fish_modGS4d =  gam(pa ~ s(LON, LAT) + s(BOTTEMP, Stg, k=10, bs="fs") +s(SURFTEMP, Stg, k=10, bs='fs') + s(DEPTH, Stg, k=10, bs="fs") + s(pseudo_100m3, Stg, k=10, bs="fs") + s(grnszmm, Stg, k=10, bs='fs') + s(rug, Stg, k=10, bs='fs'), data=fish4, method = "REML", family="binomial")
+fish_modGS4d$aic
+summary(fish_modGS4d)$dev.expl
+pred.test=predict(fish_modGS4d,dat.test,type='response')                  # make prediction for test set
+preds.obs=data.frame(pred.test=pred.test,dat.test$pa)           # data frame of preds and obs   
+colnames(preds.obs)=c("predicted","observed")
+plotROC(preds.obs$observed,preds.obs$predicted, colorize = TRUE)
+
+gam.check(fish_modGS4d)
+draw(fish_modGS4)
+draw(fish_modGS4b)
+draw(fish_modGS4c)
+draw(fish_modGS4d)
+AIC(fish_modG4, fish_modGS4)
+AIC(fish_modGS4, fish_modGS4d)
+```
+
+```{r}
+fish_modGI4 =  gam(pa ~ s(LON, LAT) + s(LON, LAT, by=Stg) + s(BOTTEMP, k=10, bs="fs") + s(BOTTEMP, k=10, by=Stg, bs="fs") +s(SURFTEMP, Stg, k=10, bs='fs') + s(SURFTEMP, Stg, k=10, by=Stg, bs='fs') + s(DEPTH, Stg, k=10, bs="fs") + s(DEPTH, Stg, k=10, by=Stg, bs="fs") + s(pseudo_100m3, Stg, k=10, bs="fs") + s(pseudo_100m3, Stg, k=10, by=Stg, bs="fs")+ s(grnszmm, Stg, k=10, bs='fs') + s(grnszmm, Stg, k=10, by=Stg, bs='fs') + s(rug, Stg, k=10, bs='fs') +s(rug, Stg, k=10, by=Stg, bs='fs') + s(Stg, k=10, bs='fs'), data=fish4, method = "REML", family="binomial")
+
+draw(fish_modGI4)
+summary(fish_modGI4)
+
+```
+
+Now model to grid
+```{r}
+
+
+```
+
+make the plot ussing ggplot2 
+```{r}
+
+```

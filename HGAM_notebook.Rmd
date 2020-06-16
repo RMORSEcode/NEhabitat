@@ -399,15 +399,15 @@ colnames(preds.obs)=c("predicted","observed")
 plotROC(preds.obs$observed,preds.obs$predicted, colorize = TRUE) # Get AUC
 
 # change bound to use LAT LON, rerun
-bound <- list(list(x = outl.crd[,1], y = outl.crd[,2], f = rep(0, nrow(outl.crd))))
-N <- 15
+boundll <- list(list(x = outl.crd[,1], y = outl.crd[,2], f = rep(0, nrow(outl.crd))))
+N <- 35
 gx <- seq(min(outl.crd[,1]), max(outl.crd[,1]), len = N)
 gy <- seq(min(outl.crd[,2]), max(outl.crd[,2]), len = N)
 gp <- expand.grid(gx, gy)
 names(gp) <- c("x","y")
-knots <- gp[with(gp, inSide(bound, x, y)), ]
-names(knots) <- c("LON", "LAT")
-names(bound[[1]]) <- c("LON", "LAT", "f")
+knotsll <- gp[with(gp, inSide(boundll, x, y)), ]
+names(knotsll) <- c("LON", "LAT")
+names(boundll[[1]]) <- c("LON", "LAT", "f")
 xym <- cbind(outline$longitude, outline$latitude)
 p = sp::Polygon(xym)
 ps = sp::Polygons(list(p),1)
@@ -417,12 +417,27 @@ fish4pts=SpatialPoints(cbind(fish4$LON, fish4$LAT),proj4string=CRS("+proj=longla
 fish4.in=sp::over(fish4pts, sps)
 fish4.sub=fish4
 fish4.sub=fish4.sub[complete.cases(fish4.in),]
+plot(boundll[[1]]$LON, boundll[[1]]$LAT, type='l', asp=1); points(knotsll, add=T, col='red')
 
 ## remove knots on the boundary
-knots=knots[-22,]
-knots=knots[-20,]
+# for N=15
+knotsll=knotsll[-22,]
+knotsll=knotsll[-20,]
 
-fish_modG4bll = gam(pa ~ s(LON, LAT, bs = "so", xt = list(bnd = bound)) + s(BOTTEMP, k=20, bs="tp") +s(SURFTEMP, k=20, bs='tp') + s(DEPTH, k=10, bs="tp") + s(Stg, k=4, bs='fs') + s(pseudo_100m3, k=20, bs="cr") + s(grnszmm, k=10, bs='tp') + s(rug, k=20, bs='tp'), data=fish4.sub, method = "REML", knots=knots, family="binomial")
+# for N=35
+knotsll=knotsll[-49,]
+knotsll=knotsll[-77,]
+knotsll=knotsll[-92,]
+knotsll=knotsll[-110,]
+knotsll=knotsll[-131,]
+knotsll=knotsll[-166,]
+knotsll=knotsll[-167,]
+knotsll=knotsll[-179,]
+knotsll=knotsll[-179,]
+knotsll=knotsll[-286,]
+knotsll=knotsll[-297,]
+
+fish_modG4bll = gam(pa ~ s(LON, LAT, bs = "so", xt = list(bnd = boundll)) + s(BOTTEMP, k=20, bs="tp") +s(SURFTEMP, k=20, bs='tp') + s(DEPTH, k=10, bs="tp") + s(Stg, k=4, bs='fs') + s(pseudo_100m3, k=20, bs="cr") + s(grnszmm, k=10, bs='tp') + s(rug, k=20, bs='tp'), data=fish4.sub, method = "REML", knots=knotsll, family="binomial")
 
 fish_modG4bll$aic
 summary(fish_modG4bll)$dev.expl
@@ -503,7 +518,7 @@ pred.df<- pred.df.pa %>%
 
 ```
 
-GS model: Y~ s(conc) +s(conc, plant)
+GS model: Y~ s(conc, bs='tp') +s(conc, plant, bs='fs')
 ```{r}
 fish_modGS4 = gam(pa ~ s(LON, LAT) + s(BOTTEMP, Stg, k=20, bs="fs") +s(SURFTEMP, Stg, k=20, bs='fs') + s(DEPTH, Stg, k=10, bs="fs") + s(pseudo_100m3, Stg, k=20, bs="fs") + s(grnszmm, Stg, k=10, bs='fs') + s(rug, Stg, k=20, bs='fs'), data=fish4, method = "REML", family="binomial") #, select=T)
 
@@ -512,22 +527,31 @@ fish_modGS4b = gam(pa ~ te(LON, LAT, Stg, bs = c("tp", "tp", "fs")) + s(BOTTEMP,
 fish_modGS4c =  gam(pa ~ ti(LON, LAT, Stg, bs=c('fs')) + s(BOTTEMP, Stg, k=10, bs="fs") +s(SURFTEMP, Stg, k=10, bs='fs') + s(DEPTH, Stg, k=10, bs="fs") + s(pseudo_100m3, Stg, k=10, bs="fs") + s(grnszmm, Stg, k=10, bs='fs') + s(rug, Stg, k=10, bs='fs'), data=fish4, method = "REML", family="binomial")
 
 fish_modGS4d =  gam(pa ~ s(LON, LAT) + s(BOTTEMP, Stg, k=10, bs="fs") +s(SURFTEMP, Stg, k=10, bs='fs') + s(DEPTH, Stg, k=10, bs="fs") + s(pseudo_100m3, Stg, k=10, bs="fs") + s(grnszmm, Stg, k=10, bs='fs') + s(rug, Stg, k=10, bs='fs'), data=fish4, method = "REML", family="binomial")
-fish_modGS4d$aic
+
+# add fs for stg to all vars
+fish_modGS4e =  gam(pa ~ te(LON, LAT, bs='tp', m=2) +t2(LON, LAT, Stg, bs=c('tp', 'tp', 'fs'), m=2, full=T) + s(BOTTEMP, bs='tp') + s(BOTTEMP, Stg, k=10, bs="fs") + s(SURFTEMP, bs='tp') + s(SURFTEMP, Stg, k=10, bs='fs') + s(DEPTH, bs='tp') + s(DEPTH, Stg, k=10, bs="fs") + s(pseudo_100m3, bs='tp') + s(pseudo_100m3, Stg, k=10, bs="fs") + s(grnszmm, bs='tp') + s(grnszmm, Stg, k=10, bs='fs') + s(rug, bs='tp') + s(rug, Stg, k=10, bs='fs'), data=fish4, method = "REML", family="binomial")
+
+fish_modGS4e$aic
 summary(fish_modGS4d)$dev.expl
 pred.test=predict(fish_modGS4d,dat.test,type='response')                  # make prediction for test set
 preds.obs=data.frame(pred.test=pred.test,dat.test$pa)           # data frame of preds and obs   
 colnames(preds.obs)=c("predicted","observed")
 plotROC(preds.obs$observed,preds.obs$predicted, colorize = TRUE)
 
+#check on order -> R,G,B = adt, ich, juv (respectively)
+foo=evaluate_smooth(fish_modGS4e,"s(pseudo_100m3,Stg)")
+ggplot(data=foo, aes(y=est, x=pseudo_100m3)) + geom_line(aes(color=Stg))
+
 gam.check(fish_modGS4d)
 draw(fish_modGS4)
 draw(fish_modGS4b)
 draw(fish_modGS4c)
-draw(fish_modGS4d)
+draw(fish_modGS4e)
 AIC(fish_modG4, fish_modGS4)
 AIC(fish_modGS4, fish_modGS4d)
 ```
-
+GI model
+y ~ s(x, bs='tp') + s(x, by=fac, m=1, bs='tp') + s(fac, bs='re')
 ```{r}
 fish_modGI4 =  gam(pa ~ s(LON, LAT) + s(LON, LAT, by=Stg) + s(BOTTEMP, k=10, bs="fs") + s(BOTTEMP, k=10, by=Stg, bs="fs") +s(SURFTEMP, Stg, k=10, bs='fs') + s(SURFTEMP, Stg, k=10, by=Stg, bs='fs') + s(DEPTH, Stg, k=10, bs="fs") + s(DEPTH, Stg, k=10, by=Stg, bs="fs") + s(pseudo_100m3, Stg, k=10, bs="fs") + s(pseudo_100m3, Stg, k=10, by=Stg, bs="fs")+ s(grnszmm, Stg, k=10, bs='fs') + s(grnszmm, Stg, k=10, by=Stg, bs='fs') + s(rug, Stg, k=10, bs='fs') +s(rug, Stg, k=10, by=Stg, bs='fs') + s(Stg, k=10, bs='fs'), data=fish4, method = "REML", family="binomial")
 

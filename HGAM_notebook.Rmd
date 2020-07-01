@@ -28,8 +28,8 @@ library(raster)
 library(ROCR)
 library(dplyr)
 
-load('/home/ryan/Git/NEhabitat/Final_merged_fish_corABN_Zoo_Ich.Rda') # Biomass
-load('/home/ryan/Git/NEhabitat/Final_merged_fish_corBIO_Zoo_Ich.Rda') # Abundance
+load('/home/ryan/Git/NEhabitat/Final_merged_fish_corBIO_Zoo_Ich.Rda') # Biomass
+load('/home/ryan/Git/NEhabitat/Final_merged_fish_corABN_Zoo_Ich.Rda') # Abundance
 ### update colnames for ichythoplankton ### Note: urospp assigned to 76 (WHK) but is not distinguishable from 77 (RHK)
 # colnames(FData.bio[50:61])
 # [1] "urospp_100m3" "gadmor_100m3" "melaeg_100m3" "polvir_100m3" "merbil_100m3" "sebspp_100m3"
@@ -88,13 +88,15 @@ fish=FData.abn %>% dplyr::select(YEAR, SEASON, LAT:BOTTEMP, `72_Adt`, `72_Juv`, 
 fish$MONTH=month(FData.abn$EST_TOWDATE)
 fish=fish[complete.cases(fish),]
 fish$`72_ich`=ceiling(fish$`72_ich`) # make integer from numbers per 100 m/3
+fish2=fish[which(fish$SEASON==slctseason),] # subset to season
+
 
 # ### now split data into training and testing set (75% train 25% test, randomly chosen)
 # set.seed(101) # Set Seed so that same sample can be reproduced in future also
 # # Now Selecting 75% of data as sample from total 'n' rows of the data  
-# sample <- sample.int(n = nrow(fish), size = floor(.75*nrow(fish)), replace = F)
-# trainPA <- fish[sample, ]
-# testPA  <- fish[-sample, ]
+sample <- sample.int(n = nrow(fish2), size = floor(.75*nrow(fish2)), replace = F)
+trainPA <- fish2[sample, ]
+testPA  <- fish2[-sample, ]
 
 ### Need to make data frame wide -> long with just species of interest...
 # e.g.: df %>% pivot_longer(c(x, y, z), names_to = "key", values_to = "value")
@@ -102,39 +104,41 @@ fish$`72_ich`=ceiling(fish$`72_ich`) # make integer from numbers per 100 m/3
 #              names_sep = NULL, names_pattern = NULL, names_ptypes = list(),
 #              names_repair = "check_unique", values_to = "value",
 #              values_drop_na = FALSE, values_ptypes = list())
-fish2=fish %>% pivot_longer(c(`72_Adt`, `72_Juv`, `72_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Number")
-fish2$Stg=factor(fish2$Stg, ordered=F)
-table(fish2$MONTH)
+trainPA=trainPA %>% pivot_longer(c(`72_Adt`, `72_Juv`, `72_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Number")
+trainPA$Stg=factor(trainPA$Stg, ordered=F)
+table(trainPA$MONTH)
 
 ## log transform plankton
-fish3=fish2
-logd=fish3[,8:17]
+logd=trainPA[,8:17]
 logd=log10(logd+1)
-fish3[,8:17]=logd
+trainPA[,8:17]=logd
+trainPA$pa=ifelse(trainPA$Number > 0, 1, 0)
 ```
 
-Now set up traing and testing data; split data sets
-1) Train model w/ data through 1999, predict 2000-2018
-2) Train 1977-2011, predict 2012-2018
-3) Train 1977-2012, predict 2013-2018
-4) Train 1977-2014, predict 2015-2018
+skip this -> Now set up traing and testing data; split data sets
 
-Select Season and Fish species
 ```{r}
+# Now set up traing and testing data; split data sets
+# 1) Train model w/ data through 1999, predict 2000-2018
+# 2) Train 1977-2011, predict 2012-2018
+# 3) Train 1977-2012, predict 2013-2018
+# 4) Train 1977-2014, predict 2015-2018
+# 
+# Select Season and Fish species
 # Training/testing year split
-dat.split.year<- 1999
+# dat.split.year<- 1999
 ```
 
 ```{r}
 ## select season and split training/testing; Change to Presence-Absence for fish Numbers
-fish5=fish3[which(fish3$SEASON==slctseason),]
-fish4<- fish5 %>%
-  filter(., YEAR <= dat.split.year) %>%
-  mutate(., "pa" = ifelse(Number > 0, 1, 0))
-dat.test<- fish5 %>%
-  filter(., YEAR > dat.split.year) %>%
-  mutate(., "pa" = ifelse(Number > 0, 1, 0),
-         "pred.id" = paste("ID.", seq(from = 1, to = nrow(.), by = 1), sep = ""))
+# fish5=fish3[which(fish3$SEASON==slctseason),]
+# trainPA<- trainPA %>%
+#   filter(., YEAR <= dat.split.year) %>%
+#   mutate(., "pa" = ifelse(Number > 0, 1, 0))
+# dat.test<- fish5 %>%
+#   filter(., YEAR > dat.split.year) %>%
+#   mutate(., "pa" = ifelse(Number > 0, 1, 0),
+#          "pred.id" = paste("ID.", seq(from = 1, to = nrow(.), by = 1), sep = ""))
 
 ```
 Do likewise for biomass data, to be combined with PA later for final model

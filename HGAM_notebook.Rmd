@@ -90,29 +90,33 @@ fish=fish[complete.cases(fish),]
 fish$`72_ich`=ceiling(fish$`72_ich`) # make integer from numbers per 100 m/3
 fish2=fish[which(fish$SEASON==slctseason),] # subset to season
 
-
 # ### now split data into training and testing set (75% train 25% test, randomly chosen)
-# set.seed(101) # Set Seed so that same sample can be reproduced in future also
+set.seed(101) # Set Seed so that same sample can be reproduced in future also
 # # Now Selecting 75% of data as sample from total 'n' rows of the data  
 sample <- sample.int(n = nrow(fish2), size = floor(.75*nrow(fish2)), replace = F)
 trainPA <- fish2[sample, ]
 testPA  <- fish2[-sample, ]
 
-### Need to make data frame wide -> long with just species of interest...
-# e.g.: df %>% pivot_longer(c(x, y, z), names_to = "key", values_to = "value")
-# pivot_longer(data, cols, names_to = "name", names_prefix = NULL,
-#              names_sep = NULL, names_pattern = NULL, names_ptypes = list(),
-#              names_repair = "check_unique", values_to = "value",
-#              values_drop_na = FALSE, values_ptypes = list())
+### pivot longer so stage is repeated
 trainPA=trainPA %>% pivot_longer(c(`72_Adt`, `72_Juv`, `72_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Number")
 trainPA$Stg=factor(trainPA$Stg, ordered=F)
-table(trainPA$MONTH)
-
-## log transform plankton
+# table(trainPA$MONTH)
+## log transform plankton for training set
 logd=trainPA[,8:17]
 logd=log10(logd+1)
 trainPA[,8:17]=logd
 trainPA$pa=ifelse(trainPA$Number > 0, 1, 0)
+
+## now do likewise for testing data
+testPA=testPA %>% pivot_longer(c(`72_Adt`, `72_Juv`, `72_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Number")
+testPA$Stg=factor(testPA$Stg, ordered=F)
+# table(testPA$MONTH)
+## log transform plankton for test set
+logd=testPA[,8:17]
+logd=log10(logd+1)
+testPA[,8:17]=logd
+testPA$pa=ifelse(testPA$Number > 0, 1, 0)
+
 ```
 
 skip this -> Now set up traing and testing data; split data sets
@@ -145,47 +149,61 @@ Do likewise for biomass data, to be combined with PA later for final model
 
 ```{r}
 ### select data
-fish.b=FData.bio %>% dplyr::select(YEAR, SEASON, LAT:BOTTEMP, `73_Adt`, `73_Juv`, `73_ich`, calfin_100m3:rug)
+fish.b=FData.bio %>% dplyr::select(YEAR, SEASON, LAT:BOTTEMP, `72_Adt`, `72_Juv`, `72_ich`, calfin_100m3:rug)
 fish.b$MONTH=month(FData.bio$EST_TOWDATE)
 fish.b=fish.b[complete.cases(fish.b),]
-
+fish.b$`72_ich`=ceiling(fish.b$`72_ich`) # make integer from numbers per 100 m/3
+fish2.b=fish.b[which(fish.b$SEASON==slctseason),] # subset to season
 ### Transform numbers per 100_m3 to KG using below conversions
 # For positive logbiomass model need to update the ichthyoplankton from (numbers per 100 m^3) to biomass
 # From: Penglase et al. (2013) DOI: 10.7717/peerj.20
 # Cod avg of experiments w/ good and poor diet: mean dry weight of fish 5-30days = 0.25 mg DW
 # mg->kg = x* 1e-6
 # https://www.int-res.com/articles/meps/32/m032p229.pdf -> 1 mg wet weight avg
-fish.b$`73_ich`=fish.b$`73_ich`*1e-6
+fish.b$`72_ich`=fish.b$`72_ich`*1e-6
 
-
-### now split data into training and testing set (75% train 25% test, randomly chosen)
+# ### now split data into training and testing set (75% train 25% test, randomly chosen)
 set.seed(101) # Set Seed so that same sample can be reproduced in future also
-# Now Selecting 75% of data as sample from total 'n' rows of the data  
-sample <- sample.int(n = nrow(fish.b), size = floor(.75*nrow(fish.b)), replace = F)
-trainBIO <- fish.b[sample, ]
-testBIO  <- fish.b[-sample, ]
+# # Now Selecting 75% of data as sample from total 'n' rows of the data  
+sample <- sample.int(n = nrow(fish2.b), size = floor(.75*nrow(fish2.b)), replace = F)
+trainBIO <- fish2.b[sample, ]
+testBIO  <- fish2.b[-sample, ]
 
-#fish.b$`73_ich`=ceiling(fish.b$`73_ich`*1e-6)
-fish2.b=trainBIO %>% pivot_longer(c(`73_Adt`, `73_Juv`, `73_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Biomass")
-fish2.b$Stg=factor(fish2.b$Stg, ordered=F)
-
-## log transform plankton
-fish3.b=fish2.b
-logd.b=fish3.b[,8:17]
-logd.b=log10(logd.b+1)
-fish3.b[,8:17]=logd.b
-
-# Split into testing and training data
-fish5.b=fish3.b[which(fish3.b$SEASON==slctseason),]
-fish4.b<- fish5.b %>%
-  filter(., YEAR <= dat.split.year) %>%
+### pivot longer so stage is repeated
+trainBIO=trainBIO %>% pivot_longer(c(`72_Adt`, `72_Juv`, `72_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Biomass")
+trainBIO$Stg=factor(trainBIO$Stg, ordered=F)
+# table(trainBIO$MONTH)
+## log transform plankton for training set
+logd=trainBIO[,8:17]
+logd=log10(logd+1)
+trainBIO[,8:17]=logd
+trainBIO=trainBIO %>%  
   filter(., Biomass >0) %>%
   mutate(., "logbio"=log10(Biomass+1))
-dat.b.test<- fish5.b %>%
-  filter(., YEAR > dat.split.year) %>%
+
+## now do likewise for testing data
+testBIO=testBIO %>% pivot_longer(c(`72_Adt`, `72_Juv`, `72_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Biomass")
+testBIO$Stg=factor(testBIO$Stg, ordered=F)
+# table(testBIO$MONTH)
+## log transform plankton for test set
+logd=testBIO[,8:17]
+logd=log10(logd+1)
+testBIO[,8:17]=logd
+testBIO=testBIO %>%  
   filter(., Biomass >0) %>%
-  mutate(., "logbio"=log10(Biomass+1)) %>%
-  mutate(.,"pred.id" = paste("ID.", seq(from = 1, to = nrow(.), by = 1), sep = ""))
+  mutate(., "logbio"=log10(Biomass+1))
+
+## Split into testing and training data
+# fish5.b=fish3.b[which(fish3.b$SEASON==slctseason),]
+# fish4.b<- fish5.b %>%
+#   filter(., YEAR <= dat.split.year) %>%
+#   filter(., Biomass >0) %>%
+#   mutate(., "logbio"=log10(Biomass+1))
+# dat.b.test<- fish5.b %>%
+#   filter(., YEAR > dat.split.year) %>%
+#   filter(., Biomass >0) %>%
+#   mutate(., "logbio"=log10(Biomass+1)) %>%
+#   mutate(.,"pred.id" = paste("ID.", seq(from = 1, to = nrow(.), by = 1), sep = ""))
 ```
 
 checking variables 

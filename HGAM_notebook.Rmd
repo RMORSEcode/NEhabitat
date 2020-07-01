@@ -29,7 +29,7 @@ library(ROCR)
 library(dplyr)
 
 load('/home/ryan/Git/NEhabitat/Final_merged_fish_corABN_Zoo_Ich.Rda') # Biomass
-load('/home/ryan/Git/NEhabitat/Final_merged_fish_corABN_Zoo_Ich.Rda') # Abundance
+load('/home/ryan/Git/NEhabitat/Final_merged_fish_corBIO_Zoo_Ich.Rda') # Abundance
 ### update colnames for ichythoplankton ### Note: urospp assigned to 76 (WHK) but is not distinguishable from 77 (RHK)
 # colnames(FData.bio[50:61])
 # [1] "urospp_100m3" "gadmor_100m3" "melaeg_100m3" "polvir_100m3" "merbil_100m3" "sebspp_100m3"
@@ -84,10 +84,17 @@ slctseason="SPRING"
 Subset the formatted data for a single species to use in models (need to update manually as these are column names)
 ```{r}
 ### select data
-fish=FData.abn %>% dplyr::select(YEAR, SEASON, LAT:BOTTEMP, `73_Adt`, `73_Juv`, `73_ich`, calfin_100m3:rug)
+fish=FData.abn %>% dplyr::select(YEAR, SEASON, LAT:BOTTEMP, `72_Adt`, `72_Juv`, `72_ich`, calfin_100m3:rug)
 fish$MONTH=month(FData.abn$EST_TOWDATE)
 fish=fish[complete.cases(fish),]
-fish$`73_ich`=ceiling(fish$`73_ich`) # make integer from numbers per 100 m/3
+fish$`72_ich`=ceiling(fish$`72_ich`) # make integer from numbers per 100 m/3
+
+# ### now split data into training and testing set (75% train 25% test, randomly chosen)
+# set.seed(101) # Set Seed so that same sample can be reproduced in future also
+# # Now Selecting 75% of data as sample from total 'n' rows of the data  
+# sample <- sample.int(n = nrow(fish), size = floor(.75*nrow(fish)), replace = F)
+# trainPA <- fish[sample, ]
+# testPA  <- fish[-sample, ]
 
 ### Need to make data frame wide -> long with just species of interest...
 # e.g.: df %>% pivot_longer(c(x, y, z), names_to = "key", values_to = "value")
@@ -95,7 +102,7 @@ fish$`73_ich`=ceiling(fish$`73_ich`) # make integer from numbers per 100 m/3
 #              names_sep = NULL, names_pattern = NULL, names_ptypes = list(),
 #              names_repair = "check_unique", values_to = "value",
 #              values_drop_na = FALSE, values_ptypes = list())
-fish2=fish %>% pivot_longer(c(`73_Adt`, `73_Juv`, `73_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Number")
+fish2=fish %>% pivot_longer(c(`72_Adt`, `72_Juv`, `72_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Number")
 fish2$Stg=factor(fish2$Stg, ordered=F)
 table(fish2$MONTH)
 
@@ -137,18 +144,25 @@ Do likewise for biomass data, to be combined with PA later for final model
 fish.b=FData.bio %>% dplyr::select(YEAR, SEASON, LAT:BOTTEMP, `73_Adt`, `73_Juv`, `73_ich`, calfin_100m3:rug)
 fish.b$MONTH=month(FData.bio$EST_TOWDATE)
 fish.b=fish.b[complete.cases(fish.b),]
-```
 
-For positive logbiomass model need to update the ichthyoplankton from (numbers per 100 m^3) to biomass
-From: Penglase et al. (2013) DOI: 10.7717/peerj.20
-Cod avg of experiments w/ good and poor diet: mean dry weight of fish 5-30days = 0.25 mg DW
-mg->kg = x* 1e-6
-https://www.int-res.com/articles/meps/32/m032p229.pdf -> 1 mg wet weight avg
-```{r}
-# transform numbers per 100_m3 to KG using above conversions
+### Transform numbers per 100_m3 to KG using below conversions
+# For positive logbiomass model need to update the ichthyoplankton from (numbers per 100 m^3) to biomass
+# From: Penglase et al. (2013) DOI: 10.7717/peerj.20
+# Cod avg of experiments w/ good and poor diet: mean dry weight of fish 5-30days = 0.25 mg DW
+# mg->kg = x* 1e-6
+# https://www.int-res.com/articles/meps/32/m032p229.pdf -> 1 mg wet weight avg
 fish.b$`73_ich`=fish.b$`73_ich`*1e-6
+
+
+### now split data into training and testing set (75% train 25% test, randomly chosen)
+set.seed(101) # Set Seed so that same sample can be reproduced in future also
+# Now Selecting 75% of data as sample from total 'n' rows of the data  
+sample <- sample.int(n = nrow(fish.b), size = floor(.75*nrow(fish.b)), replace = F)
+trainBIO <- fish.b[sample, ]
+testBIO  <- fish.b[-sample, ]
+
 #fish.b$`73_ich`=ceiling(fish.b$`73_ich`*1e-6)
-fish2.b=fish.b %>% pivot_longer(c(`73_Adt`, `73_Juv`, `73_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Biomass")
+fish2.b=trainBIO %>% pivot_longer(c(`73_Adt`, `73_Juv`, `73_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Biomass")
 fish2.b$Stg=factor(fish2.b$Stg, ordered=F)
 
 ## log transform plankton
@@ -168,9 +182,7 @@ dat.b.test<- fish5.b %>%
   filter(., Biomass >0) %>%
   mutate(., "logbio"=log10(Biomass+1)) %>%
   mutate(.,"pred.id" = paste("ID.", seq(from = 1, to = nrow(.), by = 1), sep = ""))
-
 ```
-
 
 checking variables 
 
@@ -533,7 +545,7 @@ fish_modGS4e =  gam(pa ~ te(LON, LAT, bs='tp', m=2) +t2(LON, LAT, Stg, bs=c('tp'
 
 fish_modGS4e$aic
 summary(fish_modGS4d)$dev.expl
-pred.test=predict(fish_modGS4d,dat.test,type='response')                  # make prediction for test set
+pred.test=predict(fish_modGS4e,dat.test,type='response')                  # make prediction for test set
 preds.obs=data.frame(pred.test=pred.test,dat.test$pa)           # data frame of preds and obs   
 colnames(preds.obs)=c("predicted","observed")
 plotROC(preds.obs$observed,preds.obs$predicted, colorize = TRUE)

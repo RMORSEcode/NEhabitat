@@ -435,6 +435,13 @@ plotROC(preds.obs$observed,preds.obs$predicted, colorize = TRUE) # Get AUC
 
 Now use Lat and Lon for soapfilm smoother
 ```{r}
+# Create soap film boundary for fitting GAMs
+library("rgdal")
+# gdepth=raster('/home/ryan/Desktop/nes_bath_data.nc', band=1)
+# gdepth[gdepth>0]=NA
+# gdepth[gdepth< -500]=NA
+outline <- read.csv("/home/ryan/Desktop/Final_NES_shelf_shape.csv")
+outl.crd=sp::coordinates(cbind(outline$longitude, outline$latitude))
 # change bound to use LAT LON, rerun
 boundll <- list(list(x = outl.crd[,1], y = outl.crd[,2], f = rep(0, nrow(outl.crd))))
 N <- 25

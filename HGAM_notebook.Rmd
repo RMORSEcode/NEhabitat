@@ -69,14 +69,14 @@ load('/home/ryan/Git/NEhabitat/rast_phi_fraction.rdata')
 phi=masked.raster
 phi2mm=calc(phi, fun=function(x){2^-x})
 plot(phi2mm)
-FData.abn$grnszmm = extract(phi2mm, mypoints)
-FData.bio$grnszmm = extract(phi2mm, mypoints)
+FData.abn$grnszmm = raster::extract(phi2mm, mypoints)
+FData.bio$grnszmm = raster::extract(phi2mm, mypoints)
 load('/home/ryan/Git/NEhabitat/rast_mud_fraction.rdata')
-FData.abn$mud_pct = extract(masked.raster, mypoints)
-FData.bio$mud_pct = extract(masked.raster, mypoints)
+FData.abn$mud_pct = raster::extract(masked.raster, mypoints)
+FData.bio$mud_pct = raster::extract(masked.raster, mypoints)
 load('/home/ryan/Git/NEhabitat/rast_sand_fraction.rdata')
-FData.abn$sand_pct = extract(masked.raster, mypoints)
-FData.bio$sand_pct = extract(masked.raster, mypoints)
+FData.abn$sand_pct = raster::extract(masked.raster, mypoints)
+FData.bio$sand_pct = raster::extract(masked.raster, mypoints)
 # load('/home/ryan/Git/NEhabitat/rast_gdepth.rdata')
 # FData.abn$gdepth = extract(masked.raster, mypoints) # odd scale neg vals start at 1000m
 load('/home/ryan/Git/NEhabitat/rast_rugosity.rdata')
@@ -88,8 +88,8 @@ rugscl=calc(rug, fun=function(x){(x-mmin)/(mmax-mmin)}) # rescale from -4:2 -> 0
 # FData.bio$rug = extract(masked.raster, mypoints)
 plot(masked.raster, xlim=c(-80,-60), ylim=c(36,48))
 plot(rugscl)
-FData.abn$rug = extract(rugscl, mypoints)
-FData.bio$rug = extract(rugscl, mypoints)
+FData.abn$rug = raster::extract(rugscl, mypoints)
+FData.bio$rug = raster::extract(rugscl, mypoints)
 ```
 
 Select season for GAMs
@@ -269,14 +269,13 @@ Now use Pederson et al (2019) as a model to format models:
 ```      
 Try binomial distribution and check model
 ```{r}
-fish_modG = gam(pa ~s(BOTTEMP, k=20, bs="tp") +s(SURFTEMP, k=20, bs='tp') + s(DEPTH, k=10, bs="tp") + s(Stg, k=4, bs='re') + s(pseudo_100m3, k=20, bs="cr") + s(grnszmm, k=10, bs='tp') + s(rug, k=20, bs='tp'), data=trainPA, method = "REML", family="binomial")
-```
+fish_modG = gam(pa ~ s(BOTTEMP, k=20, bs="tp") +s(SURFTEMP, k=20, bs='tp') + s(DEPTH, k=10, bs="tp") + s(Stg, k=4, bs='re') + s(pseudo_100m3, k=20, bs="cr") + s(grnszmm, k=10, bs='tp') + s(rug, k=20, bs='tp'), data=trainPA, method = "REML", family="binomial")
 
-```{r}
+
 par(mfrow=c(2,2))
 gam.check(fish_modG)
 plot(fish_modG, shade=T, rug=T, scale=0)
-#print(paste0("AIC value is: ", AIC(fish_modG)))
+AIC(fish_modG)
 ```
 
 Pres/Abs -> binomial residuals still not quite right, try tweedie dist
@@ -619,20 +618,22 @@ AIC(fish_modGS4, fish_modGS4d)
 GI model
 y ~ s(x, bs='tp') + s(x, by=fac, m=1, bs='tp') + s(fac, bs='re')
 ```{r}
-fish_modGI4 =  gam(pa ~ s(LON, LAT) + s(LON, LAT, by=Stg) + s(BOTTEMP, k=10, bs="fs") + s(BOTTEMP, k=10, by=Stg, bs="fs") +s(SURFTEMP, Stg, k=10, bs='fs') + s(SURFTEMP, Stg, k=10, by=Stg, bs='fs') + s(DEPTH, Stg, k=10, bs="fs") + s(DEPTH, Stg, k=10, by=Stg, bs="fs") + s(pseudo_100m3, Stg, k=10, bs="fs") + s(pseudo_100m3, Stg, k=10, by=Stg, bs="fs")+ s(grnszmm, Stg, k=10, bs='fs') + s(grnszmm, Stg, k=10, by=Stg, bs='fs') + s(rug, Stg, k=10, bs='fs') +s(rug, Stg, k=10, by=Stg, bs='fs') + s(Stg, k=10, bs='fs'), data=trainPA, method = "REML", family="binomial")
+fish_modGI4 =  gam(pa ~ s(LON, LAT, m=2, bs='tp') + s(LON, LAT, by=Stg, m=1, bs='tp') + s(BOTTEMP, k=10, m=2, bs="tp") + s(BOTTEMP, k=10, m=1 by=Stg, bs="tp") +s(SURFTEMP, Stg, k=10, m=2, bs='tp') + s(SURFTEMP, Stg, k=10, m=1, by=Stg, bs='tp') + s(DEPTH, Stg, k=10, m=2, bs="tp") + s(DEPTH, Stg, k=10, m=1, by=Stg, bs="tp") + s(pseudo_100m3, Stg, k=10, m=2, bs="tp") + s(pseudo_100m3, Stg, m=1, k=10, by=Stg, bs="tp")+ s(grnszmm, Stg, m=2, k=10, bs='tp') + s(grnszmm, Stg, k=10, m=1, by=Stg, bs='tp') + s(rug, Stg, m=2, k=10, bs='tp') +s(rug, Stg, k=10, m=1, by=Stg, bs='tp') + s(Stg, k=10, bs='re'), data=trainPA, method = "REML", family="binomial")
 
 draw(fish_modGI4)
 summary(fish_modGI4)
 
 ```
 
-Now model to grid
+S model
+y∼s(x, fac, bs="fs") or y∼t2(x1, x2, fac, bs=c("tp", "tp", "re")
 ```{r}
 
 
 ```
 
-make the plot ussing ggplot2 
+I model
+y∼fac+s(x, by=fac) or y∼fac+te(x1,x2, by=fac)
 ```{r}
 
 ```

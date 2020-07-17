@@ -92,10 +92,11 @@ FData.abn$rug = raster::extract(rugscl, mypoints)
 FData.bio$rug = raster::extract(rugscl, mypoints)
 ```
 
+
 Select season for GAMs
 ```{r}
 #slctseason="SPRING" #"FALL"
-slctseason="SPRING"
+slctseason="FALL"
 
 ```
 
@@ -269,7 +270,7 @@ Now use Pederson et al (2019) as a model to format models:
 ```      
 Try binomial distribution and check model
 ```{r}
-fish_modG = gam(pa ~ s(BOTTEMP, k=20, bs="tp") +s(SURFTEMP, k=20, bs='tp') + s(DEPTH, k=10, bs="tp") + s(Stg, k=4, bs='re') + s(pseudo_100m3, k=20, bs="cr") + s(grnszmm, k=10, bs='tp') + s(rug, k=20, bs='tp'), data=trainPA, method = "REML", family="binomial")
+fish_modG = gam(pa ~ s(BOTTEMP, k=20, bs="tp") +s(SURFTEMP, k=20, bs='tp') + s(DEPTH, k=10, bs="tp") + s(Stg, k=3, bs='re') + s(pseudo_100m3, k=20, bs="cr") + s(grnszmm, k=10, bs='tp') + s(rug, k=20, bs='tp'), data=trainPA, method = "REML", family="binomial")
 
 
 par(mfrow=c(2,2))
@@ -351,7 +352,8 @@ m2 <- gam(-depth ~ s(os_x, os_y, bs = "so", xt = list(bnd = bound)),data = depth
 library("rgdal")
 gdepth=raster('/home/ryan/Desktop/nes_bath_data.nc', band=1)
 gdepth[gdepth>0]=NA
-gdepth[gdepth< -500]=NA
+gdepth[gdepth< -5000]=NA
+# save(gdepth, file='/home/ryan/Git/NEhabitat/rasters/depth.RData')
 outline <- read.csv("/home/ryan/Desktop/Final_NES_shelf_shape.csv")
 outl.crd=sp::coordinates(cbind(outline$longitude, outline$latitude))
 
@@ -502,7 +504,7 @@ draw(fish_modG4bll)
 # CO2_modG_pred <- with(CO2,
                       # expand.grid(conc=seq(min(conc), max(conc), length=100),
                                   # Plant_uo=levels(Plant_uo)))
-### this is too large -> need a different approach
+### this is too large -> need a different approach, see below for split data use
 # fish_modG4bll_pred <- with(testPA, expand.grid(Lat=seq(min(LAT), max(LAT), length=10), Lon=seq(min(LON), max(LON), length=10), BT=seq(min(BOTTEMP), max(BOTTEMP), length=10), ST=seq(min(SURFTEMP), max(SURFTEMP), length=10), Z=seq(min(DEPTH), max(DEPTH), length=20), Zoo=seq(min(pseudo_100m3), max(pseudo_100m3), length=10), grn=seq(min(grnszmm), max(grnszmm), length=10), rug=seq(min(rug), max(rug), length=5), Stg=levels(Stg)))
 
 ## this works, just give it the training data and merge results
@@ -603,7 +605,7 @@ preds.obs=data.frame(pred.test=pred.test,testPA$pa)           # data frame of pr
 colnames(preds.obs)=c("predicted","observed")
 plotROC(preds.obs$observed,preds.obs$predicted, colorize = TRUE)
 
-#check on order -> R,G,B = adt, ich, juv (respectively)
+#check on order -> R,G,B = adt (1), ich (3), juv (2) (respectively) == 1,3,2 as factor values
 foo=evaluate_smooth(fish_modGS4e,"s(pseudo_100m3,Stg)")
 ggplot(data=foo, aes(y=est, x=pseudo_100m3)) + geom_line(aes(color=Stg))
 

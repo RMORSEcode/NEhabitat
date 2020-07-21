@@ -17,7 +17,7 @@ yrlist=seq(from=1977, to=2016, by=1)
 ### SELECT SPR of FALL seasons to process
 SEASON='Spr' # Fall
 SEASON='Fall'
-usemodel=fish_modG4bll_fall_had
+usemodel=fish_modG_fall_had
 
 ## list data files in each folder
 btlist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/BT', sep=''))
@@ -68,7 +68,7 @@ fl=levels=c("Adt", "Juv", "ich")
 fishnm='Haddock'
 wd2=paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/', fishnm, '/', sep='')
 ### NOW loop over files, load yearly dynamic raster files and predict habitat from HGAM models
-for (jj in 1:3){
+for (jj in 1){
   for (i in 1:length(yrlist)){
     bi=which(yrlist[i]==ttb2) # index of year
     load(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/BT/', btlist[[bi]], sep=''))
@@ -96,15 +96,22 @@ for (jj in 1:3){
     wd3=paste(yrlist[i], '_', SEASON, '_', fishnm, '_',fl[jj], '.RData', sep="")
     save(ef2, file=paste(wd2, wd3, sep=""))
     spg1=ef2[,c('LON', 'LAT', 'pred')]
-    wd4=paste(yrlist[i], '_', 'RASTERpred', '_', SEASON, '_', fishnm, '_',fl[jj], '_', '.RData', sep="")
+    wd4=paste(yrlist[i], '_', 'RASTER', '_', SEASON, '_', fishnm, '_',fl[jj], '_', '.RData', sep="")
     # tes1=rasterFromXYZ(spg1[complete.cases(spg1$Stg),])
     # save(tes1, file=paste(wd2,wd4, sep=''))
     coordinates(spg1)= ~ LON + LAT
     gridded(spg1)=T
     rastDF=raster(spg1)
+    if (i == 1){
+      keepstack=rastDF
+    }
     # plot(rastDF)
-    save(rastDF, file=paste(wd2,wd4, sep=''))
+    # save(rastDF, file=paste(wd2,wd4, sep=''))
+    if (i >1){
+      keepstack=stack(keepstack, rastDF)
+    }
   }
+  save(keepstack, file=paste(wd2,'stacked_', SEASON, '_', fishnm, '_',fl[jj], '.RData', sep=""))
 }
 
 ### Create raster stacks and save them
@@ -193,9 +200,12 @@ map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="black", ad
 # drop first layer for spring wind stress
 #####
 shp.dat3=crop(shp.dat2, small)
-time <- 1:nlayers(AdtHad) 
-fun=function(x) { if (is.na(x[1])){ NA } else { m = lm(x ~ time); summary(m)$coefficients[2] }}
-shp.dat.slope=calc(IchHad, fun)
+time <- 1:nlayers(AdtHad)
+# fun=function(x) { if (is.na(x[1])){ NA } else { m = lm(x ~ time); summary(m)$coefficients[2] }}
+fun=function(x) { if (is.na(x[1])){ NA } else { m = lm(x ~ time); summary(m)$coefficients[2] * length(time)}} # add trend over time
+shp.dat.slope=calc(AdtHad, fun)
+# fun=function(x) { if (is.na(x[1])){ NA } else  { x * length(time) }}
+# tslope=calc(shp.dat.slope, fun)
 mn=min(shp.dat.slope@data@values, na.rm = T)
 mx=max(shp.dat.slope@data@values, na.rm = T)
 high=max(abs(mn), mx)
@@ -211,14 +221,14 @@ map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="black", ad
 
 ## Calc Significance
 fun=function(x) { if (is.na(x[1])){ NA } else { m = lm(x ~ time); summary(m)$coefficients[8] }}
-p <- calc(IchHad, fun=fun)
+p <- calc(AdtHad, fun=fun)
 m = c(0, 0.05, 1, 0.05, 1, 0)
 rclmat = matrix(m, ncol=3, byrow=TRUE)
 p.mask = reclassify(p, rclmat)
 fun=function(x) { x[x<1] <- NA; return(x)}
 p.mask.NA = calc(p.mask, fun)
 trend.sig = mask(shp.dat.slope, p.mask.NA)
-plot(shp.dat.slope, main=paste(length(time),'yrs','\nYearly Slope'),col=cl, breaks=br,axis.args=arg,las=1) # Yearly slope
+plot(shp.dat.slope, main=paste(length(time),'yr trend (%)'),col=cl, breaks=br,axis.args=arg,las=1) # Yearly slope
 # plot(shp.dat.slope, main=paste(datalab, season, '\nTrend'), col=diverge_hcl(120), las=1)
 test=rasterToPoints(trend.sig)
 points(test, pch='+', col=addTrans('black',50), cex=0.5)

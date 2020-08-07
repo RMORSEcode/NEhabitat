@@ -96,18 +96,22 @@ FData.bio$rug = raster::extract(rugscl, mypoints)
 Select season for GAMs
 ```{r}
 #slctseason="SPRING" #"FALL"
-slctseason="FALL"
+slctseason="SPRING"
 
 ```
 
 Subset the formatted data for a single species to use in models (need to update manually as these are column names)
 Abundance model first, split into training and testing sets randomly (75%, 25%)
+74 - haddock
+72 - silver hake
+73 - cod (see Lmf)
+Lmf=read_excel('/home/ryan/Git/NEhabitat/Lm_included.xlsx')
 ```{r}
 ### select data
-fish=FData.abn %>% dplyr::select(YEAR, SEASON, LAT:BOTTEMP, `72_Adt`, `72_Juv`, `72_ich`, calfin_100m3:rug)
+fish=FData.abn %>% dplyr::select(YEAR, SEASON, LAT:BOTTEMP, `74_Adt`, `74_Juv`, `74_ich`, calfin_100m3:rug)
 fish$MONTH=month(FData.abn$EST_TOWDATE)
 fish=fish[complete.cases(fish),]
-fish$`72_ich`=ceiling(fish$`72_ich`) # make integer from numbers per 100 m/3
+fish$`74_ich`=ceiling(fish$`74_ich`) # make integer from numbers per 100 m/3
 fish2=fish[which(fish$SEASON==slctseason),] # subset to season
 
 # ### now split data into training and testing set (75% train 25% test, randomly chosen)
@@ -118,7 +122,7 @@ trainPA <- fish2[sample, ]
 testPA  <- fish2[-sample, ]
 
 ### pivot longer so stage is repeated
-trainPA=trainPA %>% pivot_longer(c(`72_Adt`, `72_Juv`, `72_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Number")
+trainPA=trainPA %>% pivot_longer(c(`74_Adt`, `74_Juv`, `74_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Number")
 trainPA$Stg=factor(trainPA$Stg, ordered=F)
 # table(trainPA$MONTH)
 ## log transform plankton for training set
@@ -128,7 +132,7 @@ trainPA[,8:17]=logd
 trainPA$pa=ifelse(trainPA$Number > 0, 1, 0)
 
 ## now do likewise for testing data
-testPA=testPA %>% pivot_longer(c(`72_Adt`, `72_Juv`, `72_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Number")
+testPA=testPA %>% pivot_longer(c(`74_Adt`, `74_Juv`, `74_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Number")
 testPA$Stg=factor(testPA$Stg, ordered=F)
 # table(testPA$MONTH)
 ## log transform plankton for test set
@@ -169,10 +173,10 @@ Do likewise for biomass data, to be combined with PA later for final model
 
 ```{r}
 ### select data
-fish.b=FData.bio %>% dplyr::select(YEAR, SEASON, LAT:BOTTEMP, `72_Adt`, `72_Juv`, `72_ich`, calfin_100m3:rug)
+fish.b=FData.bio %>% dplyr::select(YEAR, SEASON, LAT:BOTTEMP, `74_Adt`, `74_Juv`, `74_ich`, calfin_100m3:rug)
 fish.b$MONTH=month(FData.bio$EST_TOWDATE)
 fish.b=fish.b[complete.cases(fish.b),]
-fish.b$`72_ich`=ceiling(fish.b$`72_ich`) # make integer from numbers per 100 m/3
+fish.b$`74_ich`=ceiling(fish.b$`74_ich`) # make integer from numbers per 100 m/3
 fish2.b=fish.b[which(fish.b$SEASON==slctseason),] # subset to season
 ### Transform numbers per 100_m3 to KG using below conversions
 # For positive logbiomass model need to update the ichthyoplankton from (numbers per 100 m^3) to biomass
@@ -180,7 +184,7 @@ fish2.b=fish.b[which(fish.b$SEASON==slctseason),] # subset to season
 # Cod avg of experiments w/ good and poor diet: mean dry weight of fish 5-30days = 0.25 mg DW
 # mg->kg = x* 1e-6
 # https://www.int-res.com/articles/meps/32/m032p229.pdf -> 1 mg wet weight avg
-fish.b$`72_ich`=fish.b$`72_ich`*1e-6
+fish.b$`74_ich`=fish.b$`74_ich`*1e-6
 
 # ### now split data into training and testing set (75% train 25% test, randomly chosen)
 set.seed(101) # Set Seed so that same sample can be reproduced in future also
@@ -190,7 +194,7 @@ trainBIO <- fish2.b[sample, ]
 testBIO  <- fish2.b[-sample, ]
 
 ### pivot longer so stage is repeated
-trainBIO=trainBIO %>% pivot_longer(c(`72_Adt`, `72_Juv`, `72_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Biomass")
+trainBIO=trainBIO %>% pivot_longer(c(`74_Adt`, `74_Juv`, `74_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Biomass")
 trainBIO$Stg=factor(trainBIO$Stg, ordered=F)
 # table(trainBIO$MONTH)
 ## log transform plankton for training set
@@ -202,7 +206,7 @@ trainBIO=trainBIO %>%
   mutate(., "logbio"=log10(Biomass+1))
 
 ## now do likewise for testing data
-testBIO=testBIO %>% pivot_longer(c(`72_Adt`, `72_Juv`, `72_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Biomass")
+testBIO=testBIO %>% pivot_longer(c(`74_Adt`, `74_Juv`, `74_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Biomass")
 testBIO$Stg=factor(testBIO$Stg, ordered=F)
 # table(testBIO$MONTH)
 ## log transform plankton for test set
@@ -230,30 +234,30 @@ checking variables
 
 ```{r}
 ### check histograms of vars
-test=trainPA[which(trainPA$Number>0),]
-hist(test$Number[which(test$Stg=='ich')])
-hist(test$Number[which(test$Stg=='Juv')])
-hist(test$Number[which(test$Stg=='Adt')])
-
-levs=seq(from=min(trainPA$BOTTEMP), to=max(trainPA$BOTTEMP), by=0.2)
-barplot(table(factor(trainPA$BOTTEMP, levels=levs)))
-
-levs=seq(from=min(trainPA$DEPTH), to=max(trainPA$DEPTH), by=1)
-barplot(table(factor(trainPA$DEPTH, levels=levs)))
-
-# check on zooplankton and... remove outliers(?)
-hist(trainPA$pseudo_100m3)
-levs=sort(unique(trainPA$pseudo_100m3))
-levs2=levs[2:length(levs)]
-barplot(table(factor(trainPA$pseudo_100m3, levels=levs2)))
-summary(trainPA$pseudo_100m3)
-#outliers...
-test=rev(sort(trainPA$pseudo_100m3))
-barplot(test[1:1000])
-which(test<500000)[1]
-
-hist(trainPA$grnszmm)
-hist(trainPA$rug)
+# test=trainPA[which(trainPA$Number>0),]
+# hist(test$Number[which(test$Stg=='ich')])
+# hist(test$Number[which(test$Stg=='Juv')])
+# hist(test$Number[which(test$Stg=='Adt')])
+# 
+# levs=seq(from=min(trainPA$BOTTEMP), to=max(trainPA$BOTTEMP), by=0.2)
+# barplot(table(factor(trainPA$BOTTEMP, levels=levs)))
+# 
+# levs=seq(from=min(trainPA$DEPTH), to=max(trainPA$DEPTH), by=1)
+# barplot(table(factor(trainPA$DEPTH, levels=levs)))
+# 
+# # check on zooplankton and... remove outliers(?)
+# hist(trainPA$pseudo_100m3)
+# levs=sort(unique(trainPA$pseudo_100m3))
+# levs2=levs[2:length(levs)]
+# barplot(table(factor(trainPA$pseudo_100m3, levels=levs2)))
+# summary(trainPA$pseudo_100m3)
+# #outliers...
+# test=rev(sort(trainPA$pseudo_100m3))
+# barplot(test[1:1000])
+# which(test<500000)[1]
+# 
+# hist(trainPA$grnszmm)
+# hist(trainPA$rug)
 ```
 
 Now use Pederson et al (2019) as a model to format models:
@@ -272,6 +276,8 @@ Try binomial distribution and check model
 ```{r}
 fish_modG = gam(pa ~ s(BOTTEMP, k=20, bs="tp") +s(SURFTEMP, k=20, bs='tp') + s(DEPTH, k=10, bs="tp") + s(Stg, k=3, bs='re') + s(pseudo_100m3, k=20, bs="cr") + s(grnszmm, k=10, bs='tp') + s(rug, k=20, bs='tp'), data=trainPA, method = "REML", family="binomial")
 
+# save(fish_modG, file='/home/ryan/Git/NEhabitat/rasters/Spr/Haddock/fish_modG_spr_haddock.Rdata')
+# save(fish_modG, file='/home/ryan/Git/NEhabitat/rasters/Fall/Haddock/fish_modG_fall_haddock.Rdata')
 
 par(mfrow=c(2,2))
 gam.check(fish_modG)
@@ -319,6 +325,9 @@ fish_modG3$aic
 Add latitude and longitude as interaction terms to 'Fish_modG'
 ```{r}
 fish_modG4 = gam(pa ~ s(LON, LAT) + s(BOTTEMP, k=20, bs="tp") +s(SURFTEMP, k=20, bs='tp') + s(DEPTH, k=10, bs="tp") + s(Stg, k=4, bs='re') + s(pseudo_100m3, k=20, bs="cr") + s(grnszmm, k=10, bs='tp') + s(rug, k=20, bs='tp'), data=trainPA, method = "REML", family="binomial")
+
+# save(fish_modG4, file='/home/ryan/Git/NEhabitat/rasters/Spr/Haddock/fish_modG4_spr_haddock.Rdata')
+# save(fish_modG4, file='/home/ryan/Git/NEhabitat/rasters/Fall/Haddock/fish_modG4_fall_haddock.Rdata')
 
 gam.check(fish_modG4)
 fish_modG4$aic
@@ -462,34 +471,37 @@ trainPApts=SpatialPoints(cbind(trainPA$LON, trainPA$LAT),proj4string=CRS("+proj=
 trainPA.in=sp::over(trainPApts, sps)
 trainPA.sub=trainPA
 trainPA.sub=trainPA.sub[complete.cases(trainPA.in),]
-plot(boundll[[1]]$LON, boundll[[1]]$LAT, type='l', asp=1); points(knotsll, add=T, col='red')
+# plot(boundll[[1]]$LON, boundll[[1]]$LAT, type='l', asp=1); points(knotsll, add=T, col='red')
 
 ## remove knots on the boundary
-# for N=15
-knotsll=knotsll[-22,]
-knotsll=knotsll[-20,]
+## for N=15
+# knotsll=knotsll[-22,]
+# knotsll=knotsll[-20,]
 
-# for N=25
+## for N=25
 knotsll=knotsll[-19,]
 knotsll=knotsll[-22,]
 knotsll=knotsll[-37,]
 knotsll=knotsll[-77,]
 knotsll=knotsll[-129,]
 
-# for N=35
-knotsll=knotsll[-49,]
-knotsll=knotsll[-77,]
-knotsll=knotsll[-92,]
-knotsll=knotsll[-110,]
-knotsll=knotsll[-131,]
-knotsll=knotsll[-166,]
-knotsll=knotsll[-167,]
-knotsll=knotsll[-179,]
-knotsll=knotsll[-179,]
-knotsll=knotsll[-286,]
-knotsll=knotsll[-297,]
+## for N=35
+# knotsll=knotsll[-49,]
+# knotsll=knotsll[-77,]
+# knotsll=knotsll[-92,]
+# knotsll=knotsll[-110,]
+# knotsll=knotsll[-131,]
+# knotsll=knotsll[-166,]
+# knotsll=knotsll[-167,]
+# knotsll=knotsll[-179,]
+# knotsll=knotsll[-179,]
+# knotsll=knotsll[-286,]
+# knotsll=knotsll[-297,]
 
 fish_modG4bll = gam(pa ~ s(LON, LAT, bs = "so", xt = list(bnd = boundll)) + s(BOTTEMP, k=20, bs="tp") +s(SURFTEMP, k=20, bs='tp') + s(DEPTH, k=10, bs="tp") + s(Stg, k=4, bs='fs') + s(pseudo_100m3, k=20, bs="cr") + s(grnszmm, k=10, bs='tp') + s(rug, k=20, bs='tp'), data=trainPA.sub, method = "REML", knots=knotsll, family="binomial")
+
+# save(fish_modG4bll, file='/home/ryan/Git/NEhabitat/rasters/Spr/Haddock/fish_modG4bll_spr_haddock.Rdata')
+# save(fish_modG4bll, file='/home/ryan/Git/NEhabitat/rasters/Fall/Haddock/fish_modG4bll_fall_haddock.Rdata')
 
 fish_modG4bll$aic
 summary(fish_modG4bll)$dev.expl
@@ -598,6 +610,12 @@ fish_modGS4d =  gam(pa ~ s(LON, LAT) + s(BOTTEMP, Stg, k=10, bs="fs") +s(SURFTEM
 # add fs for stg to all vars
 fish_modGS4e =  gam(pa ~ te(LON, LAT, bs='tp', m=2) +t2(LON, LAT, Stg, bs=c('tp', 'tp', 'fs'), m=2, full=T) + s(BOTTEMP, bs='tp') + s(BOTTEMP, Stg, k=10, bs="fs") + s(SURFTEMP, bs='tp') + s(SURFTEMP, Stg, k=10, bs='fs') + s(DEPTH, bs='tp') + s(DEPTH, Stg, k=10, bs="fs") + s(pseudo_100m3, bs='tp') + s(pseudo_100m3, Stg, k=10, bs="fs") + s(grnszmm, bs='tp') + s(grnszmm, Stg, k=10, bs='fs') + s(rug, bs='tp') + s(rug, Stg, k=10, bs='fs'), data=trainPA, method = "REML", family="binomial")
 
+# remove lat and lon
+fish_modGSe =  gam(pa ~ s(BOTTEMP, bs='tp') + s(BOTTEMP, Stg, k=10, bs="fs") + s(SURFTEMP, bs='tp') + s(SURFTEMP, Stg, k=10, bs='fs') + s(DEPTH, bs='tp') + s(DEPTH, Stg, k=10, bs="fs") + s(pseudo_100m3, bs='tp') + s(pseudo_100m3, Stg, k=10, bs="fs") + s(grnszmm, bs='tp') + s(grnszmm, Stg, k=10, bs='fs') + s(rug, bs='tp') + s(rug, Stg, k=10, bs='fs'), data=trainPA, method = "REML", family="binomial")
+
+# save(fish_modGSe, file='/home/ryan/Git/NEhabitat/rasters/Spr/Haddock/fish_modGSe_spr_haddock.Rdata')
+# save(fish_modGSe, file='/home/ryan/Git/NEhabitat/rasters/Fall/Haddock/fish_modGSe_fall_haddock.Rdata')
+
 fish_modGS4e$aic
 summary(fish_modGS4d)$dev.expl
 pred.test=predict(fish_modGS4e,testPA,type='response')                  # make prediction for test set
@@ -622,6 +640,11 @@ y ~ s(x, bs='tp') + s(x, by=fac, m=1, bs='tp') + s(fac, bs='re')
 ```{r}
 fish_modGI4 =  gam(pa ~ s(LON, LAT, m=2, bs='tp') + s(LON, LAT, by=Stg, m=1, bs='tp') + s(BOTTEMP, k=10, m=2, bs="tp") + s(BOTTEMP, k=10, m=1 by=Stg, bs="tp") +s(SURFTEMP, Stg, k=10, m=2, bs='tp') + s(SURFTEMP, Stg, k=10, m=1, by=Stg, bs='tp') + s(DEPTH, Stg, k=10, m=2, bs="tp") + s(DEPTH, Stg, k=10, m=1, by=Stg, bs="tp") + s(pseudo_100m3, Stg, k=10, m=2, bs="tp") + s(pseudo_100m3, Stg, m=1, k=10, by=Stg, bs="tp")+ s(grnszmm, Stg, m=2, k=10, bs='tp') + s(grnszmm, Stg, k=10, m=1, by=Stg, bs='tp') + s(rug, Stg, m=2, k=10, bs='tp') +s(rug, Stg, k=10, m=1, by=Stg, bs='tp') + s(Stg, k=10, bs='re'), data=trainPA, method = "REML", family="binomial")
 
+fish_modGI =  gam(pa ~ s(BOTTEMP, k=10, m=2, bs="tp") + s(BOTTEMP, k=10, m=1, by=Stg, bs="tp") +s(SURFTEMP, k=10, m=2, bs='tp') + s(SURFTEMP, by=Stg, k=10, m=1, bs='tp') + s(DEPTH, k=10, m=2, bs="tp") + s(DEPTH, by=Stg, k=10, m=1, bs="tp") + s(pseudo_100m3, k=10, m=2, bs="tp") + s(pseudo_100m3, m=1, k=10, by=Stg, bs="tp")+ s(grnszmm, m=2, k=10, bs='tp') + s(grnszmm, by=Stg, k=10, m=1, bs='tp') + s(rug, m=2, k=10, bs='tp') +s(rug, by=Stg, k=10, m=1, bs='tp') + s(Stg, k=10, bs='re'), data=trainPA, method = "REML", family="binomial")
+
+# save(fish_modGI, file='/home/ryan/Git/NEhabitat/rasters/Spr/Haddock/fish_modGI_spr_haddock.Rdata')
+# save(fish_modGI, file='/home/ryan/Git/NEhabitat/rasters/Fall/Haddock/fish_modGI_fall_haddock.Rdata')
+
 draw(fish_modGI4)
 summary(fish_modGI4)
 
@@ -630,12 +653,17 @@ summary(fish_modGI4)
 S model
 y∼s(x, fac, bs="fs") or y∼t2(x1, x2, fac, bs=c("tp", "tp", "re")
 ```{r}
+fish_modS =  gam(pa ~ s(BOTTEMP, Stg, k=10, bs="fs") + s(SURFTEMP, Stg, k=10, bs='fs') + s(DEPTH, Stg, k=10, bs="fs") + s(pseudo_100m3, Stg, k=10, bs="fs") + s(grnszmm, Stg, k=10, bs='fs') + s(rug, Stg, k=10, bs='fs'), data=trainPA, method = "REML", family="binomial")
 
-
+# save(fish_modS, file='/home/ryan/Git/NEhabitat/rasters/Spr/Haddock/fish_modS_spr_haddock.Rdata')
+# save(fish_modS, file='/home/ryan/Git/NEhabitat/rasters/Fall/Haddock/fish_modS_fall_haddock.Rdata')
 ```
 
 I model
 y∼fac+s(x, by=fac) or y∼fac+te(x1,x2, by=fac)
 ```{r}
+fish_modI =  gam(pa ~ Stg + s(BOTTEMP, by=Stg, k=10, bs="tp") + s(SURFTEMP, by=Stg, k=10, bs='tp') + s(DEPTH, by=Stg, k=10, bs="tp") + s(pseudo_100m3, by=Stg, k=10, bs="tp") + s(grnszmm, by=Stg, k=10, bs='tp') + s(rug, by=Stg, k=10, bs='tp'), data=trainPA, method = "REML", family="binomial")
 
+# save(fish_modI, file='/home/ryan/Git/NEhabitat/rasters/Spr/Haddock/fish_modI_spr_haddock.Rdata')
+# save(fish_modI, file='/home/ryan/Git/NEhabitat/rasters/Fall/Haddock/fish_modI_fall_haddock.Rdata')
 ```

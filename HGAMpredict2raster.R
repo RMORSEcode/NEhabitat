@@ -17,7 +17,7 @@ yrlist=seq(from=1977, to=2016, by=1)
 ### SELECT SPR of FALL seasons to process
 SEASON='Spr' # Fall
 SEASON='Fall'
-usemodel=fish_modG_fall_had
+usemodel=fish_modS #_spr_had
 
 ## list data files in each folder
 btlist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/BT', sep=''))
@@ -51,12 +51,12 @@ phi2=resample(phi2mm, bt)
 phi2=crop(phi2, bt)
 phi2=mask(phi2, bt)
 ## rugosity raster
-load('/home/ryan/Git/NEhabitat/rasters/test/scaledrugosity.RData') #rugscl
-# load('/home/ryan/Git/NEhabitat/rast_rugosity.rdata')
-# rug=masked.raster
-# mmin=cellStats(rug, 'min')
-# mmax=cellStats(rug, 'max')
-# rugscl=calc(rug, fun=function(x){(x-mmin)/(mmax-mmin)}) # rescale from -4:2 -> 0:1
+# load('/home/ryan/Git/NEhabitat/rasters/test/scaledrugosity.RData') #rugscl
+load('/home/ryan/Git/NEhabitat/rast_rugosity.rdata')
+rug=masked.raster
+mmin=cellStats(rug, 'min')
+mmax=cellStats(rug, 'max')
+rugscl=calc(rug, fun=function(x){(x-mmin)/(mmax-mmin)}) # rescale from -4:2 -> 0:1
 rug2=resample(rugscl, bt)
 ex=extent(bt)
 rug2=crop(rug2, ex)
@@ -65,10 +65,10 @@ rug2=mask(rug2, bt)
 ## Remove bottom temp raster
 rm(bt)
 fl=levels=c("Adt", "Juv", "ich")
-fishnm='Haddock'
+fishnm='SilverHake'
 wd2=paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/', fishnm, '/', sep='')
 ### NOW loop over files, load yearly dynamic raster files and predict habitat from HGAM models
-for (jj in 1){
+for (jj in 1:3){
   for (i in 1:length(yrlist)){
     bi=which(yrlist[i]==ttb2) # index of year
     load(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/BT/', btlist[[bi]], sep=''))
@@ -200,12 +200,9 @@ map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="black", ad
 # drop first layer for spring wind stress
 #####
 shp.dat3=crop(shp.dat2, small)
-time <- 1:nlayers(AdtHad)
-# fun=function(x) { if (is.na(x[1])){ NA } else { m = lm(x ~ time); summary(m)$coefficients[2] }}
-fun=function(x) { if (is.na(x[1])){ NA } else { m = lm(x ~ time); summary(m)$coefficients[2] * length(time)}} # add trend over time
+time <- 1:nlayers(AdtHad) 
+fun=function(x) { if (is.na(x[1])){ NA } else { m = lm(x ~ time); summary(m)$coefficients[2] }}
 shp.dat.slope=calc(AdtHad, fun)
-# fun=function(x) { if (is.na(x[1])){ NA } else  { x * length(time) }}
-# tslope=calc(shp.dat.slope, fun)
 mn=min(shp.dat.slope@data@values, na.rm = T)
 mx=max(shp.dat.slope@data@values, na.rm = T)
 high=max(abs(mn), mx)
@@ -228,7 +225,7 @@ p.mask = reclassify(p, rclmat)
 fun=function(x) { x[x<1] <- NA; return(x)}
 p.mask.NA = calc(p.mask, fun)
 trend.sig = mask(shp.dat.slope, p.mask.NA)
-plot(shp.dat.slope, main=paste(length(time),'yr trend (%)'),col=cl, breaks=br,axis.args=arg,las=1) # Yearly slope
+plot(shp.dat.slope, main=paste(length(time),'yrs','\nYearly Slope'),col=cl, breaks=br,axis.args=arg,las=1) # Yearly slope
 # plot(shp.dat.slope, main=paste(datalab, season, '\nTrend'), col=diverge_hcl(120), las=1)
 test=rasterToPoints(trend.sig)
 points(test, pch='+', col=addTrans('black',50), cex=0.5)

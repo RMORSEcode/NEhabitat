@@ -147,7 +147,8 @@ for (jj in 1:3){
 }
 
 ## DO for zooplankton species to model abundance
-usemodel=zoo_modG4bll #loadRData(paste(path1,modlist[modchoice], sep='')) #fish_modS #_spr_had
+usemodelpa=zoo_modG4bll_pa #loadRData(paste(path1,modlist[modchoice], sep='')) #fish_modS #_spr_had
+usemodelbio=zoo_modG4bll_pb
 zooyrlist=seq(from=1992, to=2019, by=1)
 fishnm='zoop'
 zoosp='pseudocal'
@@ -175,11 +176,14 @@ for (i in 1:length(zooyrlist)){
   # tt=ef2$Stg
   # tt2=fl[[1]][[1]][2][[1]][tt] # subsets to stage 
   # ef$Stg=factor(ef$Stg, levels=c("Adt", "Juv", "ich"))
-  test1 <- predict.gam(usemodel, ef2, type='response')
-  ef2$pred=test1
+  test1 <- predict.gam(usemodelpa, ef2, type='response')
+  test2 <- predict.gam(usemodelbio, ef2, type='response')
+  ef2$predpa=test1
+  ef2$predbio=test2
+  ef2$combinedout=test1*test2
   wd3=paste(zooyrlist[i], '_', SEASON, '_', zoosp, '_',fl[jj], '.RData', sep="")
   save(ef2, file=paste(wd2, wd3, sep=""))
-  spg1=ef2[,c('LON', 'LAT', 'pred')]
+  spg1=ef2[,c('LON', 'LAT', 'combinedout')]
   wd4=paste(zooyrlist[i], '_', 'RASTER', '_', SEASON, '_', zoosp, '_',fl[jj], '_', '.RData', sep="")
   # tes1=rasterFromXYZ(spg1[complete.cases(spg1$Stg),])
   # save(tes1, file=paste(wd2,wd4, sep=''))
@@ -232,6 +236,9 @@ pse2=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/zoop/pseudocal/zoo_modG4/st
 pse3=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/zoop/pseudocal/zoo_modG4bll/stacked_Spr_pseudocal_ich.RData')
 
 pse4=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/pseudo/RAST_NESREG_2016.04.01.07.TEMP.YEAR.000066596.RData')
+
+plotrasterNES(pse[[25]], mn=0, mx=5, titlex='New modG 2016')
+plotrasterNES(pse3[[25]], mn=0, mx=5, titlex='modG4bll 2016')
 
 plotrasterNES(pse2[[25]], mn=0, mx=5, titlex='modG4 2016')
 plotrasterNES(pse4, mn=0, mx=5, titlex='Kevin 2016')

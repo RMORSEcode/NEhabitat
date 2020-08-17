@@ -143,6 +143,43 @@ testPA$pa=ifelse(testPA$Number > 0, 1, 0)
 
 ```
 
+Testing GAMs on zooplankton abundance
+```{r}
+zoo=FData.abn %>% dplyr::select(YEAR, SEASON, LAT:BOTSALIN, calfin_100m3:rug)
+zoo$MONTH=month(FData.abn$EST_TOWDATE)
+zoo=zoo[complete.cases(zoo),]
+zoo2=zoo[which(zoo$SEASON==slctseason),] # subset to season
+logd=zoo2[,10:19]nh
+logd=log10(logd+1)
+zoo2[,10:19]=logd
+
+set.seed(101) # Set Seed so that same sample can be reproduced in future also
+# # Now Selecting 75% of data as sample from total 'n' rows of the data  
+sample <- sample.int(n = nrow(zoo2), size = floor(.75*nrow(zoo2)), replace = F)
+trainzoo <- zoo2[sample, ]
+testzoo <- zoo2[-sample, ]
+
+zoo_modG = gam(pseudo_100m3 ~ s(BOTTEMP, k=35, bs="tp") +s(SURFTEMP, k=35, bs='tp') + s(DEPTH, k=30, bs="tp") + s(BOTSALIN, k=30, bs='tp') + s(SURFSALIN, k=30, bs="tp") + s(grnszmm, k=30, bs='tp') + s(rug, k=30, bs='tp'), data=trainzoo, method = "REML", family="gaussian")
+
+zoo_modG4 = gam(pseudo_100m3 ~ s(LON, LAT, bs='tp') + s(BOTTEMP, k=35, bs="tp") +s(SURFTEMP, k=35, bs='tp') + s(DEPTH, k=30, bs="tp") + s(BOTSALIN, k=30, bs='tp') + s(SURFSALIN, k=30, bs="tp") + s(grnszmm, k=30, bs='tp') + s(rug, k=30, bs='tp'), data=trainzoo, method = "REML", family="gaussian")
+
+# run soap film smoother below with Lat Lon first
+trainzoopts=SpatialPoints(cbind(trainzoo$LON, trainzoo$LAT),proj4string=CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"))
+trainzoo.in=sp::over(trainzoopts, sps)
+trainzoo.sub=trainzoo
+trainzoo.sub=trainzoo.sub[complete.cases(trainzoo.in),]
+zoo_modG4bll = gam(pseudo_100m3 ~ s(LON, LAT, bs = "so", xt = list(bnd = boundll)) + s(BOTTEMP, k=20, bs="tp") +s(SURFTEMP, k=20, bs='tp') + s(DEPTH, k=10, bs="tp") + s(BOTSALIN, k=30, bs='tp') + s(SURFSALIN, k=30, bs="tp") + s(grnszmm, k=10, bs='tp') + s(rug, k=20, bs='tp'), data=trainzoo.sub, method = "REML", knots=knotsll, family="gaussian")
+
+save(zoo_modG, file='/home/ryan/Git/NEhabitat/rasters/Spr/zoop/zoo_modG_spr_pseudocal.Rdata')
+save(zoo_modG4, file='/home/ryan/Git/NEhabitat/rasters/Spr/zoop/zoo_modG4_spr_pseudocal.Rdata')
+save(zoo_modG4bll, file='/home/ryan/Git/NEhabitat/rasters/Spr/zoop/zoo_modG4bll_spr_pseudocal.Rdata')
+
+
+draw(zoo_modG)
+gam.check(zoo_modG)
+plot(fish_modG, shade=T, rug=T, scale=0)
+AIC(fish_modG)
+```
 skip this -> Now set up traing and testing data; split data sets
 
 ```{r}

@@ -3,7 +3,7 @@ library(mapdata)
 
 
 ### set up year list to match files with
-yrlist=seq(from=1977, to=2016, by=1)
+yrlist=seq(from=1977, to=2019, by=1)
 
 ### These are the files to loop on for years
 ## load example raster data for spring 1977, use in predict mode for gam
@@ -29,7 +29,7 @@ SEASON='Spr' # Fall
 SEASON='Fall'
 
 ### NAME OF FISH
-fishnm='Haddock'  #'SilverHake'
+fishnm='Cod' # 'Haddock'  #'SilverHake'
 
 ## get path and list of models
 path1=paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/', fishnm,'/', sep='') # Spr/Haddock'
@@ -37,9 +37,97 @@ modlist=list.files(path1)
 
 ## CHOOSE MODEL AND VERIFY
 modlist
-modchoice=1
+modchoice=9
 modlist[modchoice]
 usemodel=loadRData(paste(path1,modlist[modchoice], sep='')) #fish_modS #_spr_had
+
+# verify model (one file)
+trainPA$SVSPP[1] #verify species
+trainPA$SEASON[1] #verify season
+modlistpa=list.files(path1, pattern = '_pa_') # presence-absence models
+modlistpb=list.files(path1, pattern = '_pb_') # positive biomass models
+
+
+pdf(paste(path1, 'PAmodels_AUC.pdf', sep=''), height=4, width=6)
+for (i in (1:length(modlistpa))){
+  modchoice=i
+  modlistpa[modchoice]
+  usemodel=loadRData(paste(path1,modlistpa[modchoice], sep=''))
+  pred.test=predict(usemodel,testPA,type='response')  # make prediction for test set
+  preds.obs=data.frame(pred.test=pred.test,testPA$pa) # data frame of preds and obs
+  colnames(preds.obs)=c("predicted","observed")
+  preds.obs2=preds.obs[complete.cases(preds.obs$predicted),]
+  plotROC(preds.obs2$observed,preds.obs2$predicted, colorize = TRUE, main=paste('All Stages ', modlistpa[i], sep=''))
+  sset=which(testPA$Stg=='Adt')
+  preds.obs2=preds.obs[sset,]
+  preds.obs2[complete.cases(preds.obs2$predicted),]
+  plotROC(preds.obs2$observed[sset],preds.obs2$predicted[sset], colorize = TRUE, main=paste('Adt only ',modlistpa[i], sep=''))
+  sset=which(testPA$Stg=='Juv')
+  preds.obs2=preds.obs[sset,]
+  preds.obs2[complete.cases(preds.obs2$predicted),]
+  plotROC(preds.obs2$observed[sset],preds.obs2$predicted[sset], colorize = TRUE, main=paste('Juv only ',modlistpa[i], sep=''))
+  sset=which(testPA$Stg=='ich')
+  preds.obs2=preds.obs[sset,]
+  preds.obs2[complete.cases(preds.obs2$predicted),]
+  plotROC(preds.obs2$observed[sset],preds.obs2$predicted[sset], colorize = TRUE, main=paste('Ich only ',modlistpa[i], sep=''))
+}
+dev.off()
+
+### verify model as seperate files
+pdf(paste(path1, 'PAmodels_AUC_all_Stg.pdf', sep=''), height=4, width=6)
+for (i in (1:length(modlistpa))){
+  modchoice=i
+  modlistpa[modchoice]
+  usemodel=loadRData(paste(path1,modlistpa[modchoice], sep=''))
+  pred.test=predict(usemodel,testPA,type='response')
+  preds.obs=data.frame(pred.test=pred.test,testPA$pa)
+  colnames(preds.obs)=c("predicted","observed")
+  preds.obs2=preds.obs2[complete.cases(preds.obs$predicted),]
+  plotROC(preds.obs2$observed,preds.obs2$predicted, colorize = TRUE, main=paste('All Stages ', modlistpa[i], sep=''))
+}
+dev.off()
+pdf(paste(path1, 'PA_models_by_Stg_Adt_AUC.pdf', sep=''), height=4, width=6)
+for (i in (1:length(modlistpa))){
+  modchoice=i
+  modlistpa[modchoice]
+  usemodel=loadRData(paste(path1,modlistpa[modchoice], sep=''))
+  pred.test=predict(usemodel,testPA,type='response')
+  preds.obs=data.frame(pred.test=pred.test,testPA$pa)
+  colnames(preds.obs)=c("predicted","observed")
+  sset=which(testPA$Stg=='Adt')
+  preds.obs2=preds.obs[sset,]
+  preds.obs2=preds.obs2[complete.cases(preds.obs2$predicted),]
+  plotROC(preds.obs2$observed,preds.obs2$predicted, colorize = TRUE, main=paste('Adt only ',modlistpa[i], sep=''))
+  }
+dev.off()
+pdf(paste(path1, 'PA_models_by_Stg_Juv_AUC.pdf', sep=''), height=4, width=6)
+for (i in (1:length(modlistpa))){
+  modchoice=i
+  modlistpa[modchoice]
+  usemodel=loadRData(paste(path1,modlistpa[modchoice], sep=''))
+  pred.test=predict(usemodel,testPA,type='response')
+  preds.obs=data.frame(pred.test=pred.test,testPA$pa)
+  colnames(preds.obs)=c("predicted","observed")
+  sset=which(testPA$Stg=='Juv')
+  preds.obs2=preds.obs[sset,]
+  preds.obs2=preds.obs2[complete.cases(preds.obs2$predicted),]
+  plotROC(preds.obs2$observed,preds.obs2$predicted, colorize = TRUE, main=paste('Juv only ',modlistpa[i], sep=''))
+}
+dev.off()
+pdf(paste(path1, 'PA_models_by_Stg_Ich_AUC.pdf', sep=''), height=4, width=6)
+for (i in (1:length(modlistpa))){
+  modchoice=i
+  modlistpa[modchoice]
+  usemodel=loadRData(paste(path1,modlistpa[modchoice], sep=''))
+  pred.test=predict(usemodel,testPA,type='response')
+  preds.obs=data.frame(pred.test=pred.test,testPA$pa)
+  colnames(preds.obs)=c("predicted","observed")
+  sset=which(testPA$Stg=='ich')
+  preds.obs2=preds.obs[sset,]
+  preds.obs2=preds.obs2[complete.cases(preds.obs2$predicted),]
+  plotROC(preds.obs2$observed,preds.obs2$predicted, colorize = TRUE, main=paste('Ich only ',modlistpa[i], sep=''))
+}
+dev.off()
 
 ## list data files in each folder
 btlist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/BT2', sep=''))
@@ -84,8 +172,7 @@ phi2=crop(phi2, bt)
 phi2=mask(phi2, bt)
 ## rugosity raster
 # load('/home/ryan/Git/NEhabitat/rasters/test/scaledrugosity.RData') #rugscl
-load('/home/ryan/Git/NEhabitat/rast_rugosity.rdata')
-rug=masked.raster
+rug=loadRData('/home/ryan/Git/NEhabitat/rast_rugosity.rdata')
 mmin=cellStats(rug, 'min')
 mmax=cellStats(rug, 'max')
 rugscl=calc(rug, fun=function(x){(x-mmin)/(mmax-mmin)}) # rescale from -4:2 -> 0:1
@@ -99,6 +186,9 @@ rm(bt)
 fl=levels=c("Adt", "Juv", "ich")
 # fishnm='SilverHake'
 wd2=paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/', fishnm, '/', sep='')
+modchoice=5
+usemodel=loadRData(paste(path1,modlistpa[modchoice], sep=''))
+usemodelbio=loadRData(paste(path1,modlistpb[modchoice], sep=''))
 ### NOW loop over files, load yearly dynamic raster files and predict habitat from HGAM models
 for (jj in 1:3){
   for (i in 1:length(yrlist)){
@@ -124,7 +214,18 @@ for (jj in 1:3){
     # tt2=fl[[1]][[1]][2][[1]][tt] # subsets to stage 
     # ef$Stg=factor(ef$Stg, levels=c("Adt", "Juv", "ich"))
     test1 <- predict.gam(usemodel, ef2, type='response')
-    ef2$pred=test1
+    test2=predict.gam(usemodelbio, ef2, type='response')
+    ef2$predpa=test1
+    
+    ef2$predbio=test2
+    ef2$combinedout=test1*test2
+    wd3=paste(zooyrlist[i], '_', SEASON, '_', zoosp, '_',fl[jj], '.RData', sep="")
+    save(ef2, file=paste(wd2, wd3, sep=""))
+    spg1=ef2[,c('LON', 'LAT', 'combinedout')]
+    wd4=paste(zooyrlist[i], '_', 'RASTER', '_', SEASON, '_', zoosp, '_',fl[jj], '_', '.RData', sep="")
+    
+    
+    
     wd3=paste(yrlist[i], '_', SEASON, '_', fishnm, '_',fl[jj], '.RData', sep="")
     save(ef2, file=paste(wd2, wd3, sep=""))
     spg1=ef2[,c('LON', 'LAT', 'pred')]

@@ -179,27 +179,27 @@ sample <- sample.int(n = nrow(zoo3), size = floor(.75*nrow(zoo3)), replace = F)
 trainzoo <- zoo3[sample, ]
 testzoo <- zoo3[-sample, ]
 
+zoonm='calfin'
 ## positive biomass model - select zoo taxa to use for model and subset to positive biomass only
-zooposbio=zoo2[which(zoo3$pseudo_100m3>0),]
+zooposbio=zoo2[which(zoo3$calfin_100m3>0),]
 sample <- sample.int(n = nrow(zooposbio), size = floor(.75*nrow(zooposbio)), replace = F)
 trainzoobio <- zooposbio[sample, ]
 testzoobio <- zooposbio[-sample, ]
 
 
-zoo_modG_pa = gam(pseudo_100m3 ~ s(BOTTEMP, k=35, bs="tp") +s(SURFTEMP, k=35, bs='tp') + s(DEPTH, k=30, bs="tp") + s(BOTSALIN, k=30, bs='tp') + s(SURFSALIN, k=30, bs="tp") + s(grnszmm, k=30, bs='tp') + s(rug, k=30, bs='tp'), data=trainzoo, method = "REML", family="binomial")
+zoo_modG_pa = gam(calfin_100m3 ~ s(BOTTEMP, k=35, bs="tp") +s(SURFTEMP, k=35, bs='tp') + s(DEPTH, k=30, bs="tp") + s(BOTSALIN, k=30, bs='tp') + s(SURFSALIN, k=30, bs="tp") + s(grnszmm, k=30, bs='tp') + s(rug, k=30, bs='tp'), data=trainzoo, method = "REML", family="binomial")
 
-zoo_modG_pb = gam(pseudo_100m3 ~ s(BOTTEMP, k=35, bs="tp") +s(SURFTEMP, k=35, bs='tp') + s(DEPTH, k=30, bs="tp") + s(BOTSALIN, k=30, bs='tp') + s(SURFSALIN, k=30, bs="tp") + s(grnszmm, k=30, bs='tp') + s(rug, k=30, bs='tp'), data=trainzoobio, method = "REML", family="gaussian")
+zoo_modG_pb = gam(calfin_100m3 ~ s(BOTTEMP, k=35, bs="tp") +s(SURFTEMP, k=35, bs='tp') + s(DEPTH, k=30, bs="tp") + s(BOTSALIN, k=30, bs='tp') + s(SURFSALIN, k=30, bs="tp") + s(grnszmm, k=30, bs='tp') + s(rug, k=30, bs='tp'), data=trainzoobio, method = "REML", family="gaussian")
 
-# save(zoo_modG_pa, file='/home/ryan/Git/NEhabitat/rasters/Spr/zoop/zoo_modG_pa_spr_pseudocal.Rdata')
-# save(zoo_modG_pb, file='/home/ryan/Git/NEhabitat/rasters/Spr/zoop/zoo_modG_pb_spr_pseudocal.Rdata')
-
+save(zoo_modG_pa, file=paste('/home/ryan/Git/NEhabitat/rasters/',fishseas,'/zoop/zoo_modG_pa_',fishseas,'_',zoonm,'.Rdata',sep=''))
+save(zoo_modG_pb, file=paste('/home/ryan/Git/NEhabitat/rasters/',fishseas,'/zoop/zoo_modG_pb_',fishseas,'_',zoonm,'.Rdata',sep='')) 
 # ______
-zoo_modG4_pa = gam(pseudo_100m3 ~ s(LON, LAT, bs='tp') + s(BOTTEMP, k=35, bs="tp") +s(SURFTEMP, k=35, bs='tp') + s(DEPTH, k=30, bs="tp") + s(BOTSALIN, k=30, bs='tp') + s(SURFSALIN, k=30, bs="tp") + s(grnszmm, k=30, bs='tp') + s(rug, k=30, bs='tp'), data=trainzoo, method = "REML", family="binomial")
+zoo_modG4_pa = gam(calfin_100m3 ~ s(LON, LAT, bs='tp') + s(BOTTEMP, k=35, bs="tp") +s(SURFTEMP, k=35, bs='tp') + s(DEPTH, k=30, bs="tp") + s(BOTSALIN, k=30, bs='tp') + s(SURFSALIN, k=30, bs="tp") + s(grnszmm, k=30, bs='tp') + s(rug, k=30, bs='tp'), data=trainzoo, method = "REML", family="binomial")
 
-zoo_modG4_pb = gam(pseudo_100m3 ~ s(LON, LAT, bs='tp') + s(BOTTEMP, k=35, bs="tp") +s(SURFTEMP, k=35, bs='tp') + s(DEPTH, k=30, bs="tp") + s(BOTSALIN, k=30, bs='tp') + s(SURFSALIN, k=30, bs="tp") + s(grnszmm, k=30, bs='tp') + s(rug, k=30, bs='tp'), data=trainzoobio, method = "REML", family="gaussian")
-# save(zoo_modG4_pa, file='/home/ryan/Git/NEhabitat/rasters/Spr/zoop/zoo_modG4_pa_spr_pseudocal.Rdata')
-# save(zoo_modG4_pb, file='/home/ryan/Git/NEhabitat/rasters/Spr/zoop/zoo_modG4_pb_spr_pseudocal.Rdata')
+zoo_modG4_pb = gam(calfin_100m3 ~ s(LON, LAT, bs='tp') + s(BOTTEMP, k=35, bs="tp") +s(SURFTEMP, k=35, bs='tp') + s(DEPTH, k=30, bs="tp") + s(BOTSALIN, k=30, bs='tp') + s(SURFSALIN, k=30, bs="tp") + s(grnszmm, k=30, bs='tp') + s(rug, k=30, bs='tp'), data=trainzoobio, method = "REML", family="gaussian")
 
+save(zoo_modG4_pa, file=paste('/home/ryan/Git/NEhabitat/rasters/',fishseas,'/zoop/zoo_modG4_pa_',fishseas,'_',zoonm,'.Rdata',sep=''))
+save(zoo_modG4_pb, file=paste('/home/ryan/Git/NEhabitat/rasters/',fishseas,'/zoop/zoo_modG4_pb_',fishseas,'_',zoonm,'.Rdata',sep='')) 
 # ______
 # run soap film smoother below with Lat Lon first
 trainzoopts=SpatialPoints(cbind(trainzoo$LON, trainzoo$LAT),proj4string=CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"))
@@ -212,12 +212,12 @@ trainzoo.inbio=sp::over(trainzoobiopts, sps)
 trainzoo.subbio=trainzoobio
 trainzoo.subbio=trainzoo.subbio[complete.cases(trainzoo.inbio),]
 
-zoo_modG4bll_pa = gam(pseudo_100m3 ~ s(LON, LAT, bs = "so", xt = list(bnd = boundll)) + s(BOTTEMP, k=20, bs="tp") +s(SURFTEMP, k=20, bs='tp') + s(DEPTH, k=10, bs="tp") + s(BOTSALIN, k=30, bs='tp') + s(SURFSALIN, k=30, bs="tp") + s(grnszmm, k=10, bs='tp') + s(rug, k=20, bs='tp'), data=trainzoo.sub, method = "REML", knots=knotsll, family="binomial")
+zoo_modG4bll_pa = gam(calfin_100m3 ~ s(LON, LAT, bs = "so", xt = list(bnd = boundll)) + s(BOTTEMP, k=20, bs="tp") +s(SURFTEMP, k=20, bs='tp') + s(DEPTH, k=10, bs="tp") + s(BOTSALIN, k=30, bs='tp') + s(SURFSALIN, k=30, bs="tp") + s(grnszmm, k=10, bs='tp') + s(rug, k=20, bs='tp'), data=trainzoo.sub, method = "REML", knots=knotsll, family="binomial")
 
-zoo_modG4bll_pb = gam(pseudo_100m3 ~ s(LON, LAT, bs = "so", xt = list(bnd = boundll)) + s(BOTTEMP, k=20, bs="tp") +s(SURFTEMP, k=20, bs='tp') + s(DEPTH, k=10, bs="tp") + s(BOTSALIN, k=30, bs='tp') + s(SURFSALIN, k=30, bs="tp") + s(grnszmm, k=10, bs='tp') + s(rug, k=20, bs='tp'), data=trainzoo.subbio, method = "REML", knots=knotsll, family="gaussian")
+zoo_modG4bll_pb = gam(calfin_100m3 ~ s(LON, LAT, bs = "so", xt = list(bnd = boundll)) + s(BOTTEMP, k=20, bs="tp") +s(SURFTEMP, k=20, bs='tp') + s(DEPTH, k=10, bs="tp") + s(BOTSALIN, k=30, bs='tp') + s(SURFSALIN, k=30, bs="tp") + s(grnszmm, k=10, bs='tp') + s(rug, k=20, bs='tp'), data=trainzoo.subbio, method = "REML", knots=knotsll, family="gaussian")
 
-# save(zoo_modG4bll_pa, file='/home/ryan/Git/NEhabitat/rasters/Spr/zoop/zoo_modG4bll_pa_spr_pseudocal.Rdata')
-# save(zoo_modG4bll_pb, file='/home/ryan/Git/NEhabitat/rasters/Spr/zoop/zoo_modG4bll_pb_spr_pseudocal.Rdata')
+save(zoo_modG4bll_pa, file=paste('/home/ryan/Git/NEhabitat/rasters/',fishseas,'/zoop/zoo_modG4bll_pa_',fishseas,'_',zoonm,'.Rdata',sep=''))
+save(zoo_modG4bll_pb, file=paste('/home/ryan/Git/NEhabitat/rasters/',fishseas,'/zoop/zoo_modG4bll_pb_',fishseas,'_',zoonm,'.Rdata',sep='')) 
 
 # draw(zoo_modG)
 # gam.check(zoo_modG)

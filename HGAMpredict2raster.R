@@ -3,7 +3,7 @@ library(mapdata)
 
 
 ### set up year list to match files with
-yrlist=seq(from=1977, to=2019, by=1)
+yrlist=seq(from=1977, to=2016, by=1)
 
 ### These are the files to loop on for years
 ## load example raster data for spring 1977, use in predict mode for gam
@@ -186,7 +186,7 @@ rm(bt)
 fl=levels=c("Adt", "Juv", "ich")
 # fishnm='SilverHake'
 wd2=paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/', fishnm, '/', sep='')
-modchoice=5
+modchoice=6
 usemodel=loadRData(paste(path1,modlistpa[modchoice], sep=''))
 usemodelbio=loadRData(paste(path1,modlistpb[modchoice], sep=''))
 ### NOW loop over files, load yearly dynamic raster files and predict habitat from HGAM models
@@ -216,20 +216,12 @@ for (jj in 1:3){
     test1 <- predict.gam(usemodel, ef2, type='response')
     test2=predict.gam(usemodelbio, ef2, type='response')
     ef2$predpa=test1
-    
-    ef2$predbio=test2
-    ef2$combinedout=test1*test2
-    wd3=paste(zooyrlist[i], '_', SEASON, '_', zoosp, '_',fl[jj], '.RData', sep="")
-    save(ef2, file=paste(wd2, wd3, sep=""))
-    spg1=ef2[,c('LON', 'LAT', 'combinedout')]
-    wd4=paste(zooyrlist[i], '_', 'RASTER', '_', SEASON, '_', zoosp, '_',fl[jj], '_', '.RData', sep="")
-    
-    
-    
-    wd3=paste(yrlist[i], '_', SEASON, '_', fishnm, '_',fl[jj], '.RData', sep="")
-    save(ef2, file=paste(wd2, wd3, sep=""))
-    spg1=ef2[,c('LON', 'LAT', 'pred')]
+    ef2$predbio=10^(test2) # biomass used was logbio -> log10(x+1)
+    ef2$combinedout=ef2$predpa * ef2$predbio
     wd4=paste(yrlist[i], '_', 'RASTER', '_', SEASON, '_', fishnm, '_',fl[jj], '_', '.RData', sep="")
+    # wd3=paste(zooyrlist[i], '_', SEASON, '_', zoosp, '_',fl[jj], '.RData', sep="")
+    save(ef2, file=paste(wd2, wd4, sep=""))
+    spg1=ef2[,c('LON', 'LAT', 'combinedout')]
     # tes1=rasterFromXYZ(spg1[complete.cases(spg1$Stg),])
     # save(tes1, file=paste(wd2,wd4, sep=''))
     coordinates(spg1)= ~ LON + LAT
@@ -248,11 +240,11 @@ for (jj in 1:3){
 }
 
 ## DO for zooplankton species to model abundance
-usemodelpa=zoo_modG4bll_pa #loadRData(paste(path1,modlist[modchoice], sep='')) #fish_modS #_spr_had
-usemodelbio=zoo_modG4bll_pb
+usemodelpa=zoo_modG_pa #loadRData(paste(path1,modlist[modchoice], sep='')) #fish_modS #_spr_had
+usemodelbio=zoo_modG_pb
 zooyrlist=seq(from=1992, to=2019, by=1)
 fishnm='zoop'
-zoosp='pseudocal'
+zoosp='calfin' #'pseudocal'
 rm(bt)
 wd2=paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/', fishnm, '/', zoosp, '/', sep='')
 ### NOW loop over files, load yearly dynamic raster files and predict habitat from HGAM models
@@ -282,10 +274,10 @@ for (i in 1:length(zooyrlist)){
   ef2$predpa=test1
   ef2$predbio=test2
   ef2$combinedout=test1*test2
-  wd3=paste(zooyrlist[i], '_', SEASON, '_', zoosp, '_',fl[jj], '.RData', sep="")
+  wd3=paste(zooyrlist[i], '_', SEASON, '_', zoosp, '_', '.RData', sep="")
   save(ef2, file=paste(wd2, wd3, sep=""))
   spg1=ef2[,c('LON', 'LAT', 'combinedout')]
-  wd4=paste(zooyrlist[i], '_', 'RASTER', '_', SEASON, '_', zoosp, '_',fl[jj], '_', '.RData', sep="")
+  wd4=paste(zooyrlist[i], '_', 'RASTER', '_', SEASON, '_', zoosp, '_', '.RData', sep="")
   # tes1=rasterFromXYZ(spg1[complete.cases(spg1$Stg),])
   # save(tes1, file=paste(wd2,wd4, sep=''))
   coordinates(spg1)= ~ LON + LAT
@@ -299,9 +291,10 @@ for (i in 1:length(zooyrlist)){
   if (i >1){
     keepstack=stack(keepstack, rastDF)
   }
-  save(keepstack, file=paste(wd2,'stacked_', SEASON, '_', zoosp, '_',fl[jj], '.RData', sep=""))
+  save(keepstack, file=paste(wd2,'stacked_', SEASON, '_', zoosp, '_', '.RData', sep=""))
 }
 
+plotRasterTrends(keepstack)
 
 plotrasterNES=function(lograx, mn, mx, titlex){
   # fun=function(x) { if (is.na(x[1])){ NA } else {10^x}}
@@ -388,6 +381,8 @@ rastlistI=rastlist[which(rlst=='ich')]
 
 ## just load rater stacks
 AdtHad=loadRData("/home/ryan/Git/NEhabitat/rasters/Spr/Haddock/stacked_Spr_Haddock_Adt.RData")
+adtcod=loadRData("/home/ryan/Git/NEhabitat/rasters/Spr/Cod/fish_modI_spr_cod/stacked_Spr_Cod_Adt.RData")
+juvcod=loadRData("/home/ryan/Git/NEhabitat/rasters/Spr/Cod/fish_modI_spr_cod/stacked_Spr_Cod_Juv.RData")
 
 ## this is not working, needs to call name of saved raster 'rastDF'
 # loadNstack=function(x, namex){
@@ -432,12 +427,74 @@ library(colorspace)
 # drop first layer for spring wind stress
 #####
 # shp.dat3=crop(shp.dat2, small)
-time <- 1:nlayers(pse) 
+
+plotRasterTrends=function(rastck){
+  time <- 1:nlayers(rastck) 
+  fun=function(x) { if (is.na(x[1])){ NA } else { m = lm(x ~ time); summary(m)$coefficients[2] }}
+  newrast=calc(rastck, fun)
+  mn=cellStats(newrast, min)
+  mx=cellStats(newrast, max)
+  high=max(abs(mn), mx)
+  br <- seq(-high, high, by = high/15) 
+  cl <- colorspace::diverge_hcl(length(br) - 1, power = 1) 
+  rng=range(newrast[],na.rm=T)
+  arg=list(at=rng, labels=round(rng,3))
+  plot(newrast, col=cl, breaks=br,axis.args=arg,las=1, main=paste(length(time),'yrs','\nYearly Slope')) # Yearly slope
+  maps::map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="black", add=T)
+  # plot slope times length of time
+  newrast.t=newrast*length(time)
+  mn=cellStats(newrast.t, min) #min(newrast.t@data@values, na.rm = T)
+  mx=cellStats(newrast.t, max) #max(newrast.t@data@values, na.rm = T)
+  high=max(abs(mn), mx)
+  br <- seq(-high, high, by = high/15) 
+  cl <- colorspace::diverge_hcl(length(br) - 1, power = 1) 
+  rng=range(newrast.t[],na.rm=T)
+  arg=list(at=rng, labels=round(rng,3))
+  plot(newrast.t, col=cl, breaks=br,axis.args=arg,las=1, main=paste(length(time),'yr change')) # Time series change
+  maps::map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="black", add=T)
+  ## Calc Significance
+  fun=function(x) { if (is.na(x[1])){ NA } else { m = lm(x ~ time); summary(m)$coefficients[8] }}
+  p <- calc(rastck, fun=fun)
+  m = c(0, 0.05, 1, 0.05, 1, 0)
+  rclmat = matrix(m, ncol=3, byrow=TRUE)
+  p.mask = reclassify(p, rclmat)
+  fun=function(x) { x[x<1] <- NA; return(x)}
+  p.mask.NA = calc(p.mask, fun)
+  trend.sig = mask(newrast, p.mask.NA)
+  mn=cellStats(newrast, min)
+  mx=cellStats(newrast, max)
+  high=max(abs(mn), mx)
+  br <- seq(-high, high, by = high/15) 
+  cl <- colorspace::diverge_hcl(length(br) - 1, power = 1) 
+  rng=range(newrast[],na.rm=T)
+  arg=list(at=rng, labels=round(rng,3))
+  plot(newrast, main=paste(length(time),'yrs','\nYearly Slope'),col=cl, breaks=br,axis.args=arg,las=1) # Yearly slope
+  test=rasterToPoints(trend.sig)
+  points(test, pch='+', col=addTrans('black',50), cex=0.5)
+  maps::map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="black", add=T)
+  ## Plot Variance
+  fun=function(x) { if (is.na(x[1])){ NA } else { m = lm(x ~ time); (summary(m)$sigma)}} ; TITL='Std deviation of slope'
+  newrast.v=calc(rastck, fun)
+  mn=min(newrast.v@data@values, na.rm = T)
+  mx=max(newrast.v@data@values, na.rm = T)
+  high=max(abs(mn), mx)
+  magn=floor(log10(mx))
+  br <- seq(0, high, by = high/15) 
+  cl=colorRampPalette(brewer.pal(9,"Reds"))(length(br))
+  rng=range(newrast.v[],na.rm=T)
+  arg=list(at=rng, labels=round(rng,abs(min(log10(rng)))))
+  plot(newrast.v, main=paste(length(time),'yrs','\n', TITL),col=cl, breaks=br,axis.args=arg,las=1) # 
+  maps::map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="black", add=T)
+}
+
+
+
+time <- 1:nlayers(ichcod) 
 fun=function(x) { if (is.na(x[1])){ NA } else { m = lm(x ~ time); summary(m)$coefficients[2] }}
-shp.dat.slope=calc(pse, fun)
+shp.dat.slope=calc(juvcod, fun)
 shp.dat.time=shp.dat.slope*length(time)
-mn=min(shp.dat.slope@data@values, na.rm = T)
-mx=max(shp.dat.slope@data@values, na.rm = T)
+mn=cellStats(shp.dat.slope, min) #min(shp.dat.slope@data@values, na.rm = T)
+mx=cellStats(shp.dat.slope, max) #max(shp.dat.slope@data@values, na.rm = T)
 high=max(abs(mn), mx)
 br <- seq(-high, high, by = high/15) 
 cl <- colorspace::diverge_hcl(length(br) - 1, power = 1) 
@@ -445,8 +502,8 @@ rng=range(shp.dat.slope[],na.rm=T)
 arg=list(at=rng, labels=round(rng,3))
 # plot(shp.dat.slope, main=paste(datalab, season, length(time),'yrs','\nYearly Slope'),col=diverge_hcl(120), las=1) # Yearly slope
 plot(shp.dat.slope, col=cl, breaks=br,axis.args=arg,las=1, main=paste(length(time),'yrs','\nYearly Slope')) # Yearly slope
-mn=min(shp.dat.time@data@values, na.rm = T)
-mx=max(shp.dat.time@data@values, na.rm = T)
+mn=cellStats(shp.dat.slope, min) #min(shp.dat.time@data@values, na.rm = T)
+mx=cellStats(shp.dat.slope, max) #max(shp.dat.time@data@values, na.rm = T)
 high=max(abs(mn), mx)
 br <- seq(-high, high, by = high/15) 
 cl <- colorspace::diverge_hcl(length(br) - 1, power = 1) 

@@ -3,7 +3,7 @@ library(mapdata)
 
 
 ### set up year list to match files with
-yrlist=seq(from=1977, to=2016, by=1)
+yrlist=seq(from=1977, to=2019, by=1)
 
 ### These are the files to loop on for years
 ## load example raster data for spring 1977, use in predict mode for gam
@@ -29,7 +29,7 @@ SEASON='Spr' # Fall
 SEASON='Fall'
 
 ### NAME OF FISH
-fishnm='Cod' # 'Haddock'  #'SilverHake'
+fishnm='Haddock' #'Cod' # 'Haddock'  #'SilverHake'
 
 ## get path and list of models
 path1=paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/', fishnm,'/', sep='') # Spr/Haddock'
@@ -46,6 +46,14 @@ trainPA$SVSPP[1] #verify species
 trainPA$SEASON[1] #verify season
 modlistpa=list.files(path1, pattern = '_pa_') # presence-absence models
 modlistpb=list.files(path1, pattern = '_pb_') # positive biomass models
+
+# pdf(paste(path1, 'Models_variables.pdf', sep=''), height=4, width=6)
+# for (i in (1:length(modlistpa))){
+#   modchoice=i
+#   usemodel=loadRData(paste(path1,modlistpa[modchoice], sep=''))
+#   draw(usemodel)
+# }
+# dev.off()
 
 
 pdf(paste(path1, 'PAmodels_AUC.pdf', sep=''), height=4, width=6)
@@ -140,11 +148,11 @@ tb=strsplit(btlist, split=('RAST_NESREG_'))
 ttb=sapply(tb, function(x) strsplit(x, "[.]")[[2]][1], USE.NAMES=FALSE)
 ttb2=as.numeric(ttb)
 #Surface temp
-ts=strsplit(btlist, split=('RAST_NESREG_'))
+ts=strsplit(stlist, split=('RAST_NESREG_'))
 tts=sapply(ts, function(x) strsplit(x, "[.]")[[2]][1], USE.NAMES=FALSE)
 tts2=as.numeric(tts)
 # Zooplankton (pseudocal)
-tz=strsplit(btlist, split=('RAST_NESREG_'))
+tz=strsplit(zlist, split=('RAST_NESREG_'))
 ttz=sapply(tz, function(x) strsplit(x, "[.]")[[2]][1], USE.NAMES=FALSE)
 ttz2=as.numeric(ttz)
 #Surface salinity
@@ -186,21 +194,18 @@ rm(bt)
 fl=levels=c("Adt", "Juv", "ich")
 # fishnm='SilverHake'
 wd2=paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/', fishnm, '/', sep='')
-modchoice=6
+modchoice=3
 usemodel=loadRData(paste(path1,modlistpa[modchoice], sep=''))
 usemodelbio=loadRData(paste(path1,modlistpb[modchoice], sep=''))
 ### NOW loop over files, load yearly dynamic raster files and predict habitat from HGAM models
 for (jj in 1:3){
   for (i in 1:length(yrlist)){
     bi=which(yrlist[i]==ttb2) # index of year
-    load(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/BT2/', btlist[[bi]], sep=''))
-    bt=masked.raster # rename
+    bt=loadRData(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/BT2/', btlist[[bi]], sep=''))
     bi=which(yrlist[i]==tts2) # index of year
-    load(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/ST2/', stlist[[bi]], sep=''))
-    st=masked.raster
+    st=loadRData(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/ST2/', stlist[[bi]], sep=''))
     bi=which(yrlist[i]==ttz2) # index of year
-    load(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/pseudo/', zlist[[bi]], sep=''))
-    pse=masked.raster
+    pse=loadRData(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/pseudo/', zlist[[bi]], sep=''))
     ef <- data.frame(coordinates(bt), val=values(bt))
     colnames(ef)=c("LON", "LAT", "BOTTEMP")
     ef$SURFTEMP=values(st)
@@ -209,7 +214,8 @@ for (jj in 1:3){
     ef$pseudo_100m3=values(pse)
     ef$grnszmm=values(phi2)
     ef$rug=values(rug2)
-    ef2=ef[complete.cases(ef),]
+    ef2=ef
+    # ef2=ef[complete.cases(ef),]
     # tt=ef2$Stg
     # tt2=fl[[1]][[1]][2][[1]][tt] # subsets to stage 
     # ef$Stg=factor(ef$Stg, levels=c("Adt", "Juv", "ich"))
@@ -218,33 +224,43 @@ for (jj in 1:3){
     ef2$predpa=test1
     ef2$predbio=10^(test2) # biomass used was logbio -> log10(x+1)
     ef2$combinedout=ef2$predpa * ef2$predbio
-    wd4=paste(yrlist[i], '_', 'RASTER', '_', SEASON, '_', fishnm, '_',fl[jj], '_', '.RData', sep="")
+    wd4=paste(yrlist[i], '_', 'matrix', '_', SEASON, '_', fishnm, '_',fl[jj], '.RData', sep="")
     # wd3=paste(zooyrlist[i], '_', SEASON, '_', zoosp, '_',fl[jj], '.RData', sep="")
     save(ef2, file=paste(wd2, wd4, sep=""))
     spg1=ef2[,c('LON', 'LAT', 'combinedout')]
+    spg2=ef2[,c('LON','LAT','predpa')]
     # tes1=rasterFromXYZ(spg1[complete.cases(spg1$Stg),])
     # save(tes1, file=paste(wd2,wd4, sep=''))
     coordinates(spg1)= ~ LON + LAT
+    coordinates(spg2)= ~ LON + LAT
     gridded(spg1)=T
+    gridded(spg2)=T
     rastDF=raster(spg1)
+    extent(rastDF)=c(-75.95, -65.45, 35.65, 44.65)
+    rastDF2=raster(spg2)
+    extent(rastDF2)=c(-75.95, -65.45, 35.65, 44.65)
     if (i == 1){
       keepstack=rastDF
+      keepstackpa=rastDF2
     }
     # plot(rastDF)
     # save(rastDF, file=paste(wd2,wd4, sep=''))
     if (i >1){
       keepstack=stack(keepstack, rastDF)
+      keepstackpa=stack(keepstackpa, rastDF2)
     }
   }
   save(keepstack, file=paste(wd2,'stacked_', SEASON, '_', fishnm, '_',fl[jj], '.RData', sep=""))
+  save(keepstackpa, file=paste(wd2,'PA_only_stacked_', SEASON, '_', fishnm, '_',fl[jj], '.RData', sep=""))
 }
+
 
 ## DO for zooplankton species to model abundance
 usemodelpa=zoo_modG_pa #loadRData(paste(path1,modlist[modchoice], sep='')) #fish_modS #_spr_had
 usemodelbio=zoo_modG_pb
 zooyrlist=seq(from=1992, to=2019, by=1)
 fishnm='zoop'
-zoosp='calfin' #'pseudocal'
+zoosp='pseudocal' #'calfin' #'pseudocal'
 rm(bt)
 wd2=paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/', fishnm, '/', zoosp, '/', sep='')
 ### NOW loop over files, load yearly dynamic raster files and predict habitat from HGAM models
@@ -293,8 +309,51 @@ for (i in 1:length(zooyrlist)){
   }
   save(keepstack, file=paste(wd2,'stacked_', SEASON, '_', zoosp, '_', '.RData', sep=""))
 }
+### save raster layers to new file:
+t1=subset(keepstack, 26)
+save(t1, file='/home/ryan/Git/NEhabitat/rasters/Fall/pseudo/RAST_NESREG_2017.04.01.07.TEMP.YEAR.000066596.RData')
+t1=subset(keepstack, 27)
+save(t1, file='/home/ryan/Git/NEhabitat/rasters/Fall/pseudo/RAST_NESREG_2018.04.01.07.TEMP.YEAR.000066596.RData')
+t1=subset(keepstack, 28)
+save(t1, file='/home/ryan/Git/NEhabitat/rasters/Fall/pseudo/RAST_NESREG_2019.04.01.07.TEMP.YEAR.000066596.RData')
 
-plotRasterTrends(keepstack)
+modlistpa[modchoice]
+
+#### Save model hindcast output trends (mean, trend, variance)
+## Load rasters
+p1=paste('/home/ryan/Git/NEhabitat/rasters/',SEASON,'/', fishnm, '/', sep='')
+p2='fish_modGI_fall_haddock' #'fish_modG4_spr_Haddock/'
+p3=paste('/PA_only_stacked_', SEASON, '_', fishnm, '_', sep='') #'PA_only_stacked_Spr_Haddock_'
+p4=paste('/stacked_', SEASON, '_', fishnm, '_', sep='') #'stacked_Spr_Haddock_'
+ichpa=loadRData(paste(p1,p2,p3,'ich.RData', sep=''))
+juvpa=loadRData(paste(p1,p2,p3,'Juv.RData', sep=''))
+adtpa=loadRData(paste(p1,p2,p3,'Adt.RData', sep=''))
+ich=loadRData(paste(p1,p2,p4,'ich.RData', sep=''))
+juv=loadRData(paste(p1,p2,p4,'Juv.RData', sep=''))
+adt=loadRData(paste(p1,p2,p4,'Adt.RData', sep=''))
+### Run script and save as PDF
+pdf(paste(path1, 'PA_Hindcast_',p2,'_Ich.pdf', sep=''), height=4, width=6)
+plotRasterTrends(ichpa)
+dev.off()
+pdf(paste(path1, 'PA_Hindcast_',p2,'_Juv.pdf', sep=''), height=4, width=6)
+plotRasterTrends(juvpa)
+dev.off()
+pdf(paste(path1, 'PA_Hindcast_',p2,'_Adt.pdf', sep=''), height=4, width=6)
+plotRasterTrends(adtpa)
+dev.off()
+pdf(paste(path1, 'Bio_Hindcast_',p2,'_Ich.pdf', sep=''), height=4, width=6)
+plotRasterTrends(ich)
+dev.off()
+pdf(paste(path1, 'Bio_Hindcast_',p2,'_Juv.pdf', sep=''), height=4, width=6)
+plotRasterTrends(juv)
+dev.off()
+pdf(paste(path1, 'Bio_Hindcast_',p2,'_Adt.pdf', sep=''), height=4, width=6)
+plotRasterTrends(adt)
+dev.off()
+
+
+plot(keepstack[[28]], zlim=c(0,5), col=viridis::viridis(64))
+
 
 plotrasterNES=function(lograx, mn, mx, titlex){
   # fun=function(x) { if (is.na(x[1])){ NA } else {10^x}}
@@ -384,6 +443,11 @@ AdtHad=loadRData("/home/ryan/Git/NEhabitat/rasters/Spr/Haddock/stacked_Spr_Haddo
 adtcod=loadRData("/home/ryan/Git/NEhabitat/rasters/Spr/Cod/fish_modI_spr_cod/stacked_Spr_Cod_Adt.RData")
 juvcod=loadRData("/home/ryan/Git/NEhabitat/rasters/Spr/Cod/fish_modI_spr_cod/stacked_Spr_Cod_Juv.RData")
 
+psefall=loadRData('/home/ryan/Git/NEhabitat/rasters/Fall/zoop/pseudocal/zoo_modG_fall_pse/stacked_Fall_pseudocal_.RData')
+psespr=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/zoop/pseudocal/zoo_modG/stacked_Spr_pseudocal_ich.RData')
+plotRasterTrends(psefall)
+plotRasterTrends(psespr)
+
 ## this is not working, needs to call name of saved raster 'rastDF'
 # loadNstack=function(x, namex){
 #   namex=load(x[1])
@@ -394,7 +458,18 @@ juvcod=loadRData("/home/ryan/Git/NEhabitat/rasters/Spr/Cod/fish_modI_spr_cod/sta
 #   return(namex)
 # }
 
-
+lisz=list.files('/home/ryan/1_habitat_analysis_2017/zoo_data/maps/spring_raster/calfin', pattern='RAST_NESREG_')
+wd2='/home/ryan/1_habitat_analysis_2017/zoo_data/maps/spring_raster/calfin/'
+for (i in (1:40)){
+x=loadRData(paste(wd2, lisz[i], sep=''))
+  if (i == 1){
+    stk=x
+  } else {
+    stk=stack(stk, x)
+  }
+}
+plot(cellStats(keepstack, 'mean'), type='b')
+plot(cellStats(stk, 'mean'), type='b')
 ##### _______________________________________________________________________________________________________
 # Correlation routine
 #####
@@ -430,12 +505,22 @@ library(colorspace)
 
 plotRasterTrends=function(rastck){
   time <- 1:nlayers(rastck) 
+  newrast.m=calc(rastck, fun=mean, na.rm=T)
+  mn=cellStats(newrast.m, min)
+  mx=cellStats(newrast.m, max)
+  high=max(0, mx)
+  br <- seq(0, high, by = high/15) 
+  cl=colorRampPalette(brewer.pal(9,"Reds"))(length(br))
+  rng=range(newrast.m[],na.rm=T)
+  arg=list(at=rng, labels=round(rng,3))
+  plot(newrast.m, col=cl, breaks=br,axis.args=arg,las=1, main=paste(length(time),'yrs','\nmean distribution')) # Yearly slope
+  maps::map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="black", add=T)
   fun=function(x) { if (is.na(x[1])){ NA } else { m = lm(x ~ time); summary(m)$coefficients[2] }}
   newrast=calc(rastck, fun)
   mn=cellStats(newrast, min)
   mx=cellStats(newrast, max)
   high=max(abs(mn), mx)
-  br <- seq(-high, high, by = high/15) 
+  br <- seq(mn, mx, by = high/15) 
   cl <- colorspace::diverge_hcl(length(br) - 1, power = 1) 
   rng=range(newrast[],na.rm=T)
   arg=list(at=rng, labels=round(rng,3))
@@ -475,14 +560,13 @@ plotRasterTrends=function(rastck){
   ## Plot Variance
   fun=function(x) { if (is.na(x[1])){ NA } else { m = lm(x ~ time); (summary(m)$sigma)}} ; TITL='Std deviation of slope'
   newrast.v=calc(rastck, fun)
-  mn=min(newrast.v@data@values, na.rm = T)
-  mx=max(newrast.v@data@values, na.rm = T)
+  mn=cellStats(newrast.v, min)
+  mx=cellStats(newrast.v, max)
   high=max(abs(mn), mx)
-  magn=floor(log10(mx))
   br <- seq(0, high, by = high/15) 
   cl=colorRampPalette(brewer.pal(9,"Reds"))(length(br))
-  rng=range(newrast.v[],na.rm=T)
-  arg=list(at=rng, labels=round(rng,abs(min(log10(rng)))))
+  rng=c(0, mx) #range(newrast.v[],na.rm=T)
+  arg=list(at=rng, labels=round(rng,3))
   plot(newrast.v, main=paste(length(time),'yrs','\n', TITL),col=cl, breaks=br,axis.args=arg,las=1) # 
   maps::map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="black", add=T)
 }

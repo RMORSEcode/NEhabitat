@@ -103,8 +103,8 @@ FData.bio$rug = raster::extract(rugscl, mypoints)
 
 Select season for GAMs
 ```{r}
-#slctseason="FALL"; fishseas="Fall"
-slctseason="SPRING"; fishseas="Spr"
+slctseason="FALL"; fishseas="Fall"
+# slctseason="SPRING"; fishseas="Spr"
 
 ```
 
@@ -117,17 +117,17 @@ Lmf=read_excel('/home/ryan/Git/NEhabitat/Lm_included.xlsx')
 ```{r}
 ### select data
 
-  ### Choose fish to run, adjust by searching on and changing " `73_ " to new ID ****
-fishname='Cod' #73
+  ### Choose fish to run, adjust by searching on and changing " `72_ " to new ID ****
+# fishname='Cod' #73
 # fishname='Haddock' #74
-# fishname='SilverHake' #72
+fishname='SilverHake' #72
 # fishname='Pollock' #75
 
 
-fish=FData.abn %>% dplyr::select(YEAR, SEASON, LAT:BOTTEMP, `73_Adt`, `73_Juv`, `73_ich`, calfin_100m3:rug)
+fish=FData.abn %>% dplyr::select(YEAR, SEASON, LAT:BOTTEMP, `72_Adt`, `72_Juv`, `72_ich`, calfin_100m3:rug)
 fish$MONTH=month(FData.abn$EST_TOWDATE)
 fish=fish[complete.cases(fish),]
-fish$`73_ich`=ceiling(fish$`73_ich`) # make integer from numbers per 100 m/3
+fish$`72_ich`=ceiling(fish$`72_ich`) # make integer from numbers per 100 m/3
 fish2=fish[which(fish$SEASON==slctseason),] # subset to season
 
 # ### now split data into training and testing set (75% train 25% test, randomly chosen)
@@ -138,7 +138,7 @@ trainPA <- fish2[sample, ]
 testPA  <- fish2[-sample, ]
 
 ### pivot longer so stage is repeated
-trainPA=trainPA %>% pivot_longer(c(`73_Adt`, `73_Juv`, `73_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Number")
+trainPA=trainPA %>% pivot_longer(c(`72_Adt`, `72_Juv`, `72_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Number")
 trainPA$Stg=factor(trainPA$Stg, ordered=F)
 # table(trainPA$MONTH)
 ## log transform plankton for training set
@@ -148,7 +148,7 @@ trainPA[,8:17]=logd
 trainPA$pa=ifelse(trainPA$Number > 0, 1, 0)
 
 ## now do likewise for testing data
-testPA=testPA %>% pivot_longer(c(`73_Adt`, `73_Juv`, `73_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Number")
+testPA=testPA %>% pivot_longer(c(`72_Adt`, `72_Juv`, `72_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Number")
 testPA$Stg=factor(testPA$Stg, ordered=F)
 # table(testPA$MONTH)
 ## log transform plankton for test set
@@ -179,24 +179,24 @@ sample <- sample.int(n = nrow(zoo3), size = floor(.75*nrow(zoo3)), replace = F)
 trainzoo <- zoo3[sample, ]
 testzoo <- zoo3[-sample, ]
 
-zoonm='calfin'
+zoonm='pseudocal' #'calfin'
 ## positive biomass model - select zoo taxa to use for model and subset to positive biomass only
-zooposbio=zoo2[which(zoo3$calfin_100m3>0),]
+zooposbio=zoo2[which(zoo3$pseudo_100m3>0),]
 sample <- sample.int(n = nrow(zooposbio), size = floor(.75*nrow(zooposbio)), replace = F)
 trainzoobio <- zooposbio[sample, ]
 testzoobio <- zooposbio[-sample, ]
 
 
-zoo_modG_pa = gam(calfin_100m3 ~ s(BOTTEMP, k=35, bs="tp") +s(SURFTEMP, k=35, bs='tp') + s(DEPTH, k=30, bs="tp") + s(BOTSALIN, k=30, bs='tp') + s(SURFSALIN, k=30, bs="tp") + s(grnszmm, k=30, bs='tp') + s(rug, k=30, bs='tp'), data=trainzoo, method = "REML", family="binomial")
+zoo_modG_pa = gam(pseudo_100m3 ~ s(BOTTEMP, k=35, bs="tp") +s(SURFTEMP, k=35, bs='tp') + s(DEPTH, k=30, bs="tp") + s(BOTSALIN, k=30, bs='tp') + s(SURFSALIN, k=30, bs="tp") + s(grnszmm, k=30, bs='tp') + s(rug, k=30, bs='tp'), data=trainzoo, method = "REML", family="binomial")
 
-zoo_modG_pb = gam(calfin_100m3 ~ s(BOTTEMP, k=35, bs="tp") +s(SURFTEMP, k=35, bs='tp') + s(DEPTH, k=30, bs="tp") + s(BOTSALIN, k=30, bs='tp') + s(SURFSALIN, k=30, bs="tp") + s(grnszmm, k=30, bs='tp') + s(rug, k=30, bs='tp'), data=trainzoobio, method = "REML", family="gaussian")
+zoo_modG_pb = gam(pseudo_100m3 ~ s(BOTTEMP, k=35, bs="tp") +s(SURFTEMP, k=35, bs='tp') + s(DEPTH, k=30, bs="tp") + s(BOTSALIN, k=30, bs='tp') + s(SURFSALIN, k=30, bs="tp") + s(grnszmm, k=30, bs='tp') + s(rug, k=30, bs='tp'), data=trainzoobio, method = "REML", family="gaussian")
 
 save(zoo_modG_pa, file=paste('/home/ryan/Git/NEhabitat/rasters/',fishseas,'/zoop/zoo_modG_pa_',fishseas,'_',zoonm,'.Rdata',sep=''))
 save(zoo_modG_pb, file=paste('/home/ryan/Git/NEhabitat/rasters/',fishseas,'/zoop/zoo_modG_pb_',fishseas,'_',zoonm,'.Rdata',sep='')) 
 # ______
-zoo_modG4_pa = gam(calfin_100m3 ~ s(LON, LAT, bs='tp') + s(BOTTEMP, k=35, bs="tp") +s(SURFTEMP, k=35, bs='tp') + s(DEPTH, k=30, bs="tp") + s(BOTSALIN, k=30, bs='tp') + s(SURFSALIN, k=30, bs="tp") + s(grnszmm, k=30, bs='tp') + s(rug, k=30, bs='tp'), data=trainzoo, method = "REML", family="binomial")
+zoo_modG4_pa = gam(pseudo_100m3 ~ s(LON, LAT, bs='tp') + s(BOTTEMP, k=35, bs="tp") +s(SURFTEMP, k=35, bs='tp') + s(DEPTH, k=30, bs="tp") + s(BOTSALIN, k=30, bs='tp') + s(SURFSALIN, k=30, bs="tp") + s(grnszmm, k=30, bs='tp') + s(rug, k=30, bs='tp'), data=trainzoo, method = "REML", family="binomial")
 
-zoo_modG4_pb = gam(calfin_100m3 ~ s(LON, LAT, bs='tp') + s(BOTTEMP, k=35, bs="tp") +s(SURFTEMP, k=35, bs='tp') + s(DEPTH, k=30, bs="tp") + s(BOTSALIN, k=30, bs='tp') + s(SURFSALIN, k=30, bs="tp") + s(grnszmm, k=30, bs='tp') + s(rug, k=30, bs='tp'), data=trainzoobio, method = "REML", family="gaussian")
+zoo_modG4_pb = gam(pseudo_100m3 ~ s(LON, LAT, bs='tp') + s(BOTTEMP, k=35, bs="tp") +s(SURFTEMP, k=35, bs='tp') + s(DEPTH, k=30, bs="tp") + s(BOTSALIN, k=30, bs='tp') + s(SURFSALIN, k=30, bs="tp") + s(grnszmm, k=30, bs='tp') + s(rug, k=30, bs='tp'), data=trainzoobio, method = "REML", family="gaussian")
 
 save(zoo_modG4_pa, file=paste('/home/ryan/Git/NEhabitat/rasters/',fishseas,'/zoop/zoo_modG4_pa_',fishseas,'_',zoonm,'.Rdata',sep=''))
 save(zoo_modG4_pb, file=paste('/home/ryan/Git/NEhabitat/rasters/',fishseas,'/zoop/zoo_modG4_pb_',fishseas,'_',zoonm,'.Rdata',sep='')) 
@@ -212,9 +212,9 @@ trainzoo.inbio=sp::over(trainzoobiopts, sps)
 trainzoo.subbio=trainzoobio
 trainzoo.subbio=trainzoo.subbio[complete.cases(trainzoo.inbio),]
 
-zoo_modG4bll_pa = gam(calfin_100m3 ~ s(LON, LAT, bs = "so", xt = list(bnd = boundll)) + s(BOTTEMP, k=20, bs="tp") +s(SURFTEMP, k=20, bs='tp') + s(DEPTH, k=10, bs="tp") + s(BOTSALIN, k=30, bs='tp') + s(SURFSALIN, k=30, bs="tp") + s(grnszmm, k=10, bs='tp') + s(rug, k=20, bs='tp'), data=trainzoo.sub, method = "REML", knots=knotsll, family="binomial")
+zoo_modG4bll_pa = gam(pseudo_100m3 ~ s(LON, LAT, bs = "so", xt = list(bnd = boundll)) + s(BOTTEMP, k=20, bs="tp") +s(SURFTEMP, k=20, bs='tp') + s(DEPTH, k=10, bs="tp") + s(BOTSALIN, k=30, bs='tp') + s(SURFSALIN, k=30, bs="tp") + s(grnszmm, k=10, bs='tp') + s(rug, k=20, bs='tp'), data=trainzoo.sub, method = "REML", knots=knotsll, family="binomial")
 
-zoo_modG4bll_pb = gam(calfin_100m3 ~ s(LON, LAT, bs = "so", xt = list(bnd = boundll)) + s(BOTTEMP, k=20, bs="tp") +s(SURFTEMP, k=20, bs='tp') + s(DEPTH, k=10, bs="tp") + s(BOTSALIN, k=30, bs='tp') + s(SURFSALIN, k=30, bs="tp") + s(grnszmm, k=10, bs='tp') + s(rug, k=20, bs='tp'), data=trainzoo.subbio, method = "REML", knots=knotsll, family="gaussian")
+zoo_modG4bll_pb = gam(pseudo_100m3 ~ s(LON, LAT, bs = "so", xt = list(bnd = boundll)) + s(BOTTEMP, k=20, bs="tp") +s(SURFTEMP, k=20, bs='tp') + s(DEPTH, k=10, bs="tp") + s(BOTSALIN, k=30, bs='tp') + s(SURFSALIN, k=30, bs="tp") + s(grnszmm, k=10, bs='tp') + s(rug, k=20, bs='tp'), data=trainzoo.subbio, method = "REML", knots=knotsll, family="gaussian")
 
 save(zoo_modG4bll_pa, file=paste('/home/ryan/Git/NEhabitat/rasters/',fishseas,'/zoop/zoo_modG4bll_pa_',fishseas,'_',zoonm,'.Rdata',sep=''))
 save(zoo_modG4bll_pb, file=paste('/home/ryan/Git/NEhabitat/rasters/',fishseas,'/zoop/zoo_modG4bll_pb_',fishseas,'_',zoonm,'.Rdata',sep='')) 
@@ -254,10 +254,10 @@ Do likewise for biomass data, to be combined with PA later for final model
 
 ```{r}
 ### select data
-fish.b=FData.bio %>% dplyr::select(YEAR, SEASON, LAT:BOTTEMP, `73_Adt`, `73_Juv`, `73_ich`, calfin_100m3:rug)
+fish.b=FData.bio %>% dplyr::select(YEAR, SEASON, LAT:BOTTEMP, `72_Adt`, `72_Juv`, `72_ich`, calfin_100m3:rug)
 fish.b$MONTH=month(FData.bio$EST_TOWDATE)
 fish.b=fish.b[complete.cases(fish.b),]
-fish.b$`73_ich`=ceiling(fish.b$`73_ich`) # make integer from numbers per 100 m/3
+fish.b$`72_ich`=ceiling(fish.b$`72_ich`) # make integer from numbers per 100 m/3
 fish2.b=fish.b[which(fish.b$SEASON==slctseason),] # subset to season
 ### Transform numbers per 100_m3 to KG using below conversions
 # For positive logbiomass model need to update the ichthyoplankton from (numbers per 100 m^3) to biomass
@@ -265,7 +265,7 @@ fish2.b=fish.b[which(fish.b$SEASON==slctseason),] # subset to season
 # Cod avg of experiments w/ good and poor diet: mean dry weight of fish 5-30days = 0.25 mg DW
 # mg->kg = x* 1e-6
 # https://www.int-res.com/articles/meps/32/m032p229.pdf -> 1 mg wet weight avg
-fish.b$`73_ich`=fish.b$`73_ich`*1e-6
+fish.b$`72_ich`=fish.b$`72_ich`*1e-6
 
 # ### now split data into training and testing set (75% train 25% test, randomly chosen)
 set.seed(101) # Set Seed so that same sample can be reproduced in future also
@@ -275,7 +275,7 @@ trainBIO <- fish2.b[sample, ]
 testBIO  <- fish2.b[-sample, ]
 
 ### pivot longer so stage is repeated
-trainBIO=trainBIO %>% pivot_longer(c(`73_Adt`, `73_Juv`, `73_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Biomass")
+trainBIO=trainBIO %>% pivot_longer(c(`72_Adt`, `72_Juv`, `72_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Biomass")
 trainBIO$Stg=factor(trainBIO$Stg, ordered=F)
 # table(trainBIO$MONTH)
 ## log transform plankton for training set
@@ -287,7 +287,7 @@ trainBIO=trainBIO %>%
   mutate(., "logbio"=log10(Biomass+1))
 
 ## now do likewise for testing data
-testBIO=testBIO %>% pivot_longer(c(`73_Adt`, `73_Juv`, `73_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Biomass")
+testBIO=testBIO %>% pivot_longer(c(`72_Adt`, `72_Juv`, `72_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Biomass")
 testBIO$Stg=factor(testBIO$Stg, ordered=F)
 # table(testBIO$MONTH)
 ## log transform plankton for test set
@@ -412,24 +412,24 @@ save(fish_modG4_pb, file=paste('/home/ryan/Git/NEhabitat/rasters/',fishseas,'/',
 # fish_modG4$aic
 # draw(fish_modG4)
 # [1] 16241.43
-pred.test=predict(fish_modG4_pa,testPA,type='response')                  # make prediction for test set
-preds.obs=data.frame(pred.test=pred.test,testPA$pa)           # data frame of preds and obs
-colnames(preds.obs)=c("predicted","observed")
-plotROC(preds.obs$observed,preds.obs$predicted, colorize = TRUE)
+# pred.test=predict(fish_modG4_pa,testPA,type='response')                  # make prediction for test set
+# preds.obs=data.frame(pred.test=pred.test,testPA$pa)           # data frame of preds and obs
+# colnames(preds.obs)=c("predicted","observed")
+# plotROC(preds.obs$observed,preds.obs$predicted, colorize = TRUE)
 ```
 
 Now run predicitons and get AUC from ROC
 ```{r}
-pred.test=predict(fish_modG4,testPA,type='response')                  # make prediction for test set
-preds.obs=data.frame(pred.test=pred.test,testPA$pa)           # data frame of preds and obs   
-colnames(preds.obs)=c("predicted","observed")
+# pred.test=predict(fish_modG4,testPA,type='response')                  # make prediction for test set
+# preds.obs=data.frame(pred.test=pred.test,testPA$pa)           # data frame of preds and obs   
+# colnames(preds.obs)=c("predicted","observed")
 
 ```
 
 Get AUC and plot ROC
 ```{r}
 # plotROC(preds.obs$testPA,preds.obs$pred.test, colorize = TRUE)
-plotROC(preds.obs$observed,preds.obs$predicted, colorize = TRUE)
+# plotROC(preds.obs$observed,preds.obs$predicted, colorize = TRUE)
 
 ```
 
@@ -667,7 +667,7 @@ save(fish_modGSe_pb, file=paste('/home/ryan/Git/NEhabitat/rasters/',fishseas,'/'
 
 #check on order -> R,G,B = adt (1), ich (3), juv (2) (respectively) == 1,3,2 as factor values
 ```{r}
-foo=evaluate_smooth(fish_modGS4e,"s(pseudo_100m3,Stg)")
+foo=evaluate_smooth(fish_modGSe_pa,"s(pseudo_100m3,Stg)")
 ggplot(data=foo, aes(y=est, x=pseudo_100m3)) + geom_line(aes(color=Stg))
 
 # gam.check(fish_modGS4d)

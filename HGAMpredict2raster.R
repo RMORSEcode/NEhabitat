@@ -194,7 +194,7 @@ rm(bt)
 fl=levels=c("Adt", "Juv", "ich")
 # fishnm='SilverHake'
 wd2=paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/', fishnm, '/', sep='')
-modchoice=3
+modchoice=7
 usemodel=loadRData(paste(path1,modlistpa[modchoice], sep=''))
 usemodelbio=loadRData(paste(path1,modlistpb[modchoice], sep=''))
 ### NOW loop over files, load yearly dynamic raster files and predict habitat from HGAM models
@@ -319,10 +319,28 @@ save(t1, file='/home/ryan/Git/NEhabitat/rasters/Fall/pseudo/RAST_NESREG_2019.04.
 
 modlistpa[modchoice]
 
+
+
+
+### SAVE out model performance data to CSV file - deviance explained, AIC
+modeval=data.frame(matrix(nrow=length(modlistpa), ncol=5, data=NA))
+for (i in 1:length(modlistpa)){
+  modchoice=i
+  usemodel=loadRData(paste(path1,modlistpa[modchoice], sep=''))
+  usemodelbio=loadRData(paste(path1,modlistpb[modchoice], sep=''))
+  modeval[i,1]=modlistpa[modchoice]
+  modeval[i,2]=summary(usemodel)$dev.expl
+  modeval[i,3]=summary(usemodelbio)$dev.expl
+  modeval[i,4]=usemodel$aic
+  modeval[i,5]=usemodelbio$aic
+}
+colnames(modeval)=c('model', 'PA.dev.exp','BIO.dev.exp','PA.aic','BIO.aic')
+write.csv(modeval, file=paste(wd2,'model_evaluation_', SEASON, '_', fishnm, '_', '.csv', sep=""), row.names = F)
+
 #### Save model hindcast output trends (mean, trend, variance)
 ## Load rasters
 p1=paste('/home/ryan/Git/NEhabitat/rasters/',SEASON,'/', fishnm, '/', sep='')
-p2='fish_modGI_fall_haddock' #'fish_modG4_spr_Haddock/'
+p2='fish_modGSe3_spr_Haddock' #'fish_modG4_spr_Haddock/'
 p3=paste('/PA_only_stacked_', SEASON, '_', fishnm, '_', sep='') #'PA_only_stacked_Spr_Haddock_'
 p4=paste('/stacked_', SEASON, '_', fishnm, '_', sep='') #'stacked_Spr_Haddock_'
 ichpa=loadRData(paste(p1,p2,p3,'ich.RData', sep=''))
@@ -350,6 +368,7 @@ dev.off()
 pdf(paste(path1, 'Bio_Hindcast_',p2,'_Adt.pdf', sep=''), height=4, width=6)
 plotRasterTrends(adt)
 dev.off()
+
 
 
 plot(keepstack[[28]], zlim=c(0,5), col=viridis::viridis(64))

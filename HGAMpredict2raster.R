@@ -433,6 +433,7 @@ plotrasterNES(pse3[[25]], mn=0, mx=5, titlex='modG4bll 2016')
 plotrasterNES(pse2[[25]], mn=0, mx=5, titlex='modG4 2016')
 plotrasterNES(pse4, mn=0, mx=5, titlex='Kevin 2016')
 
+### checking for recruitment bumps in Ich output - 2013 and 2003 were big recruit years, need area index
 plotrasterNES(ichpa[[20]], mn=0, mx=1, titlex=paste(yrlist[20]))
 plotrasterNES(ichpa[[21]], mn=0, mx=1, titlex=paste(yrlist[21]))
 plotrasterNES(ichpa[[22]], mn=0, mx=1, titlex=paste(yrlist[22]))

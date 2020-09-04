@@ -41,7 +41,7 @@ modchoice=9
 modlist[modchoice]
 usemodel=loadRData(paste(path1,modlist[modchoice], sep='')) #fish_modS #_spr_had
 
-# verify model (one file)
+#### VERIFY MODEL SPECIES AND SEASON ####
 trainPA$SVSPP[1] #verify species
 trainPA$SEASON[1] #verify season
 modlistpa=list.files(path1, pattern = '_pa_') # presence-absence models
@@ -94,6 +94,8 @@ for (i in (1:length(modlistpa))){
   plotROC(preds.obs2$observed,preds.obs2$predicted, colorize = TRUE, main=paste('All Stages ', modlistpa[i], sep=''))
 }
 dev.off()
+
+modauc=data.frame(matrix(nrow=length(modlistpa), ncol=2, data=NA))
 pdf(paste(path1, 'PA_models_by_Stg_Adt_AUC.pdf', sep=''), height=4, width=6)
 for (i in (1:length(modlistpa))){
   modchoice=i
@@ -105,9 +107,15 @@ for (i in (1:length(modlistpa))){
   sset=which(testPA$Stg=='Adt')
   preds.obs2=preds.obs[sset,]
   preds.obs2=preds.obs2[complete.cases(preds.obs2$predicted),]
-  plotROC(preds.obs2$observed,preds.obs2$predicted, colorize = TRUE, main=paste('Adt only ',modlistpa[i], sep=''))
-  }
+  modauc[i,1]=modlistpa[modchoice]
+  modauc[i,2]=saveAUC(preds.obs2$observed,preds.obs2$predicted)[[1]]
+  # plotROC(preds.obs2$observed,preds.obs2$predicted, colorize = TRUE, main=paste('Adt only ',modlistpa[i], sep=''))
+}
+colnames(modauc)=c('model', 'Adt.AUC')
+write.csv(modauc, file=paste(path1,'Adt_model_AUC.csv', sep=""), row.names = F)
 dev.off()
+
+modauc=data.frame(matrix(nrow=length(modlistpa), ncol=2, data=NA))
 pdf(paste(path1, 'PA_models_by_Stg_Juv_AUC.pdf', sep=''), height=4, width=6)
 for (i in (1:length(modlistpa))){
   modchoice=i
@@ -119,9 +127,15 @@ for (i in (1:length(modlistpa))){
   sset=which(testPA$Stg=='Juv')
   preds.obs2=preds.obs[sset,]
   preds.obs2=preds.obs2[complete.cases(preds.obs2$predicted),]
-  plotROC(preds.obs2$observed,preds.obs2$predicted, colorize = TRUE, main=paste('Juv only ',modlistpa[i], sep=''))
+  modauc[i,1]=modlistpa[modchoice]
+  modauc[i,2]=saveAUC(preds.obs2$observed,preds.obs2$predicted)[[1]]
+  # plotROC(preds.obs2$observed,preds.obs2$predicted, colorize = TRUE, main=paste('Juv only ',modlistpa[i], sep=''))
 }
+colnames(modauc)=c('model', 'Juv.AUC')
+write.csv(modauc, file=paste(path1,'Juv_model_AUC.csv', sep=""), row.names = F)
 dev.off()
+
+modauc=data.frame(matrix(nrow=length(modlistpa), ncol=2, data=NA))
 pdf(paste(path1, 'PA_models_by_Stg_Ich_AUC.pdf', sep=''), height=4, width=6)
 for (i in (1:length(modlistpa))){
   modchoice=i
@@ -133,8 +147,12 @@ for (i in (1:length(modlistpa))){
   sset=which(testPA$Stg=='ich')
   preds.obs2=preds.obs[sset,]
   preds.obs2=preds.obs2[complete.cases(preds.obs2$predicted),]
-  plotROC(preds.obs2$observed,preds.obs2$predicted, colorize = TRUE, main=paste('Ich only ',modlistpa[i], sep=''))
+  modauc[i,1]=modlistpa[modchoice]
+  modauc[i,2]=saveAUC(preds.obs2$observed,preds.obs2$predicted)[[1]]
+  # plotROC(preds.obs2$observed,preds.obs2$predicted, colorize = TRUE, main=paste('Ich only ',modlistpa[i], sep=''))
 }
+colnames(modauc)=c('model', 'Ich.AUC')
+write.csv(modauc, file=paste(path1,'Ich_model_AUC.csv', sep=""), row.names = F)
 dev.off()
 
 ## list data files in each folder
@@ -340,7 +358,7 @@ write.csv(modeval, file=paste(wd2,'model_evaluation_', SEASON, '_', fishnm, '_',
 #### Save model hindcast output trends (mean, trend, variance)
 ## Load rasters
 p1=paste('/home/ryan/Git/NEhabitat/rasters/',SEASON,'/', fishnm, '/', sep='')
-p2='fish_modGSe3_spr_Haddock' #'fish_modG4_spr_Haddock/'
+p2='fish_modGSe_spr_Haddock' #'fish_modG4_spr_Haddock/'
 p3=paste('/PA_only_stacked_', SEASON, '_', fishnm, '_', sep='') #'PA_only_stacked_Spr_Haddock_'
 p4=paste('/stacked_', SEASON, '_', fishnm, '_', sep='') #'stacked_Spr_Haddock_'
 ichpa=loadRData(paste(p1,p2,p3,'ich.RData', sep=''))
@@ -414,6 +432,24 @@ plotrasterNES(pse3[[25]], mn=0, mx=5, titlex='modG4bll 2016')
 
 plotrasterNES(pse2[[25]], mn=0, mx=5, titlex='modG4 2016')
 plotrasterNES(pse4, mn=0, mx=5, titlex='Kevin 2016')
+
+plotrasterNES(ichpa[[20]], mn=0, mx=1, titlex=paste(yrlist[20]))
+plotrasterNES(ichpa[[21]], mn=0, mx=1, titlex=paste(yrlist[21]))
+plotrasterNES(ichpa[[22]], mn=0, mx=1, titlex=paste(yrlist[22]))
+plotrasterNES(ichpa[[23]], mn=0, mx=1, titlex=paste(yrlist[23]))
+plotrasterNES(ichpa[[24]], mn=0, mx=1, titlex=paste(yrlist[24]))
+plotrasterNES(ichpa[[25]], mn=0, mx=1, titlex=paste(yrlist[25]))
+plotrasterNES(ichpa[[26]], mn=0, mx=1, titlex=paste(yrlist[26]))
+plotrasterNES(ichpa[[27]], mn=0, mx=1, titlex=paste(yrlist[27]))
+plotrasterNES(ichpa[[28]], mn=0, mx=1, titlex=paste(yrlist[28]))
+plotrasterNES(ichpa[[29]], mn=0, mx=1, titlex=paste(yrlist[29]))
+
+
+plotrasterNES(ichpa[[34]], mn=0, mx=1, titlex=paste(yrlist[34]))
+plotrasterNES(ichpa[[35]], mn=0, mx=1, titlex=paste(yrlist[35]))
+plotrasterNES(ichpa[[36]], mn=0, mx=1, titlex=paste(yrlist[36]))
+plotrasterNES(ichpa[[37]], mn=0, mx=1, titlex=paste(yrlist[37]))
+plotrasterNES(ichpa[[38]], mn=0, mx=1, titlex=paste(yrlist[38]))
 
 ### Create raster stacks and save them
 # wd2=paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/', fishnm, '/', sep='')

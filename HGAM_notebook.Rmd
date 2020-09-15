@@ -103,7 +103,7 @@ FData.bio$rug = raster::extract(rugscl, mypoints)
 
 Select season for GAMs
 ```{r}
-# slctseason="FALL"; fishseas="Fall"
+slctseason="FALL"; fishseas="Fall"
 slctseason="SPRING"; fishseas="Spr"
 
 ```

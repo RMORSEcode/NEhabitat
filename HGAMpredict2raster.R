@@ -1,6 +1,7 @@
 library(maps)
 library(mapdata)
-
+library(RColorBrewer)
+library(colorspace)
 
 ### set up year list to match files with
 yrlist=seq(from=1977, to=2019, by=1)
@@ -41,7 +42,7 @@ modchoice=9
 modlist[modchoice]
 usemodel=loadRData(paste(path1,modlist[modchoice], sep='')) #fish_modS #_spr_had
 
-# verify model (one file)
+#### VERIFY MODEL SPECIES AND SEASON ####
 trainPA$SVSPP[1] #verify species
 trainPA$SEASON[1] #verify season
 modlistpa=list.files(path1, pattern = '_pa_') # presence-absence models
@@ -81,6 +82,16 @@ for (i in (1:length(modlistpa))){
 }
 dev.off()
 
+## draw smooths (takes a long time)
+pdf(paste(path1, 'PAmodels_smooths.pdf', sep=''), height=6, width=8)
+for (i in (1:length(modlistpa))){
+  modchoice=i
+  usemodel=loadRData(paste(path1,modlistpa[modchoice], sep=''))
+  draw(usemodel)
+}
+dev.off()
+
+
 ### verify model as seperate files
 pdf(paste(path1, 'PAmodels_AUC_all_Stg.pdf', sep=''), height=4, width=6)
 for (i in (1:length(modlistpa))){
@@ -94,6 +105,8 @@ for (i in (1:length(modlistpa))){
   plotROC(preds.obs2$observed,preds.obs2$predicted, colorize = TRUE, main=paste('All Stages ', modlistpa[i], sep=''))
 }
 dev.off()
+
+modauc=data.frame(matrix(nrow=length(modlistpa), ncol=2, data=NA))
 pdf(paste(path1, 'PA_models_by_Stg_Adt_AUC.pdf', sep=''), height=4, width=6)
 for (i in (1:length(modlistpa))){
   modchoice=i
@@ -105,9 +118,15 @@ for (i in (1:length(modlistpa))){
   sset=which(testPA$Stg=='Adt')
   preds.obs2=preds.obs[sset,]
   preds.obs2=preds.obs2[complete.cases(preds.obs2$predicted),]
-  plotROC(preds.obs2$observed,preds.obs2$predicted, colorize = TRUE, main=paste('Adt only ',modlistpa[i], sep=''))
-  }
+  modauc[i,1]=modlistpa[modchoice]
+  modauc[i,2]=saveAUC(preds.obs2$observed,preds.obs2$predicted)[[1]]
+  # plotROC(preds.obs2$observed,preds.obs2$predicted, colorize = TRUE, main=paste('Adt only ',modlistpa[i], sep=''))
+}
+colnames(modauc)=c('model', 'Adt.AUC')
+write.csv(modauc, file=paste(path1,'Adt_model_AUC.csv', sep=""), row.names = F)
 dev.off()
+
+modauc=data.frame(matrix(nrow=length(modlistpa), ncol=2, data=NA))
 pdf(paste(path1, 'PA_models_by_Stg_Juv_AUC.pdf', sep=''), height=4, width=6)
 for (i in (1:length(modlistpa))){
   modchoice=i
@@ -119,9 +138,15 @@ for (i in (1:length(modlistpa))){
   sset=which(testPA$Stg=='Juv')
   preds.obs2=preds.obs[sset,]
   preds.obs2=preds.obs2[complete.cases(preds.obs2$predicted),]
-  plotROC(preds.obs2$observed,preds.obs2$predicted, colorize = TRUE, main=paste('Juv only ',modlistpa[i], sep=''))
+  modauc[i,1]=modlistpa[modchoice]
+  modauc[i,2]=saveAUC(preds.obs2$observed,preds.obs2$predicted)[[1]]
+  # plotROC(preds.obs2$observed,preds.obs2$predicted, colorize = TRUE, main=paste('Juv only ',modlistpa[i], sep=''))
 }
+colnames(modauc)=c('model', 'Juv.AUC')
+write.csv(modauc, file=paste(path1,'Juv_model_AUC.csv', sep=""), row.names = F)
 dev.off()
+
+modauc=data.frame(matrix(nrow=length(modlistpa), ncol=2, data=NA))
 pdf(paste(path1, 'PA_models_by_Stg_Ich_AUC.pdf', sep=''), height=4, width=6)
 for (i in (1:length(modlistpa))){
   modchoice=i
@@ -133,8 +158,12 @@ for (i in (1:length(modlistpa))){
   sset=which(testPA$Stg=='ich')
   preds.obs2=preds.obs[sset,]
   preds.obs2=preds.obs2[complete.cases(preds.obs2$predicted),]
-  plotROC(preds.obs2$observed,preds.obs2$predicted, colorize = TRUE, main=paste('Ich only ',modlistpa[i], sep=''))
+  modauc[i,1]=modlistpa[modchoice]
+  modauc[i,2]=saveAUC(preds.obs2$observed,preds.obs2$predicted)[[1]]
+  # plotROC(preds.obs2$observed,preds.obs2$predicted, colorize = TRUE, main=paste('Ich only ',modlistpa[i], sep=''))
 }
+colnames(modauc)=c('model', 'Ich.AUC')
+write.csv(modauc, file=paste(path1,'Ich_model_AUC.csv', sep=""), row.names = F)
 dev.off()
 
 ## list data files in each folder
@@ -168,11 +197,16 @@ ttbs2=as.numeric(ttbs)
 bt=loadRData('/home/ryan/Git/NEhabitat/rasters/test/RAST_NESREG_1977.04.03.BT.TEMP.YEAR.000066596.RData') #BT
 # bt=masked.raster
 ## depth raster
-gdepth=loadRData('/home/ryan/Git/NEhabitat/rasters/test/depth.RData') #gdepth
-gz=resample(gdepth, bt, 'bilinear')
+gz=loadRData('/home/ryan/Git/NEhabitat/rasters/test/depth.RData') #gdepth
+# gz=resample(gdepth, bt, 'bilinear')
 gz2=(gz*-1)
-gd2=crop(gz2, bt)
-gd2=mask(gd2, bt)
+# gd2=crop(gz2, bt)
+# gd2=mask(gd2, bt)
+gd3=gd2
+gd3[gd3>375]=NA # set values > 375 m to NA
+gd4=resample(gd3, bt, 'bilinear')
+gd4=crop(gd4, bt)
+gd4=mask(gd4, bt)
 ## grain size raster
 phi2mm=loadRData('/home/ryan/Git/NEhabitat/rasters/test/grainsizeMM.RData') #phi2mm
 phi2=resample(phi2mm, bt)
@@ -194,7 +228,7 @@ rm(bt)
 fl=levels=c("Adt", "Juv", "ich")
 # fishnm='SilverHake'
 wd2=paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/', fishnm, '/', sep='')
-modchoice=7
+modchoice=8
 usemodel=loadRData(paste(path1,modlistpa[modchoice], sep=''))
 usemodelbio=loadRData(paste(path1,modlistpb[modchoice], sep=''))
 ### NOW loop over files, load yearly dynamic raster files and predict habitat from HGAM models
@@ -209,7 +243,7 @@ for (jj in 1:3){
     ef <- data.frame(coordinates(bt), val=values(bt))
     colnames(ef)=c("LON", "LAT", "BOTTEMP")
     ef$SURFTEMP=values(st)
-    ef$DEPTH=values(gd2)
+    ef$DEPTH=values(gd4)
     ef$Stg=factor(fl[jj], levels=c('Adt', 'Juv', 'ich'))
     ef$pseudo_100m3=values(pse)
     ef$grnszmm=values(phi2)
@@ -276,7 +310,7 @@ for (i in 1:length(zooyrlist)){
   ef <- data.frame(coordinates(bt), val=values(bt))
   colnames(ef)=c("LON", "LAT", "BOTTEMP")
   ef$SURFTEMP=values(st)
-  ef$DEPTH=values(gd2)
+  ef$DEPTH=values(gd4)
   ef$SURFSALIN=values(ss)
   ef$BOTSALIN=values(bs)
   ef$grnszmm=values(phi2)
@@ -340,7 +374,7 @@ write.csv(modeval, file=paste(wd2,'model_evaluation_', SEASON, '_', fishnm, '_',
 #### Save model hindcast output trends (mean, trend, variance)
 ## Load rasters
 p1=paste('/home/ryan/Git/NEhabitat/rasters/',SEASON,'/', fishnm, '/', sep='')
-p2='fish_modGSe3_spr_Haddock' #'fish_modG4_spr_Haddock/'
+p2='fish_modGSe_spr_Haddock' #'fish_modG4_spr_Haddock/'
 p3=paste('/PA_only_stacked_', SEASON, '_', fishnm, '_', sep='') #'PA_only_stacked_Spr_Haddock_'
 p4=paste('/stacked_', SEASON, '_', fishnm, '_', sep='') #'stacked_Spr_Haddock_'
 ichpa=loadRData(paste(p1,p2,p3,'ich.RData', sep=''))
@@ -414,6 +448,25 @@ plotrasterNES(pse3[[25]], mn=0, mx=5, titlex='modG4bll 2016')
 
 plotrasterNES(pse2[[25]], mn=0, mx=5, titlex='modG4 2016')
 plotrasterNES(pse4, mn=0, mx=5, titlex='Kevin 2016')
+
+### checking for recruitment bumps in Ich output - 2013 and 2003 were big recruit years, need area index
+plotrasterNES(ichpa[[20]], mn=0, mx=1, titlex=paste(yrlist[20]))
+plotrasterNES(ichpa[[21]], mn=0, mx=1, titlex=paste(yrlist[21]))
+plotrasterNES(ichpa[[22]], mn=0, mx=1, titlex=paste(yrlist[22]))
+plotrasterNES(ichpa[[23]], mn=0, mx=1, titlex=paste(yrlist[23]))
+plotrasterNES(ichpa[[24]], mn=0, mx=1, titlex=paste(yrlist[24]))
+plotrasterNES(ichpa[[25]], mn=0, mx=1, titlex=paste(yrlist[25]))
+plotrasterNES(ichpa[[26]], mn=0, mx=1, titlex=paste(yrlist[26]))
+plotrasterNES(ichpa[[27]], mn=0, mx=1, titlex=paste(yrlist[27]))
+plotrasterNES(ichpa[[28]], mn=0, mx=1, titlex=paste(yrlist[28]))
+plotrasterNES(ichpa[[29]], mn=0, mx=1, titlex=paste(yrlist[29]))
+
+
+plotrasterNES(ichpa[[34]], mn=0, mx=1, titlex=paste(yrlist[34]))
+plotrasterNES(ichpa[[35]], mn=0, mx=1, titlex=paste(yrlist[35]))
+plotrasterNES(ichpa[[36]], mn=0, mx=1, titlex=paste(yrlist[36]))
+plotrasterNES(ichpa[[37]], mn=0, mx=1, titlex=paste(yrlist[37]))
+plotrasterNES(ichpa[[38]], mn=0, mx=1, titlex=paste(yrlist[38]))
 
 ### Create raster stacks and save them
 # wd2=paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/', fishnm, '/', sep='')
@@ -489,14 +542,71 @@ x=loadRData(paste(wd2, lisz[i], sep=''))
 }
 plot(cellStats(keepstack, 'mean'), type='b')
 plot(cellStats(stk, 'mean'), type='b')
+
+### see plot_map.R in {dropbox} for code
+par(mar = c(0,0,0,0))
+par(oma = c(0,0,0,0))
+map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="gray70")
+map.axes(las=1)
+points(fish2$LON[which(fish2$`74_Adt`==0)], fish2$LAT[which(fish2$`74_Adt`==0)], col=addTrans('purple', 20), pch=19)
+points(fish2$LON[which(fish2$`74_Adt`>0)], fish2$LAT[which(fish2$`74_Adt`>0)], col=addTrans('red', 20), pch=19)
+plot(nesbath,deep=-200, shallow=-200, step=1,add=T,lwd=1,col=addTrans('black',150),lty=1)
+
+map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="gray70")
+map.axes(las=1)
+points(fish2$LON[which(fish2$`74_Juv`==0)], fish2$LAT[which(fish2$`74_Juv`==0)], col=addTrans('purple', 20), pch=19)
+points(fish2$LON[which(fish2$`74_Juv`>0)], fish2$LAT[which(fish2$`74_Juv`>0)], col=addTrans('red', 20), pch=19)
+plot(nesbath,deep=-200, shallow=-200, step=1,add=T,lwd=1,col=addTrans('black',150),lty=1)
+
+map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="gray70")
+map.axes(las=1)
+points(fish2$LON[which(fish2$`74_ich`==0)], fish2$LAT[which(fish2$`74_ich`==0)], col=addTrans('purple', 20), pch=19)
+points(fish2$LON[which(fish2$`74_ich`>0)], fish2$LAT[which(fish2$`74_ich`>0)], col=addTrans('red', 20), pch=19)
+plot(nesbath,deep=-200, shallow=-200, step=1,add=T,lwd=1,col=addTrans('black',150),lty=1)
+
+map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="gray70")
+map.axes(las=1)
+points(trainPA$LON[which(trainPA$pa==1 & trainPA$Stg=='Juv')], trainPA$LAT[which(trainPA$pa==1& trainPA$Stg=='Juv')], col=addTrans('blue', 5), pch=19)
+plot(nesbath,deep=-200, shallow=-200, step=1,add=T,lwd=1,col=addTrans('black',150),lty=1)
+map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="gray70")
+map.axes(las=1)
+points(trainPA$LON[which(trainPA$pa==1 & trainPA$Stg=='ich')], trainPA$LAT[which(trainPA$pa==1& trainPA$Stg=='ich')], col=addTrans('green', 255), pch=19)
+plot(nesbath,deep=-200, shallow=-200, step=1,add=T,lwd=1,col=addTrans('black',150),lty=1)
+
+
+map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="gray70")
+map.axes(las=1)
+points(testPA$LON[which(testPA$pa==1 & testPA$Stg=='ich')], testPA$LAT[which(testPA$pa==1& testPA$Stg=='ich')], col=addTrans('green', 255), pch=19)
+plot(nesbath,deep=-200, shallow=-200, step=1,add=T,lwd=1,col=addTrans('black',150),lty=1)
+
 ##### _______________________________________________________________________________________________________
 # Correlation routine
 #####
 source("/home/ryan/Desktop/8 R Functions/Rfuncs.R")
 source("/home/ryan/Desktop/8 R Functions/Gridcorts.R")
 source("/home/ryan/Desktop/8 R Functions/KDE_funcs.R")
-library(RColorBrewer)
-library(colorspace)
+
+addTrans <- function(color,trans)
+{
+  # This function adds transparancy to a color.
+  # Define transparancy with an integer between 0 and 255
+  # 0 being fully transparant and 255 being fully visable
+  # Works with either color and trans a vector of equal length,
+  # or one of the two of length 1.
+  
+  if (length(color)!=length(trans)&!any(c(length(color),length(trans))==1)) stop("Vector lengths not correct")
+  if (length(color)==1 & length(trans)>1) color <- rep(color,length(trans))
+  if (length(trans)==1 & length(color)>1) trans <- rep(trans,length(color))
+  
+  num2hex <- function(x)
+  {
+    hex <- unlist(strsplit("0123456789ABCDEF",split=""))
+    return(paste(hex[(x-x%%16)/16+1],hex[x%%16+1],sep=""))
+  }
+  rgb <- rbind(col2rgb(color),trans)
+  res <- paste("#",apply(apply(rgb,2,num2hex),2,paste,collapse=""),sep="")
+  return(res)
+}
 # cg1=gridcorts(rasterstack=AdtHad, method='kendall',type='corel') #spearman
 # cg2=gridcorts(rasterstack=AdtHad, method='kendall',type='pval')
 # cg3=cg1  

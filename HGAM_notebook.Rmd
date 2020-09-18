@@ -104,7 +104,7 @@ FData.bio$rug = raster::extract(rugscl, mypoints)
 Select season for GAMs
 ```{r}
 slctseason="FALL"; fishseas="Fall"
-# slctseason="SPRING"; fishseas="Spr"
+slctseason="SPRING"; fishseas="Spr"
 
 ```
 
@@ -654,21 +654,21 @@ fish_modGSe_pa =  gam(pa ~ s(BOTTEMP, bs='tp') + s(BOTTEMP, Stg, k=10, bs="fs") 
 fish_modGSe_pb =  gam(logbio ~ s(BOTTEMP, bs='tp') + s(BOTTEMP, Stg, k=10, bs="fs") + s(SURFTEMP, bs='tp') + s(SURFTEMP, Stg, k=10, bs='fs') + s(DEPTH, bs='tp') + s(DEPTH, Stg, k=10, bs="fs") + s(pseudo_100m3, bs='tp') + s(pseudo_100m3, Stg, k=10, bs="fs") + s(grnszmm, bs='tp') + s(grnszmm, Stg, k=10, bs='fs') + s(rug, bs='tp') + s(rug, Stg, k=10, bs='fs'), data=trainBIO, method = "REML", family="gaussian")
 
 # # no rugosity
-# fish_modGSe1_pa =  gam(pa ~ s(BOTTEMP, bs='tp') + s(BOTTEMP, Stg, k=10, bs="fs") + s(SURFTEMP, bs='tp') + s(SURFTEMP, Stg, k=10, bs='fs') + s(DEPTH, bs='tp') + s(DEPTH, Stg, k=10, bs="fs") + s(pseudo_100m3, bs='tp') + s(pseudo_100m3, Stg, k=10, bs="fs") + s(grnszmm, bs='tp') + s(grnszmm, Stg, k=10, bs='fs'), data=trainPA, method = "REML", family="binomial")
-# # no rugosity or grain size
-# fish_modGSe2_pa =  gam(pa ~ s(BOTTEMP, bs='tp') + s(BOTTEMP, Stg, k=10, bs="fs") + s(SURFTEMP, bs='tp') + s(SURFTEMP, Stg, k=10, bs='fs') + s(DEPTH, bs='tp') + s(DEPTH, Stg, k=10, bs="fs") + s(pseudo_100m3, bs='tp') + s(pseudo_100m3, Stg, k=10, bs="fs"), data=trainPA, method = "REML", family="binomial")
-# # no grain size
-# fish_modGSe3_pa =  gam(pa ~ s(BOTTEMP, bs='tp') + s(BOTTEMP, Stg, k=10, bs="fs") + s(SURFTEMP, bs='tp') + s(SURFTEMP, Stg, k=10, bs='fs') + s(DEPTH, bs='tp') + s(DEPTH, Stg, k=10, bs="fs") + s(pseudo_100m3, bs='tp') + s(pseudo_100m3, Stg, k=10, bs="fs") + s(rug, bs='tp') + s(rug, Stg, k=10, bs='fs'), data=trainPA, method = "REML", family="binomial")
-# 
-# # no rugosity
-# fish_modGSe1_pb =  gam(logbio ~ s(BOTTEMP, bs='tp') + s(BOTTEMP, Stg, k=10, bs="fs") + s(SURFTEMP, bs='tp') + s(SURFTEMP, Stg, k=10, bs='fs') + s(DEPTH, bs='tp') + s(DEPTH, Stg, k=10, bs="fs") + s(pseudo_100m3, bs='tp') + s(pseudo_100m3, Stg, k=10, bs="fs") + s(grnszmm, bs='tp') + s(grnszmm, Stg, k=10, bs='fs'), data=trainBIO, method = "REML", family="gaussian")
-# # no rugosity or grain size
-# fish_modGSe2_pb =  gam(logbio ~ s(BOTTEMP, bs='tp') + s(BOTTEMP, Stg, k=10, bs="fs") + s(SURFTEMP, bs='tp') + s(SURFTEMP, Stg, k=10, bs='fs') + s(DEPTH, bs='tp') + s(DEPTH, Stg, k=10, bs="fs") + s(pseudo_100m3, bs='tp') + s(pseudo_100m3, Stg, k=10, bs="fs"), data=trainBIO, method = "REML", family="gaussian")
-# #no grain size
-# fish_modGSe3_pb =  gam(logbio ~ s(BOTTEMP, bs='tp') + s(BOTTEMP, Stg, k=10, bs="fs") + s(SURFTEMP, bs='tp') + s(SURFTEMP, Stg, k=10, bs='fs') + s(DEPTH, bs='tp') + s(DEPTH, Stg, k=10, bs="fs") + s(pseudo_100m3, bs='tp') + s(pseudo_100m3, Stg, k=10, bs="fs") + s(rug, bs='tp') + s(rug, Stg, k=10, bs='fs'), data=trainBIO, method = "REML", family="gaussian")
+fish_modGSe1_pa =  gam(pa ~ s(BOTTEMP, bs='tp') + s(BOTTEMP, Stg, k=10, bs="fs") + s(SURFTEMP, bs='tp') + s(SURFTEMP, Stg, k=10, bs='fs') + s(DEPTH, bs='tp') + s(DEPTH, Stg, k=10, bs="fs") + s(pseudo_100m3, bs='tp') + s(pseudo_100m3, Stg, k=10, bs="fs") + s(grnszmm, bs='tp') + s(grnszmm, Stg, k=10, bs='fs'), data=trainPA, method = "REML", family="binomial")
+# no rugosity or grain size
+fish_modGSe2_pa =  gam(pa ~ s(BOTTEMP, bs='tp') + s(BOTTEMP, Stg, k=10, bs="fs") + s(SURFTEMP, bs='tp') + s(SURFTEMP, Stg, k=10, bs='fs') + s(DEPTH, bs='tp') + s(DEPTH, Stg, k=10, bs="fs") + s(pseudo_100m3, bs='tp') + s(pseudo_100m3, Stg, k=10, bs="fs"), data=trainPA, method = "REML", family="binomial")
+# no grain size
+fish_modGSe3_pa =  gam(pa ~ s(BOTTEMP, bs='tp') + s(BOTTEMP, Stg, k=10, bs="fs") + s(SURFTEMP, bs='tp') + s(SURFTEMP, Stg, k=10, bs='fs') + s(DEPTH, bs='tp') + s(DEPTH, Stg, k=10, bs="fs") + s(pseudo_100m3, bs='tp') + s(pseudo_100m3, Stg, k=10, bs="fs") + s(rug, bs='tp') + s(rug, Stg, k=10, bs='fs'), data=trainPA, method = "REML", family="binomial")
 
-save(fish_modGSe_pa, file=paste('/home/ryan/Git/NEhabitat/rasters/',fishseas,'/',fishname,'/fish_modGSe_pa_',fishseas,'_',fishname,'.Rdata',sep=''))
-save(fish_modGSe_pb, file=paste('/home/ryan/Git/NEhabitat/rasters/',fishseas,'/',fishname,'/fish_modGSe_pb_',fishseas,'_',fishname,'.Rdata',sep=''))
+# # no rugosity
+fish_modGSe1_pb =  gam(logbio ~ s(BOTTEMP, bs='tp') + s(BOTTEMP, Stg, k=10, bs="fs") + s(SURFTEMP, bs='tp') + s(SURFTEMP, Stg, k=10, bs='fs') + s(DEPTH, bs='tp') + s(DEPTH, Stg, k=10, bs="fs") + s(pseudo_100m3, bs='tp') + s(pseudo_100m3, Stg, k=10, bs="fs") + s(grnszmm, bs='tp') + s(grnszmm, Stg, k=10, bs='fs'), data=trainBIO, method = "REML", family="gaussian")
+# no rugosity or grain size
+fish_modGSe2_pb =  gam(logbio ~ s(BOTTEMP, bs='tp') + s(BOTTEMP, Stg, k=10, bs="fs") + s(SURFTEMP, bs='tp') + s(SURFTEMP, Stg, k=10, bs='fs') + s(DEPTH, bs='tp') + s(DEPTH, Stg, k=10, bs="fs") + s(pseudo_100m3, bs='tp') + s(pseudo_100m3, Stg, k=10, bs="fs"), data=trainBIO, method = "REML", family="gaussian")
+#no grain size
+fish_modGSe3_pb =  gam(logbio ~ s(BOTTEMP, bs='tp') + s(BOTTEMP, Stg, k=10, bs="fs") + s(SURFTEMP, bs='tp') + s(SURFTEMP, Stg, k=10, bs='fs') + s(DEPTH, bs='tp') + s(DEPTH, Stg, k=10, bs="fs") + s(pseudo_100m3, bs='tp') + s(pseudo_100m3, Stg, k=10, bs="fs") + s(rug, bs='tp') + s(rug, Stg, k=10, bs='fs'), data=trainBIO, method = "REML", family="gaussian")
+
+save(fish_modGSe3_pa, file=paste('/home/ryan/Git/NEhabitat/rasters/',fishseas,'/',fishname,'/fish_modGSe3_pa_',fishseas,'_',fishname,'.Rdata',sep=''))
+save(fish_modGSe3_pb, file=paste('/home/ryan/Git/NEhabitat/rasters/',fishseas,'/',fishname,'/fish_modGSe3_pb_',fishseas,'_',fishname,'.Rdata',sep=''))
 
 
 # fish_modGS4e$aic

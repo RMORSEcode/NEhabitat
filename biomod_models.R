@@ -48,68 +48,82 @@ FData.abn$rug = extract(rugscl, mypoints)
 FData.bio$rug = extract(rugscl, mypoints)
 
 # Select season for GAMs
-#slctseason="SPRING" #"FALL"
+slctseason="SPRING" #"FALL"
 slctseason="FALL"
 
 
-# Subset the formatted data for a single species to use in models (need to update manually as these are column names)
-### select data
+### Choose fish to run, adjust by searching on and changing " `74_ " to new ID ****
+# fname='Cod' #73
+fname='Haddock' #74
+# fname='SilverHake' #72
+# fname='Pollock' #75
 
-fname='Haddock'
+
 fish=FData.abn %>% dplyr::select(YEAR, SEASON, LAT:BOTTEMP, `74_Adt`, `74_Juv`, `74_ich`, calfin_100m3:rug)
 fish$MONTH=month(FData.abn$EST_TOWDATE)
 fish=fish[complete.cases(fish),]
 fish$`74_ich`=ceiling(fish$`74_ich`) # make integer from numbers per 100 m/3
+fish2=fish[which(fish$SEASON==slctseason),] # subset to season
 
-### Need to make data frame wide -> long with just species of interest...
-# e.g.: df %>% pivot_longer(c(x, y, z), names_to = "key", values_to = "value")
-# pivot_longer(data, cols, names_to = "name", names_prefix = NULL,
-#              names_sep = NULL, names_pattern = NULL, names_ptypes = list(),
-#              names_repair = "check_unique", values_to = "value",
-#              values_drop_na = FALSE, values_ptypes = list())
-fish2=fish %>% pivot_longer(c(`74_Adt`, `74_Juv`, `74_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Number")
-fish2$Stg=factor(fish2$Stg, ordered=F)
-table(fish2$MONTH)
+# # ### now split data into training and testing set (75% train 25% test, randomly chosen)
+# set.seed(101) # Set Seed so that same sample can be reproduced in future also
+# # # Now Selecting 75% of data as sample from total 'n' rows of the data  
+# sample <- sample.int(n = nrow(fish2), size = floor(.75*nrow(fish2)), replace = F)
+# trainPA <- fish2[sample, ]
+# testPA  <- fish2[-sample, ]
 
-## log transform plankton
-fish3=fish2
-logd=fish3[,8:17]
+### pivot longer so stage is repeated
+trainPA=fish2 %>% pivot_longer(c(`74_Adt`, `74_Juv`, `74_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Number")
+trainPA$Stg=factor(trainPA$Stg, ordered=F)
+# table(trainPA$MONTH)
+## log transform plankton for training set
+logd=trainPA[,8:17]
 logd=log10(logd+1)
-fish3[,8:17]=logd
+trainPA[,8:17]=logd
+trainPA$pa=ifelse(trainPA$Number > 0, 1, 0)
+
+## now do likewise for testing data
+# testPA=testPA %>% pivot_longer(c(`74_Adt`, `74_Juv`, `74_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Number")
+# testPA$Stg=factor(testPA$Stg, ordered=F)
+# # table(testPA$MONTH)
+# ## log transform plankton for test set
+# logd=testPA[,8:17]
+# logd=log10(logd+1)
+# testPA[,8:17]=logd
+# testPA$pa=ifelse(testPA$Number > 0, 1, 0)
 
 # Now set up traing and testing data; split data sets
 # 1) Train model w/ data through 1999, predict 2000-2018
 # 2) Train 1977-2011, predict 2012-2018
 # 3) Train 1977-2012, predict 2013-2018
 # 4) Train 1977-2014, predict 2015-2018
-
-# Select Season and Fish species
-# Training/testing year split
-dat.split.year<- 2018
-
-## select season and split training/testing; Change to Presence-Absence for fish Numbers
-fish5=fish3[which(fish3$SEASON==slctseason),]
-fish4<- fish5 %>%
-  filter(., YEAR <= dat.split.year) %>%
-  mutate(., "pa" = ifelse(Number > 0, 1, 0))
-# dat.test<- fish5 %>%
-  # filter(., YEAR > dat.split.year) %>%
-  # mutate(., "pa" = ifelse(Number > 0, 1, 0),
-         # "pred.id" = paste("ID.", seq(from = 1, to = nrow(.), by = 1), sep = ""))
-
+## Select Season and Fish species
+## Training/testing year split
+# dat.split.year<- 2018
+# 
+# ## select season and split training/testing; Change to Presence-Absence for fish Numbers
+# fish5=fish3[which(fish3$SEASON==slctseason),]
+# fish4<- fish5 %>%
+#   filter(., YEAR <= dat.split.year) %>%
+#   mutate(., "pa" = ifelse(Number > 0, 1, 0))
+# # dat.test<- fish5 %>%
+#   # filter(., YEAR > dat.split.year) %>%
+#   # mutate(., "pa" = ifelse(Number > 0, 1, 0),
+#          # "pred.id" = paste("ID.", seq(from = 1, to = nrow(.), by = 1), sep = ""))
+# 
 ### Subset to stage for individual models ----> choose one only
-fish4.ss=fish4 %>% filter(., Stg=='Adt'); stage='Adt'
-fish4.ss=fish4 %>% filter(., Stg=='Juv'); stage='Juv'
-fish4.ss=fish4 %>% filter(., Stg=='ich'); stage='Ich'
+trainPA.ss=trainPA %>% filter(., Stg=='Adt'); stage='Adt'
+trainPA.ss=trainPA %>% filter(., Stg=='Juv'); stage='Juv'
+trainPA.ss=trainPA %>% filter(., Stg=='ich'); stage='Ich'
 
 modname=paste(slctseason, ' ', stage, ' ',fname)
-modname2=paste(stage, '.',fname,'.', slctseason, sep='')
+modname2=paste(stage, '_',fname,'_', slctseason, sep='')
 
 ### biomod2 ####
-resp.var=fish4.ss$pa
+resp.var=trainPA.ss$pa
 # resp.var[resp.var > 0]=1 # presence absence
-latlon=as.matrix((data.frame(fish4.ss$LON, fish4.ss$LAT)))
-expl.var=fish4.ss %>% select(DEPTH, SURFTEMP, BOTTEMP, calfin_100m3:rug)
+latlon=as.matrix((data.frame(trainPA.ss$LON, trainPA.ss$LAT)))
+expl.var=trainPA.ss %>% select(DEPTH, SURFTEMP, BOTTEMP, calfin_100m3:rug)
 expl.var=data.frame(expl.var)
 myBiomodData=BIOMOD_FormatingData(resp.var,
                                   expl.var,
@@ -144,7 +158,7 @@ myBiomodModelOut <- BIOMOD_Modeling(
   SaveObj = TRUE,
   rescal.all.models = FALSE,
   do.full.models = FALSE,
-  modeling.id = paste(modname,"FirstModeling",sep=""))
+  modeling.id = paste(modname2,"FirstModeling",sep=""))
 
 myBiomodModelOut 
 myBiomodModelEval <- get_evaluations(myBiomodModelOut)
@@ -160,8 +174,10 @@ get_variables_importance(myBiomodModelOut)
 gg1 <- models_scores_graph( myBiomodModelOut,
                             by = 'models',
                             metrics = c('ROC','TSS') )
+gg1 + ggtitle(paste(modname))
 
 ### by cross validation run
 gg2 <- models_scores_graph( myBiomodModelOut,
                             by = 'cv_run',
                             metrics = c('ROC','TSS') )
+gg2 + ggtitle(paste(modname))

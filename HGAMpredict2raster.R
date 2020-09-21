@@ -48,15 +48,19 @@ trainPA$SEASON[1] #verify season
 modlistpa=list.files(path1, pattern = '_pa_') # presence-absence models
 modlistpb=list.files(path1, pattern = '_pb_') # positive biomass models
 
-# pdf(paste(path1, 'Models_variables.pdf', sep=''), height=4, width=6)
-# for (i in (1:length(modlistpa))){
-#   modchoice=i
-#   usemodel=loadRData(paste(path1,modlistpa[modchoice], sep=''))
-#   draw(usemodel)
-# }
+
+## draw GAM smooths, save to pdf
+# pdf(paste(path1, 'PAmodels_smooths.pdf', sep=''), height=8, width=12)
+for (i in (1:length(modlistpa))){
+  modchoice=i
+  usemodel=loadRData(paste(path1,modlistpa[modchoice], sep=''))
+  modnm=strsplit(modlistpa[modchoice], split ='.Rdata')[[1]]
+  draw(usemodel)
+  ggplot2::ggsave(paste(path1, modnm,'_smooths.pdf', sep=''), height=8, width=12)
+}
 # dev.off()
 
-
+### Plot ROC curves
 pdf(paste(path1, 'PAmodels_AUC.pdf', sep=''), height=4, width=6)
 for (i in (1:length(modlistpa))){
   modchoice=i
@@ -81,16 +85,6 @@ for (i in (1:length(modlistpa))){
   plotROC(preds.obs2$observed[sset],preds.obs2$predicted[sset], colorize = TRUE, main=paste('Ich only ',modlistpa[i], sep=''))
 }
 dev.off()
-
-## draw smooths (takes a long time)
-pdf(paste(path1, 'PAmodels_smooths.pdf', sep=''), height=6, width=8)
-for (i in (1:length(modlistpa))){
-  modchoice=i
-  usemodel=loadRData(paste(path1,modlistpa[modchoice], sep=''))
-  draw(usemodel)
-}
-dev.off()
-
 
 ### verify model as seperate files
 pdf(paste(path1, 'PAmodels_AUC_all_Stg.pdf', sep=''), height=4, width=6)
@@ -357,7 +351,7 @@ modlistpa[modchoice]
 
 
 ### SAVE out model performance data to CSV file - deviance explained, AIC
-modeval=data.frame(matrix(nrow=length(modlistpa), ncol=5, data=NA))
+modeval=data.frame(matrix(nrow=length(modlistpa), ncol=11, data=NA))
 for (i in 1:length(modlistpa)){
   modchoice=i
   usemodel=loadRData(paste(path1,modlistpa[modchoice], sep=''))
@@ -367,14 +361,20 @@ for (i in 1:length(modlistpa)){
   modeval[i,3]=summary(usemodelbio)$dev.expl
   modeval[i,4]=usemodel$aic
   modeval[i,5]=usemodelbio$aic
+  modeval[i,6]=sum(usemodel$edf)
+  modeval[i,7]=sum(usemodelbio$edf)
+  modeval[i,8]=df.residual(usemodel)
+  modeval[i,9]=df.residual(usemodelbio)
+  modeval[i,10]=((df.residual(usemodel)+sum(usemodel$edf))/3)-sum(usemodel$edf)
+  modeval[i,11]=((df.residual(usemodelbio)+sum(usemodelbio$edf))/3)-sum(usemodelbio$edf)
 }
-colnames(modeval)=c('model', 'PA.dev.exp','BIO.dev.exp','PA.aic','BIO.aic')
+colnames(modeval)=c('model', 'PA.dev.exp','BIO.dev.exp','PA.aic','BIO.aic','PA.edf','BIO.edf','PA.res.df','BIO.res.df', 'PA.corr.res.df','BIO.corr.res.df')
 write.csv(modeval, file=paste(wd2,'model_evaluation_', SEASON, '_', fishnm, '_', '.csv', sep=""), row.names = F)
 
 #### Save model hindcast output trends (mean, trend, variance)
 ## Load rasters
 p1=paste('/home/ryan/Git/NEhabitat/rasters/',SEASON,'/', fishnm, '/', sep='')
-p2='fish_modGSe_spr_Haddock' #'fish_modG4_spr_Haddock/'
+p2='fish_modGSe_fall_haddock' #'fish_modG4_spr_Haddock/'
 p3=paste('/PA_only_stacked_', SEASON, '_', fishnm, '_', sep='') #'PA_only_stacked_Spr_Haddock_'
 p4=paste('/stacked_', SEASON, '_', fishnm, '_', sep='') #'stacked_Spr_Haddock_'
 ichpa=loadRData(paste(p1,p2,p3,'ich.RData', sep=''))

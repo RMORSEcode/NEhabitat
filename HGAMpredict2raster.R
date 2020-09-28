@@ -1,3 +1,14 @@
+library(mgcv)
+library(gratia)
+library(car)
+library(MASS)
+library(stringr)
+library(tidyr)
+library(lubridate)
+library(raster)
+library(ROCR)
+library(dplyr)
+
 library(maps)
 library(mapdata)
 library(RColorBrewer)
@@ -374,7 +385,7 @@ write.csv(modeval, file=paste(wd2,'model_evaluation_', SEASON, '_', fishnm, '_',
 #### Save model hindcast output trends (mean, trend, variance)
 ## Load rasters
 p1=paste('/home/ryan/Git/NEhabitat/rasters/',SEASON,'/', fishnm, '/', sep='')
-p2='fish_modGSe_fall_haddock' #'fish_modG4_spr_Haddock/'
+p2='fish_modGSe_spr_Haddock' #'fish_modG4_spr_Haddock/'
 p3=paste('/PA_only_stacked_', SEASON, '_', fishnm, '_', sep='') #'PA_only_stacked_Spr_Haddock_'
 p4=paste('/stacked_', SEASON, '_', fishnm, '_', sep='') #'stacked_Spr_Haddock_'
 ichpa=loadRData(paste(p1,p2,p3,'ich.RData', sep=''))
@@ -468,6 +479,100 @@ plotrasterNES(ichpa[[36]], mn=0, mx=1, titlex=paste(yrlist[36]))
 plotrasterNES(ichpa[[37]], mn=0, mx=1, titlex=paste(yrlist[37]))
 plotrasterNES(ichpa[[38]], mn=0, mx=1, titlex=paste(yrlist[38]))
 
+ichhab_gbk=raster::extract(ichpa, gbk, fun=mean, na.rm=T)
+plot(ichhab_gbk[1,]~yrlist, type='l')
+ichhab_gom=raster::extract(ichpa, gom, fun=mean, na.rm=T)
+plot(ichhab_gom[1,]~yrlist, type='l')
+
+adthab_gbk=raster::extract(adtpa, gbk, fun=mean, na.rm=T)
+plot(adthab_gbk[1,]~yrlist, type='l')
+adthab_gom=raster::extract(adtpa, gom, fun=mean, na.rm=T)
+plot(adthab_gom[1,]~yrlist, type='l')
+
+juvhab_gbk=raster::extract(juvpa, gbk, fun=mean, na.rm=T)
+plot(juvhab_gbk[1,]~yrlist, type='l')
+juvhab_gom=raster::extract(juvpa, gom, fun=mean, na.rm=T)
+plot(juvhab_gom[1,]~yrlist, type='l')
+
+haddocksr=read.csv('/home/ryan/Downloads/SR.csv', header=T, stringsAsFactors = F)
+hdts=haddocksr[60:88,]
+
+plot(haddocksr$year, log(haddocksr$recr), type='l')
+plot(hdts$year, log10(hdts$recr), type='l')
+
+plot(hdts$year, log10(hdts$recr)/hdts$ssb, type='l')
+
+test=data.frame(log10(hdts$recr), ichhab_gbk[1,])
+cor(test)
+
+### load and stack Bottom temperaure
+btlist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/BT2', sep=''))
+wd3=paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/BT2', sep='')
+rastBT=loadRData(paste(wd3,'/',btlist[1], sep=''))
+for (i in 2:length(btlist)){
+  rastDF=loadRData(paste(wd3,'/',btlist[i], sep=''))
+  rastBT=stack(rastBT, rastDF)
+}
+BT_gbk=raster::extract(rastBT, gbk, fun=mean, na.rm=T)
+plot(BT_gbk[1,]~yrlist, type='l')
+BT_gom=raster::extract(rastBT, gom, fun=mean, na.rm=T)
+plot(BT_gom[1,]~yrlist, type='l')
+
+### load and stack Bottom temperaure
+bslist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/BS2', sep=''))
+wd3=paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/BS2', sep='')
+rastBS=loadRData(paste(wd3,'/',bslist[1], sep=''))
+for (i in 2:length(bslist)){
+  rastDF=loadRData(paste(wd3,'/',bslist[i], sep=''))
+  rastBS=stack(rastBS, rastDF)
+}
+BS_gbk=raster::extract(rastBS, gbk, fun=mean, na.rm=T)
+plot(BS_gbk[1,]~yrlist[16:43], type='l')
+BT_gom=raster::extract(rastBT, gom, fun=mean, na.rm=T)
+plot(BT_gom[1,]~yrlist, type='l')
+### load and stack Bottom temperaure
+zlist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/pseudo', sep=''))
+wd3=paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/pseudo', sep='')
+rastPSE=loadRData(paste(wd3,'/',zlist[1], sep=''))
+for (i in 2:length(btlist)){
+  rastDF=loadRData(paste(wd3,'/',zlist[i], sep=''))
+  rastPSE=stack(rastPSE, rastDF)
+}
+PSE_gbk=raster::extract(rastPSE, gbk, fun=mean, na.rm=T)
+plot(PSE_gbk[1,]~yrlist, type='l')
+PSE_gom=raster::extract(rastPSE, gom, fun=mean, na.rm=T)
+plot(PSE_gom[1,]~yrlist, type='l')
+
+## check GAM pseudocal
+PSE=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/zoop/pseudocal/zoo_modG/stacked_Spr_pseudocal_ich.RData')
+PSE_gbk=raster::extract(PSE, gbk, fun=mean, na.rm=T)
+plot(PSE_gbk[1,]~yrlist[16:43], type='l')
+PSE_gom=raster::extract(PSE, gom, fun=mean, na.rm=T)
+plot(PSE_gom[1,]~yrlist[16:43], type='l')
+
+### check against EcoMon anomalies aggregated to EPUs
+tt1=loadRData("/home/ryan/Downloads/zoo_abun_anom.rdata")
+plot(tt1$value[which(tt1$variable=='Pse' & tt1$Region=='GB' & tt1$Time > 1991)] ~ 
+       tt1$Time[which(tt1$variable=='Pse' & tt1$Region=='GB' & tt1$Time > 1991)], 
+     type='b', ylab='Pse GB anom')
+
+
+
+gbk=rgdal::readOGR('/home/ryan/Desktop/shapefiles/epu_shapes/EPU_GBKPoly.shp')
+gom=rgdal::readOGR('/home/ryan/Desktop/shapefiles/epu_shapes/EPU_GOMPoly.shp')
+### Function to extract data using a shapefile
+extract_calc=function(x, shp){
+  v2=list()
+  for(i in 1:dim(x)[3]){
+    v=extract(x[[i]], shp)
+    v1=lapply(v, function(xx) mean(xx, na.rm=T))
+    v2[i]=list(v1)
+  }
+  m=matrix(unlist(v2), ncol=dim(x)[3], nrow=length(shp@polygons)) # box 0-29 =rows, years =cols
+  # colnames(m)=seq(1998, 2016, by=1)
+  # rownamse(m)=
+  return(m)
+}
 ### Create raster stacks and save them
 # wd2=paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/', fishnm, '/', sep='')
 # wd4=paste(yrlist[i], '_', 'RASTERpred', '_', SEASON, '_', fishnm, '_',fl[jj], '_', '.RData', sep="")

@@ -5,6 +5,7 @@ library(dismo)
 library(dplyr)
 library(lubridate)
 library(raster)
+library(ggplot2)
 load('/home/ryan/Documents/Git/NEhabitat/Final_merged_fish_corBIO_Zoo_Ich.Rda') # Biomass
 load('/home/ryan/Documents/Git/NEhabitat/Final_merged_fish_corABN_Zoo_Ich.Rda') # Abundance
 
@@ -58,12 +59,29 @@ fname='Haddock' #74
 # fname='SilverHake' #72
 # fname='Pollock' #75
 
+# use for zooplankton
+fish=FData.abn %>% dplyr::select(YEAR, SEASON:`197_ich`, ctyp_100m3:rug)
+fish$MONTH=month(FData.abn$EST_TOWDATE)
+fish=fish[complete.cases(fish),]
+fish$pa=ifelse(fish$calfin_100m3>0, 1, 0)
+# fish2=fish %>% dplyr::select(-`calfin_100m3`) # change to PA and drop column
+fish2=fish %>% dplyr::select(-`pseudo_100m3`) # change to PA and drop column
+fish2=fish2[which(fish2$SEASON==slctseason),]
+logd=fish2[,56:65]
+logd=log10(logd+1)
+fish2[,56:65]=logd
+trainPA=fish2[complete.cases(fish2),]
+trainPA.ss=trainPA[,c(3:9, 56:69)]
+stage='zoo'
+fname='pseudo' #'calfin'
+
 
 fish=FData.abn %>% dplyr::select(YEAR, SEASON, LAT:BOTTEMP, `74_Adt`, `74_Juv`, `74_ich`, calfin_100m3:rug)
 fish$MONTH=month(FData.abn$EST_TOWDATE)
 fish=fish[complete.cases(fish),]
 fish$`74_ich`=ceiling(fish$`74_ich`) # make integer from numbers per 100 m/3
 fish2=fish[which(fish$SEASON==slctseason),] # subset to season
+
 
 # # ### now split data into training and testing set (75% train 25% test, randomly chosen)
 # set.seed(101) # Set Seed so that same sample can be reproduced in future also
@@ -81,7 +99,7 @@ logd=trainPA[,8:17]
 logd=log10(logd+1)
 trainPA[,8:17]=logd
 trainPA$pa=ifelse(trainPA$Number > 0, 1, 0)
-
+trainPA=trainPA[complete.cases(trainPA),]
 ## now do likewise for testing data
 # testPA=testPA %>% pivot_longer(c(`74_Adt`, `74_Juv`, `74_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Number")
 # testPA$Stg=factor(testPA$Stg, ordered=F)
@@ -158,7 +176,7 @@ myBiomodModelOut <- BIOMOD_Modeling(
   SaveObj = TRUE,
   rescal.all.models = FALSE,
   do.full.models = FALSE,
-  modeling.id = paste(modname2,"FirstModeling",sep=""))
+  modeling.id = paste(modname2,"SecondModeling",sep=""))
 
 myBiomodModelOut 
 myBiomodModelEval <- get_evaluations(myBiomodModelOut)

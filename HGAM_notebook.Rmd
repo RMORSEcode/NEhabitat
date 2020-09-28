@@ -98,6 +98,42 @@ rugscl=calc(rug, fun=function(x){(x-mmin)/(mmax-mmin)}) # rescale from -4:2 -> 0
 # plot(rugscl)
 FData.abn$rug = raster::extract(rugscl, mypoints)
 FData.bio$rug = raster::extract(rugscl, mypoints)
+
+## add chlorophyll climatology
+chllist=list.files('/home/ryan/1_habitat_analysis_2017/chl/NESREG/clim', pattern='.RData')
+wd3=paste('/home/ryan/1_habitat_analysis_2017/chl/NESREG/clim')
+chlclim=data.frame(matrix(data=NA, nrow=length(FData.abn[,1]), ncol=12))
+polylist=cbind(FData.abn$LON, FData.abn$LAT)
+polylist2=polylist[1:30,]
+for (i in 1:12){
+rastchl=loadRData(paste(wd3, '/', chllist[i], sep=''))
+chlclim[,i]=raster::extract(rastchl, polylist)
+}
+FData.abn$chl1=chlclim[,1]
+FData.abn$chl2=chlclim[,2]
+FData.abn$chl3=chlclim[,3]
+FData.abn$chl4=chlclim[,4]
+FData.abn$chl5=chlclim[,5]
+FData.abn$chl6=chlclim[,6]
+FData.abn$chl7=chlclim[,7]
+FData.abn$chl8=chlclim[,8]
+FData.abn$chl9=chlclim[,9]
+FData.abn$chl10=chlclim[,10]
+FData.abn$chl11=chlclim[,11]
+FData.abn$chl12=chlclim[,12]
+
+FData.bio$chl1=chlclim[,1]
+FData.bio$chl2=chlclim[,2]
+FData.bio$chl3=chlclim[,3]
+FData.bio$chl4=chlclim[,4]
+FData.bio$chl5=chlclim[,5]
+FData.bio$chl6=chlclim[,6]
+FData.bio$chl7=chlclim[,7]
+FData.bio$chl8=chlclim[,8]
+FData.bio$chl9=chlclim[,9]
+FData.bio$chl10=chlclim[,10]
+FData.bio$chl11=chlclim[,11]
+FData.bio$chl12=chlclim[,12]
 ```
 
 
@@ -124,7 +160,7 @@ fishname='Haddock' #74
 # fishname='Pollock' #75
 
 
-fish=FData.abn %>% dplyr::select(YEAR, SEASON, LAT:BOTTEMP, `74_Adt`, `74_Juv`, `74_ich`, calfin_100m3:rug)
+fish=FData.abn %>% dplyr::select(YEAR, SEASON, LAT:BOTTEMP, `74_Adt`, `74_Juv`, `74_ich`, calfin_100m3:chl12)
 fish$MONTH=month(FData.abn$EST_TOWDATE)
 fish=fish[complete.cases(fish),]
 fish$`74_ich`=ceiling(fish$`74_ich`) # make integer from numbers per 100 m/3
@@ -161,7 +197,7 @@ testPA$pa=ifelse(testPA$Number > 0, 1, 0)
 
 Testing GAMs on zooplankton abundance
 ```{r}
-zoo=FData.abn %>% dplyr::select(YEAR, SEASON, LAT:BOTSALIN, calfin_100m3:rug)
+zoo=FData.abn %>% dplyr::select(YEAR, SEASON, LAT:BOTSALIN, calfin_100m3:chl12)
 zoo$MONTH=month(FData.abn$EST_TOWDATE)
 zoo=zoo[complete.cases(zoo),]
 zoo2=zoo[which(zoo$SEASON==slctseason),] # subset to season
@@ -254,7 +290,7 @@ Do likewise for biomass data, to be combined with PA later for final model
 
 ```{r}
 ### select data
-fish.b=FData.bio %>% dplyr::select(YEAR, SEASON, LAT:BOTTEMP, `74_Adt`, `74_Juv`, `74_ich`, calfin_100m3:rug)
+fish.b=FData.bio %>% dplyr::select(YEAR, SEASON, LAT:BOTTEMP, `74_Adt`, `74_Juv`, `74_ich`, calfin_100m3:chl12)
 fish.b$MONTH=month(FData.bio$EST_TOWDATE)
 fish.b=fish.b[complete.cases(fish.b),]
 fish.b$`74_ich`=ceiling(fish.b$`74_ich`) # make integer from numbers per 100 m/3

@@ -560,6 +560,8 @@ plot(tt1$value[which(tt1$variable=='Pse' & tt1$Region=='GB' & tt1$Time > 1991)] 
 
 gbk=rgdal::readOGR('/home/ryan/Desktop/shapefiles/epu_shapes/EPU_GBKPoly.shp')
 gom=rgdal::readOGR('/home/ryan/Desktop/shapefiles/epu_shapes/EPU_GOMPoly.shp')
+
+NES5=rgdal::readOGR('/home/ryan/Desktop/nes_gbk_gome_gomw_mabn_mabsPoly.shp')
 ### Function to extract data using a shapefile
 extract_calc=function(x, shp){
   v2=list()

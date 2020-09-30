@@ -41,7 +41,7 @@ SEASON='Spr' # Fall
 SEASON='Fall'
 
 ### NAME OF FISH
-fishnm='Haddock' #'Cod' # 'Haddock'  #'SilverHake'
+fishnm='Cod' # 'Haddock'  #'SilverHake'
 
 ## get path and list of models
 path1=paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/', fishnm,'/', sep='') # Spr/Haddock'
@@ -655,20 +655,20 @@ par(mar = c(0,0,0,0))
 par(oma = c(0,0,0,0))
 map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="gray70")
 map.axes(las=1)
-points(fish2$LON[which(fish2$`74_Adt`==0)], fish2$LAT[which(fish2$`74_Adt`==0)], col=addTrans('purple', 20), pch=19)
-points(fish2$LON[which(fish2$`74_Adt`>0)], fish2$LAT[which(fish2$`74_Adt`>0)], col=addTrans('red', 20), pch=19)
+points(fish2$LON[which(fish2$`73_Adt`==0)], fish2$LAT[which(fish2$`73_Adt`==0)], col=addTrans('purple', 20), pch=19)
+points(fish2$LON[which(fish2$`73_Adt`>0)], fish2$LAT[which(fish2$`73_Adt`>0)], col=addTrans('red', 20), pch=19)
 plot(nesbath,deep=-200, shallow=-200, step=1,add=T,lwd=1,col=addTrans('black',150),lty=1)
 
 map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="gray70")
 map.axes(las=1)
-points(fish2$LON[which(fish2$`74_Juv`==0)], fish2$LAT[which(fish2$`74_Juv`==0)], col=addTrans('purple', 20), pch=19)
-points(fish2$LON[which(fish2$`74_Juv`>0)], fish2$LAT[which(fish2$`74_Juv`>0)], col=addTrans('red', 20), pch=19)
+points(fish2$LON[which(fish2$`73_Juv`==0)], fish2$LAT[which(fish2$`73_Juv`==0)], col=addTrans('purple', 20), pch=19)
+points(fish2$LON[which(fish2$`73_Juv`>0)], fish2$LAT[which(fish2$`73_Juv`>0)], col=addTrans('red', 20), pch=19)
 plot(nesbath,deep=-200, shallow=-200, step=1,add=T,lwd=1,col=addTrans('black',150),lty=1)
 
 map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="gray70")
 map.axes(las=1)
-points(fish2$LON[which(fish2$`74_ich`==0)], fish2$LAT[which(fish2$`74_ich`==0)], col=addTrans('purple', 20), pch=19)
-points(fish2$LON[which(fish2$`74_ich`>0)], fish2$LAT[which(fish2$`74_ich`>0)], col=addTrans('red', 20), pch=19)
+points(fish2$LON[which(fish2$`73_ich`==0)], fish2$LAT[which(fish2$`73_ich`==0)], col=addTrans('purple', 20), pch=19)
+points(fish2$LON[which(fish2$`73_ich`>0)], fish2$LAT[which(fish2$`73_ich`>0)], col=addTrans('red', 20), pch=19)
 plot(nesbath,deep=-200, shallow=-200, step=1,add=T,lwd=1,col=addTrans('black',150),lty=1)
 
 map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="gray70")

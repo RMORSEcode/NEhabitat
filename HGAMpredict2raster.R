@@ -56,8 +56,8 @@ usemodel=loadRData(paste(path1,modlist[modchoice], sep='')) #fish_modS #_spr_had
 #### VERIFY MODEL SPECIES AND SEASON ####
 trainPA$SVSPP[1] #verify species
 trainPA$SEASON[1] #verify season
-modlistpa=list.files(path1, pattern = '_pa_') # presence-absence models
-modlistpb=list.files(path1, pattern = '_pb_') # positive biomass models
+modlistpa=list.files(path1, pattern = glob2rx("*_pa_*Rdata")) # presence-absence models
+modlistpb=list.files(path1, pattern = glob2rx("*_pb_*Rdata")) # positive biomass models
 
 
 ## draw GAM smooths, save to pdf
@@ -243,7 +243,7 @@ rm(bt)
 fl=levels=c("Adt", "Juv", "ich")
 # fishnm='SilverHake'
 wd2=paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/', fishnm, '/', sep='')
-modchoice=4
+modchoice=3
 usemodel=loadRData(paste(path1,modlistpa[modchoice], sep=''))
 usemodelbio=loadRData(paste(path1,modlistpb[modchoice], sep=''))
 ### NOW loop over files, load yearly dynamic raster files and predict habitat from HGAM models
@@ -394,12 +394,12 @@ for (i in 1:length(modlistpa)){
   modeval[i,11]=((df.residual(usemodelbio)+sum(usemodelbio$edf))/3)-sum(usemodelbio$edf)
 }
 colnames(modeval)=c('model', 'PA.dev.exp','BIO.dev.exp','PA.aic','BIO.aic','PA.edf','BIO.edf','PA.res.df','BIO.res.df', 'PA.corr.res.df','BIO.corr.res.df')
-write.csv(modeval, file=paste(wd2,'model_evaluation_', SEASON, '_', fishnm, '_', '.csv', sep=""), row.names = F)
+write.csv(format(modeval, digits=2), file=paste(wd2,'model_evaluation_', SEASON, '_', fishnm, '_', '.csv', sep=""), row.names = F)
 
 #### Save model hindcast output trends (mean, trend, variance)
 ## Load rasters
 p1=paste('/home/ryan/Git/NEhabitat/rasters/',SEASON,'/', fishnm, '/', sep='')
-p2='fish_modG_Spr_Haddock' #'fish_modG4_spr_Haddock/'
+p2='fish_modGI_spr_Haddock' #'fish_modG4_spr_Haddock/'
 p3=paste('/PA_only_stacked_', SEASON, '_', fishnm, '_', sep='') #'PA_only_stacked_Spr_Haddock_'
 p4=paste('/stacked_', SEASON, '_', fishnm, '_', sep='') #'stacked_Spr_Haddock_'
 ichpa=loadRData(paste(p1,p2,p3,'ich.RData', sep=''))
@@ -509,12 +509,11 @@ juvhab_gom=raster::extract(juvpa, gom, fun=mean, na.rm=T)
 plot(juvhab_gom[1,]~yrlist, type='l')
 
 haddocksr=read.csv('/home/ryan/Downloads/SR.csv', header=T, stringsAsFactors = F)
-hdts=haddocksr[60:88,]
+hdts=haddocksr[50:88,]
 
 plot(haddocksr$year, log(haddocksr$recr), type='l')
 plot(hdts$year, log10(hdts$recr), type='l')
-
-plot(hdts$year, log10(hdts$recr)/hdts$ssb, type='l')
+plot(hdts$year, hdts$recr/hdts$ssb, type='l')
 
 test=data.frame(log10(hdts$recr), ichhab_gbk[1,])
 cor(test)

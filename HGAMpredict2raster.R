@@ -41,7 +41,7 @@ SEASON='Spr' # Fall
 SEASON='Fall'
 
 ### NAME OF FISH
-fishnm='Cod' # 'Haddock'  #'SilverHake'
+fishnm='Haddock' #'Cod' # 'Haddock'  #'SilverHake'
 
 ## get path and list of models
 path1=paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/', fishnm,'/', sep='') # Spr/Haddock'
@@ -97,19 +97,19 @@ for (i in (1:length(modlistpa))){
 }
 dev.off()
 
-### verify model as seperate files
-pdf(paste(path1, 'PAmodels_AUC_all_Stg.pdf', sep=''), height=4, width=6)
-for (i in (1:length(modlistpa))){
-  modchoice=i
-  modlistpa[modchoice]
-  usemodel=loadRData(paste(path1,modlistpa[modchoice], sep=''))
-  pred.test=predict(usemodel,testPA,type='response')
-  preds.obs=data.frame(pred.test=pred.test,testPA$pa)
-  colnames(preds.obs)=c("predicted","observed")
-  preds.obs2=preds.obs2[complete.cases(preds.obs$predicted),]
-  plotROC(preds.obs2$observed,preds.obs2$predicted, colorize = TRUE, main=paste('All Stages ', modlistpa[i], sep=''))
-}
-dev.off()
+# ### verify model as seperate files
+# pdf(paste(path1, 'PAmodels_AUC_all_Stg.pdf', sep=''), height=4, width=6)
+# for (i in (1:length(modlistpa))){
+#   modchoice=i
+#   modlistpa[modchoice]
+#   usemodel=loadRData(paste(path1,modlistpa[modchoice], sep=''))
+#   pred.test=predict(usemodel,testPA,type='response')
+#   preds.obs=data.frame(pred.test=pred.test,testPA$pa)
+#   colnames(preds.obs)=c("predicted","observed")
+#   preds.obs2=preds.obs2[complete.cases(preds.obs$predicted),]
+#   plotROC(preds.obs2$observed,preds.obs2$predicted, colorize = TRUE, main=paste('All Stages ', modlistpa[i], sep=''))
+# }
+# dev.off()
 
 modauc=data.frame(matrix(nrow=length(modlistpa), ncol=2, data=NA))
 pdf(paste(path1, 'PA_models_by_Stg_Adt_AUC.pdf', sep=''), height=4, width=6)
@@ -174,7 +174,8 @@ dev.off()
 ## list data files in each folder
 btlist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/BT2', sep=''))
 stlist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/ST2', sep=''))
-zlist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/pseudo', sep=''))
+# zlist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/pseudo', sep=''))
+zlist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/ctyp', sep=''))
 sslist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/SS2', sep=''))
 bslist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/BS2', sep=''))
 ## parse year from filenames e.g #"RAST_NESREG_1977.04.03.BT.TEMP.YEAR.000066596.RData"
@@ -186,7 +187,8 @@ ts=strsplit(stlist, split=('RAST_NESREG_'))
 tts=sapply(ts, function(x) strsplit(x, "[.]")[[2]][1], USE.NAMES=FALSE)
 tts2=as.numeric(tts)
 # Zooplankton (pseudocal)
-tz=strsplit(zlist, split=('RAST_NESREG_'))
+# tz=strsplit(zlist, split=('RAST_NESREG_')) #old one for PSE
+tz=strsplit(zlist, split=('RAST_ctypZZ_')) # for new 7-year series
 ttz=sapply(tz, function(x) strsplit(x, "[.]")[[2]][1], USE.NAMES=FALSE)
 ttz2=as.numeric(ttz)
 #Surface salinity
@@ -227,13 +229,21 @@ rug2=resample(rugscl, bt)
 ex=extent(bt)
 rug2=crop(rug2, ex)
 rug2=mask(rug2, bt)
+chl10=loadRData('/home/ryan/1_habitat_analysis_2017/chl/NESREG/clim/RAST.CLIMMO_1998.10.01.GB.CHR1.MNTH.000072227.RData')
+chl10b=crop(chl10, bt)
+chl10b=resample(chl10b, bt)
+chl10b2=mask(chl10b, bt)
+chl2=loadRData('/home/ryan/1_habitat_analysis_2017/chl/NESREG/clim/RAST.CLIMMO_1998.02.01.GB.CHR1.MNTH.000072350.RData')
+chl2b=crop(chl2, bt)
+chl2b=resample(chl2b, bt)
+chl2b2=mask(chl2b, bt)
 
 ## Remove bottom temp raster
 rm(bt)
 fl=levels=c("Adt", "Juv", "ich")
 # fishnm='SilverHake'
 wd2=paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/', fishnm, '/', sep='')
-modchoice=8
+modchoice=4
 usemodel=loadRData(paste(path1,modlistpa[modchoice], sep=''))
 usemodelbio=loadRData(paste(path1,modlistpb[modchoice], sep=''))
 ### NOW loop over files, load yearly dynamic raster files and predict habitat from HGAM models
@@ -244,13 +254,17 @@ for (jj in 1:3){
     bi=which(yrlist[i]==tts2) # index of year
     st=loadRData(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/ST2/', stlist[[bi]], sep=''))
     bi=which(yrlist[i]==ttz2) # index of year
-    pse=loadRData(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/pseudo/', zlist[[bi]], sep=''))
+    # pse=loadRData(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/pseudo/', zlist[[bi]], sep=''))
+    cty=loadRData(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/ctyp/', zlist[[bi]], sep=''))
     ef <- data.frame(coordinates(bt), val=values(bt))
     colnames(ef)=c("LON", "LAT", "BOTTEMP")
     ef$SURFTEMP=values(st)
     ef$DEPTH=values(gd4)
     ef$Stg=factor(fl[jj], levels=c('Adt', 'Juv', 'ich'))
-    ef$pseudo_100m3=values(pse)
+    # ef$pseudo_100m3=values(pse)
+    ef$ctyp_100m3=values(cty)
+    ef$chl2=values(chl2b2)
+    ef$chl10=values(chl10b2)
     ef$grnszmm=values(phi2)
     ef$rug=values(rug2)
     ef2=ef
@@ -385,7 +399,7 @@ write.csv(modeval, file=paste(wd2,'model_evaluation_', SEASON, '_', fishnm, '_',
 #### Save model hindcast output trends (mean, trend, variance)
 ## Load rasters
 p1=paste('/home/ryan/Git/NEhabitat/rasters/',SEASON,'/', fishnm, '/', sep='')
-p2='fish_modGSe_spr_Haddock' #'fish_modG4_spr_Haddock/'
+p2='fish_modG_Spr_Haddock' #'fish_modG4_spr_Haddock/'
 p3=paste('/PA_only_stacked_', SEASON, '_', fishnm, '_', sep='') #'PA_only_stacked_Spr_Haddock_'
 p4=paste('/stacked_', SEASON, '_', fishnm, '_', sep='') #'stacked_Spr_Haddock_'
 ichpa=loadRData(paste(p1,p2,p3,'ich.RData', sep=''))

@@ -9,17 +9,16 @@ library(ggplot2)
 load('/home/ryan/Documents/Git/NEhabitat/Final_merged_fish_corBIO_Zoo_Ich.Rda') # Biomass
 load('/home/ryan/Documents/Git/NEhabitat/Final_merged_fish_corABN_Zoo_Ich.Rda') # Abundance
 
-## no longer needed with updated data
-# colnames(FData.bio)[50:61]=c("76_ich", "73_ich", "74_ich", "75_ich", "72_ich", "155_ich", "192_ich", "103_ich","106_ich","107_ich", "108_ich", "197_ich")
-# colnames(FData.abn)[50:61]=c("76_ich", "73_ich", "74_ich", "75_ich", "72_ich", "155_ich", "192_ich", "103_ich","106_ich","107_ich", "108_ich", "197_ich")
-
 setwd('/home/ryan/Biomod models')
+# get date to save in file names
+xdt=today()
+xdt=gsub('-','',xdt)
 
-# Add variables from rasters to both biomass and numbers database -> NOT NEEDED ANYMORE
+# Add variables from rasters to both biomass and numbers database -NOT NEEDED ANYMORE
 ### extract from rasters at fish points
-locs=FData.abn[,c('LON', 'LAT')]
-coordinates(locs) <- ~LON+LAT
-mypoints = SpatialPoints(locs,proj4string = CRS("+init=epsg:4326"))
+# locs=FData.abn[,c('LON', 'LAT')]
+# coordinates(locs) <- ~LON+LAT
+# mypoints = SpatialPoints(locs,proj4string = CRS("+init=epsg:4326"))
 # myproj = CRS(masked.raster)
 # points.proj = spTransform(mypoints, myproj)
 # load('/home/ryan/Documents/Git/NEhabitat/rast_phi_fraction.rdata') 
@@ -41,7 +40,7 @@ mypoints = SpatialPoints(locs,proj4string = CRS("+init=epsg:4326"))
 # rug=masked.raster
 # mmin=cellStats(rug, 'min')
 # mmax=cellStats(rug, 'max')
-# rugscl=calc(rug, fun=function(x){(x-mmin)/(mmax-mmin)}) # rescale from -4:2 -> 0:1
+# rugscl=calc(rug, fun=function(x){(x-mmin)/(mmax-mmin)}) # rescale from -4:2 -0:1
 # # FData.abn$rug = extract(masked.raster, mypoints)
 # # FData.bio$rug = extract(masked.raster, mypoints)
 # # plot(masked.raster, xlim=c(-80,-60), ylim=c(36,48))
@@ -54,36 +53,36 @@ slctseason="SPRING" #"FALL"
 slctseason="FALL"
 
 
-### Choose fish to run, adjust by searching on and changing " `74_ " to new ID ****
+### Choose fish to run, adjust by searching on and changing " `72_ " to new ID ****
 # fname='Cod' #73
-fname='Haddock' #74
-# fname='SilverHake' #72
+# fname='Haddock' #74
+fname='SilverHake' #72
 # fname='Pollock' #75
 
 ###____________________________________________________________________
-# use for zooplankton only
-fish=FData.abn %>% dplyr::select(YEAR, SEASON:`197_ich`, ctyp_100m3:rug)
-fish$MONTH=month(FData.abn$EST_TOWDATE)
-fish=fish[complete.cases(fish),]
-fish$pa=ifelse(fish$calfin_100m3>0, 1, 0)
-# fish2=fish %>% dplyr::select(-`calfin_100m3`) # change to PA and drop column
-fish2=fish %>% dplyr::select(-`pseudo_100m3`) # change to PA and drop column
-fish2=fish2[which(fish2$SEASON==slctseason),]
-logd=fish2[,56:65]
-logd=log10(logd+1)
-fish2[,56:65]=logd
-trainPA=fish2[complete.cases(fish2),]
-trainPA.ss=trainPA[,c(3:9, 56:69)]
-stage='zoo'
-fname='pseudo' #'calfin'
+## use for zooplankton only
+# fish=FData.abn %>% dplyr::select(YEAR, SEASON:`197_ich`, ctyp_100m3:rug)
+# fish$MONTH=month(FData.abn$EST_TOWDATE)
+# fish=fish[complete.cases(fish),]
+# fish$pa=ifelse(fish$calfin_100m3>0, 1, 0)
+# # fish2=fish %>% dplyr::select(-`calfin_100m3`) # change to PA and drop column
+# fish2=fish %>% dplyr::select(-`pseudo_100m3`) # change to PA and drop column
+# fish2=fish2[which(fish2$SEASON==slctseason),]
+# logd=fish2[,56:65]
+# logd=log10(logd+1)
+# fish2[,56:65]=logd
+# trainPA=fish2[complete.cases(fish2),]
+# trainPA.ss=trainPA[,c(3:9, 56:69)]
+# stage='zoo'
+# fname='pseudo' #'calfin'
 ###_______________________________________________________________________
 
 
 ### change fish to whatever species you are modeling!!!
-fish=FData.abn %>% dplyr::select(YEAR, SEASON, LAT:BOTTEMP, `74_Adt`, `74_Juv`, `74_ich`, volume_100m3:chl12)
+fish=FData.abn %>% dplyr::select(YEAR, SEASON, LAT:BOTTEMP, `72_Adt`, `72_Juv`, `72_ich`, volume_100m3:chl12)
 fish$MONTH=month(FData.abn$EST_TOWDATE)
 fish=fish[complete.cases(fish),]
-fish$`74_ich`=ceiling(fish$`74_ich`) # make integer from numbers per 100 m/3
+fish$`72_ich`=ceiling(fish$`72_ich`) # make integer from numbers per 100 m/3
 fish2=fish[which(fish$SEASON==slctseason),] # subset to season
 
 
@@ -95,14 +94,14 @@ fish2=fish[which(fish$SEASON==slctseason),] # subset to season
 # testPA  <- fish2[-sample, ]
 
 ### pivot longer so stage is repeated
-trainPA=fish2 %>% pivot_longer(c(`74_Adt`, `74_Juv`, `74_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Number")
+trainPA=fish2 %>% pivot_longer(c(`72_Adt`, `72_Juv`, `72_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Number")
 trainPA$Stg=factor(trainPA$Stg, ordered=F)
 # table(trainPA$MONTH)
 ## log transform plankton for training set
 logd=trainPA[,8:19]
 logd=log10(logd+1)
 trainPA[,8:19]=logd
-trainPA$pa=ifelse(trainPA$Number > 0, 1, 0)
+trainPA$pa=ifelse(trainPA$Number>0, 1, 0)
 trainPA=trainPA[complete.cases(trainPA),]
 
 # Now set up traing and testing data; split data sets
@@ -115,7 +114,7 @@ trainPA=trainPA[complete.cases(trainPA),]
 # dat.split.year<- 2018
 #  
 
-### Subset to stage for individual models ----> choose one only
+### Subset to stage for individual models ----choose one only
 trainPA.ss=trainPA %>% filter(., Stg=='Adt'); stage='Adt'
 trainPA.ss=trainPA %>% filter(., Stg=='Juv'); stage='Juv'
 trainPA.ss=trainPA %>% filter(., Stg=='ich'); stage='Ich'
@@ -130,9 +129,14 @@ modname2=paste(stage, '_',fname,'_', slctseason, sep='')
 
 ### biomod2 ####
 resp.var=trainPA.ss$pa
-# resp.var[resp.var > 0]=1 # presence absence
+# resp.var[resp.var 0]=1 # presence absence
 latlon=as.matrix((data.frame(trainPA.ss$LON, trainPA.ss$LAT)))
 expl.var=trainPA.ss %>% select(DEPTH, SURFTEMP, BOTTEMP, volume_100m3:chl12)
+
+### subset to only those found important from full suite (run that first)
+# expl.var=expl.var %>% select(DEPTH, SURFTEMP,BOTTEMP,ctyp_100m3, chl10, chl2, grnszmm)
+# xdt=paste(xdt,'selectedvarsonly', sep=')
+
 expl.var=data.frame(expl.var)
 eval.resp.var.ss=testPA.ss$pa
 eval.expl.var.ss=data.frame(testPA.ss %>% select(DEPTH, SURFTEMP, BOTTEMP, volume_100m3:chl12))
@@ -170,7 +174,7 @@ myBiomodModelOut <- BIOMOD_Modeling(
   SaveObj = TRUE,
   rescal.all.models = FALSE,
   do.full.models = FALSE,
-  modeling.id = paste(modname2,"20200928",sep=""))
+  modeling.id = paste(modname2,"_",xdt,sep=""))
 
 myBiomodModelOut 
 myBiomodModelEval <- get_evaluations(myBiomodModelOut)
@@ -182,7 +186,22 @@ myBiomodModelEval["ROC","Testing.data",,,]
 get_variables_importance(myBiomodModelOut)
 test=get_variables_importance(myBiomodModelOut)
 test2=apply(test, c(1,2), 'mean')
-write.csv(test2, file=paste(modname2,'variable_importance.csv', sep=''))
+write.csv(format(test2, digits=3), file=paste(modname2, '_', xdt,'_variable_importance.csv', sep=''))
+
+
+### open saved list of variable importance and select important factors:
+wd='/home/ryan/Biomod models'
+varlist=list.files(wd, pattern="variable_importance.csv")
+# test2=read.csv('/home/ryan/Biomod models/Ich_Haddock_SPRINGvariable_importance.csv', stringsAsFactors = F, row.names = 1)
+test2=read.csv(paste(wd,'/',varlist[3],sep=''), stringsAsFactors = F, row.names = 1)
+
+test3=matrix(data=NA, nrow=dim(test2)[1], ncol=dim(test2)[2])
+for (i in 1:dim(test2)[2]){
+  test3[,i]=rownames(test2)[rev(order(test2[,i]))]
+}
+colnames(test3)=colnames(test2)
+# table(test3[1:7,])
+rev(sort(table(test3[1:7,])))
 
 ### Plot model performance:
 ### by models
@@ -196,3 +215,33 @@ gg2 <- models_scores_graph( myBiomodModelOut,
                             by = 'cv_run',
                             metrics = c('ROC','TSS') )
 gg2 + ggtitle(paste(modname))
+
+### plot response curves
+myRF <- BIOMOD_LoadModels(myBiomodModelOut, models = 'RF')
+myRespPlot2D=response.plot2(
+  myRF,
+  Data = get_formal_data(myBiomodModelOut, 'expl.var'),
+  show.variables = get_formal_data(myBiomodModelOut,'expl.var.names'),
+  do.bivariate = FALSE,
+  fixed.var.metric = 'median',
+  col = c("blue", "red"),
+  legend = TRUE,
+  data_species = get_formal_data(myBiomodModelOut, 'resp.var'),
+  plot = TRUE)
+
+### load saved model example:
+# rm(myBiomodModelOut)
+# rm(myBiomodModelEval)
+# load("~/Biomod models/Adt.Haddock.SPRING/Adt.Haddock.SPRING.Adt_Haddock_SPRING20200928.models.out")
+# myBiomodModelOut=Adt.Haddock.SPRING.Adt_Haddock_SPRING20200928.models.out 
+# myBiomodModelEval <- get_evaluations(myBiomodModelOut)
+
+myBiomodProj <- BIOMOD_Projection(
+  modeling.output = myBiomodModelOut,
+  new.env = myExpl,
+  proj.name = 'current',
+  selected.models = 'all',
+  binary.meth = 'TSS',
+  compress = 'xz',
+  clamping.mask = F,
+  output.format = '.grd')

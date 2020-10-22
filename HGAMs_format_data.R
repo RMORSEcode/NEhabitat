@@ -65,16 +65,16 @@ testPA  <- fish2[-sample, ]
 ### pivot longer so stage is repeated
 trainPA=trainPA %>% pivot_longer(c(`74_Adt`, `74_Juv`, `74_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Number")
 trainPA$Stg=factor(trainPA$Stg, ordered=F)
-logd=trainPA[,8:17]
+logd=trainPA[,8:19]
 logd=log10(logd+1)
-trainPA[,8:17]=logd
+trainPA[,8:19]=logd
 trainPA$pa=ifelse(trainPA$Number > 0, 1, 0)
 ## now do likewise for testing data
 testPA=testPA %>% pivot_longer(c(`74_Adt`, `74_Juv`, `74_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Number")
 testPA$Stg=factor(testPA$Stg, ordered=F)
-logd=testPA[,8:17]
+logd=testPA[,8:19]
 logd=log10(logd+1)
-testPA[,8:17]=logd
+testPA[,8:19]=logd
 testPA$pa=ifelse(testPA$Number > 0, 1, 0)
 
 ### Do likewise for biomass data, to be combined with PA later for final model
@@ -99,18 +99,18 @@ testBIO  <- fish2.b[-sample, ]
 ### pivot longer so stage is repeated
 trainBIO=trainBIO %>% pivot_longer(c(`74_Adt`, `74_Juv`, `74_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Biomass")
 trainBIO$Stg=factor(trainBIO$Stg, ordered=F)
-logd=trainBIO[,8:17]
+logd=trainBIO[,8:19]
 logd=log10(logd+1)
-trainBIO[,8:17]=logd
+trainBIO[,8:19]=logd
 trainBIO=trainBIO %>%  
   filter(., Biomass >0) %>%
   mutate(., "logbio"=log10(Biomass+1))
 ## now do likewise for testing data
 testBIO=testBIO %>% pivot_longer(c(`74_Adt`, `74_Juv`, `74_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Biomass")
 testBIO$Stg=factor(testBIO$Stg, ordered=F)
-logd=testBIO[,8:17]
+logd=testBIO[,8:19]
 logd=log10(logd+1)
-testBIO[,8:17]=logd
+testBIO[,8:19]=logd
 testBIO=testBIO %>%  
   filter(., Biomass >0) %>%
   mutate(., "logbio"=log10(Biomass+1))

@@ -399,7 +399,7 @@ write.csv(format(modeval, digits=2), file=paste(wd2,'model_evaluation_', SEASON,
 #### Save model hindcast output trends (mean, trend, variance)
 ## Load rasters
 p1=paste('/home/ryan/Git/NEhabitat/rasters/',SEASON,'/', fishnm, '/', sep='')
-p2='fish_modGI_spr_Haddock' #'fish_modG4_spr_Haddock/'
+p2='fish_modGSe_spr_cod' #'fish_modG4_spr_Haddock/'
 p3=paste('/PA_only_stacked_', SEASON, '_', fishnm, '_', sep='') #'PA_only_stacked_Spr_Haddock_'
 p4=paste('/stacked_', SEASON, '_', fishnm, '_', sep='') #'stacked_Spr_Haddock_'
 ichpa=loadRData(paste(p1,p2,p3,'ich.RData', sep=''))
@@ -494,28 +494,53 @@ plotrasterNES(ichpa[[37]], mn=0, mx=1, titlex=paste(yrlist[37]))
 plotrasterNES(ichpa[[38]], mn=0, mx=1, titlex=paste(yrlist[38]))
 
 ichhab_gbk=raster::extract(ichpa, gbk, fun=mean, na.rm=T)
-plot(ichhab_gbk[1,]~yrlist, type='l')
+plot(ichhab_gbk[1,]~yrlist, type='l', las=1)
 ichhab_gom=raster::extract(ichpa, gom, fun=mean, na.rm=T)
-plot(ichhab_gom[1,]~yrlist, type='l')
+plot(ichhab_gom[1,]~yrlist, type='l', las=1)
 
 adthab_gbk=raster::extract(adtpa, gbk, fun=mean, na.rm=T)
-plot(adthab_gbk[1,]~yrlist, type='l')
+plot(adthab_gbk[1,]~yrlist, type='l', las=1)
 adthab_gom=raster::extract(adtpa, gom, fun=mean, na.rm=T)
-plot(adthab_gom[1,]~yrlist, type='l')
+plot(adthab_gom[1,]~yrlist, type='l', las=1)
 
 juvhab_gbk=raster::extract(juvpa, gbk, fun=mean, na.rm=T)
-plot(juvhab_gbk[1,]~yrlist, type='l')
+plot(juvhab_gbk[1,]~yrlist, type='l', las=1)
 juvhab_gom=raster::extract(juvpa, gom, fun=mean, na.rm=T)
-plot(juvhab_gom[1,]~yrlist, type='l')
+plot(juvhab_gom[1,]~yrlist, type='l', las=1)
 
+### haddock WG data for recruits and SSB
 haddocksr=read.csv('/home/ryan/Downloads/SR.csv', header=T, stringsAsFactors = F)
-hdts=haddocksr[50:88,]
 
-plot(haddocksr$year, log(haddocksr$recr), type='l')
-plot(hdts$year, log10(hdts$recr), type='l')
-plot(hdts$year, hdts$recr/hdts$ssb, type='l')
+## RSSB from Kevin (Peretti)
+ssbr=read.csv('/home/ryan/1_habitat_analysis_2017/SSB and recruits.csv',header=T, stringsAsFactors = F)
+ssbr2=read.csv('/home/ryan/1_habitat_analysis_2017/SSB and recruits.csv',header=T, skip=3, stringsAsFactors = F)
+plot(ssbr2[10:44,1], ssbr2[10:44,13], type='l', las=1) #GOM cod rssb
+plot(ssbr2[10:44,1], ssbr2[10:44,19], type='l', las=1) #GBK haddock rssb
+
+
+
+
+hdts=haddocksr[46:88,] #1977-2019
+hdts$ra=log10(hdts$recr)-mean(log10(hdts$recr))/sd(log10(hdts$recr))
+hdts$ssba=hdts$ssb-mean(hdts$ssb)/sd(hdts$ssb)
+hdts$rssb=hdts$ra/hdts$ssba
+# hdts=haddocksr[61:88,] #1992-2019
+# plot(haddocksr$year, log(haddocksr$recr), type='l')
+plot(hdts$year, log10(hdts$recr), type='b', ylab='log10 recruits', xlab='', pch=20) #log recruits
+plot(hdts$year, hdts$recr/hdts$ssb, type='b', pch=20, ylab='recr/SSB', xlab='') # recruits per ssb
+plot(hdts$year, log10(hdts$recr)/log10(hdts$ssb), type='l', pch=20, ylab='log10(R)/ log10(SSB)', xlab='', las=1) # recruits per ssb
+
+plot(hdts$year, log10(hdts$recr-mean(hdts$recr))/log10(hdts$ssb-mean(hdts$ssb)), type='b', pch=20, ylab='log10(R)/ log10(SSB)', xlab='') # recruits per ssb
+
+
+plot(hdts$year, hdts$ssb, type='b', pch=20, ylab='SSB', xlab='')
+plot(hdts$year, log10(hdts$ssb), type='b', pch=20, ylab='log10 SSB', xlab='')
 
 test=data.frame(log10(hdts$recr), ichhab_gbk[1,])
+cor(test)
+
+test=data.frame(ssbr2[10:44,13], juvhab_gom[1,4:38])
+test=test[complete.cases(test),]
 cor(test)
 
 ### load and stack Bottom temperaure
@@ -543,7 +568,8 @@ BS_gbk=raster::extract(rastBS, gbk, fun=mean, na.rm=T)
 plot(BS_gbk[1,]~yrlist[16:43], type='l')
 BT_gom=raster::extract(rastBT, gom, fun=mean, na.rm=T)
 plot(BT_gom[1,]~yrlist, type='l')
-### load and stack Bottom temperaure
+
+### load and stack PSeudocalanus
 zlist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/pseudo', sep=''))
 wd3=paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/pseudo', sep='')
 rastPSE=loadRData(paste(wd3,'/',zlist[1], sep=''))
@@ -556,6 +582,19 @@ plot(PSE_gbk[1,]~yrlist, type='l')
 PSE_gom=raster::extract(rastPSE, gom, fun=mean, na.rm=T)
 plot(PSE_gom[1,]~yrlist, type='l')
 
+### load and stack Ctyp
+zlist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/ctyp', sep=''))
+wd3=paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/ctyp', sep='')
+rastCTY=loadRData(paste(wd3,'/',zlist[1], sep=''))
+for (i in 2:length(zlist)){
+  rastDF=loadRData(paste(wd3,'/',zlist[i], sep=''))
+  rastCTY=stack(rastCTY, rastDF)
+}
+CTY_gbk=raster::extract(rastCTY, gbk, fun=mean, na.rm=T)
+plot(CTY_gbk[1,]~yrlist, type='l')
+CTY_gom=raster::extract(rastCTY, gom, fun=mean, na.rm=T)
+plot(CTY_gom[1,]~yrlist, type='l')
+
 ## check GAM pseudocal
 PSE=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/zoop/pseudocal/zoo_modG/stacked_Spr_pseudocal_ich.RData')
 PSE_gbk=raster::extract(PSE, gbk, fun=mean, na.rm=T)
@@ -567,9 +606,13 @@ plot(PSE_gom[1,]~yrlist[16:43], type='l')
 tt1=loadRData("/home/ryan/Downloads/zoo_abun_anom.rdata")
 plot(tt1$value[which(tt1$variable=='Pse' & tt1$Region=='GB' & tt1$Time > 1991)] ~ 
        tt1$Time[which(tt1$variable=='Pse' & tt1$Region=='GB' & tt1$Time > 1991)], 
-     type='b', ylab='Pse GB anom')
+     type='b', ylab='Pse GB anom', xlab='')
+abline(h=0, lty=3)
 
-
+plot(tt1$value[which(tt1$variable=='Cty' & tt1$Region=='GB' & tt1$Time > 1991)] ~ 
+       tt1$Time[which(tt1$variable=='Cty' & tt1$Region=='GB' & tt1$Time > 1991)], 
+     type='b', ylab='Cty GB anom', xlab='')
+abline(h=0, lty=3)
 
 gbk=rgdal::readOGR('/home/ryan/Desktop/shapefiles/epu_shapes/EPU_GBKPoly.shp')
 gom=rgdal::readOGR('/home/ryan/Desktop/shapefiles/epu_shapes/EPU_GOMPoly.shp')

@@ -5,7 +5,7 @@
 wd='/home/ryan/Git/NEhabitat'
 impvarlist=list.files(wd, pattern="variable_importance.csv")
 impvarlist
-xxi=2
+xxi=3
 impvarlist[xxi]
 # test2=read.csv('/home/ryan/Biomod models/Ich_Haddock_SPRINGvariable_importance.csv', stringsAsFactors = F, row.names = 1)
 test2=read.csv(paste(wd,'/',impvarlist[xxi],sep=''), stringsAsFactors = F, row.names = 1)

@@ -17,6 +17,7 @@ colnames(test3)=colnames(test2)
 # table(test3[1:7,])
 rev(sort(table(test3[1:7,])))
 rev(sort(table(test3[1:5,])))
+barplot(rev(sort(table(test3[1:5,]))))
 ### variables of importance from biomod2 runs:
 ## Juv [1:5]
 # chl1    DEPTH     chl2  grnszmm  BOTTEMP SURFTEMP     chl9    chl12    chl10     chl3 
@@ -36,18 +37,28 @@ rev(sort(table(test3[1:5,])))
 # add BOTTEMP
 ## done
 
+
+### UPDATE DATA to remove ichtyhyoplankton for fall haddock (only 6 positive samples 1977-2017)
+trainPA=trainPA %>% filter(Stg!='ich') %>% droplevels(exclude="ich")
+# levels(trainPA$Stg)
+testPA=testPA %>% filter(Stg!='ich') %>% droplevels(exclude="ich")
+trainBIO=trainBIO %>% filter(Stg!='ich') %>% droplevels(exclude="ich")
+testBIO=testBIO %>% filter(Stg!='ich') %>% droplevels(exclude="ich")
+
+
+
 # 1) Model G: single global smoother for all stages
 # y ~ s(x, bs='ts') + s(fac, bs='re')
 # Use binomial distribution for presence absence model, gaussian for biomass model, combine later with predict in 'HGAMpredict2raster.R'
-fish_modG_pa = gam(pa ~ s(SURFTEMP, k=15, bs='ts') + s(BOTTEMP, k=15, bs='ts') + s(DEPTH, k=10, bs="ts") + s(Stg, k=4, bs='re') + s(chl9, k=20, bs="cs") + s(grnszmm, k=15, bs='ts') + s(chl2, k=20, bs='cs') + s(chl1, k=20, bs='cs'),  data=trainPA, method = "REML", family="binomial", select=T)
-fish_modG_pb = gam(logbio ~ s(SURFTEMP, k=15, bs='ts') + s(BOTTEMP, k=15, bs='ts') + s(DEPTH, k=10, bs="ts") + s(Stg, k=4, bs='re') + s(chl9, k=20, bs="cs") + s(grnszmm, k=15, bs='ts') + s(chl2, k=20, bs='cs') + s(chl1, k=20, bs='cs'),  data=trainBIO, method = "REML", family="gaussian", select=T)
+fish_modG_pa = gam(pa ~ s(SURFTEMP, k=30, bs='ts') + s(BOTTEMP, k=30, bs='ts') + s(DEPTH, k=20, bs="ts") + s(Stg, k=3, bs='re') + s(chl9, k=30, bs="cs") + s(grnszmm, k=15, bs='ts') + s(chl2, k=30, bs='cs') + s(chl1, k=30, bs='cs'),  data=trainPA, method = "REML", family="binomial", select=T)
+fish_modG_pb = gam(logbio ~ s(SURFTEMP, k=30, bs='ts') + s(BOTTEMP, k=30, bs='ts') + s(DEPTH, k=20, bs="ts") + s(Stg, k=3, bs='re') + s(chl9, k=30, bs="cs") + s(grnszmm, k=15, bs='ts') + s(chl2, k=30, bs='cs') + s(chl1, k=30, bs='cs'),  data=trainBIO, method = "REML", family="gaussian", select=T)
 save(fish_modG_pa, file=paste('/home/ryan/Git/NEhabitat/rasters/',fishseas,'/',fishname,'/fish_modG_pa_',fishseas,'_',fishname,'.Rdata',sep=''))
 save(fish_modG_pb, file=paste('/home/ryan/Git/NEhabitat/rasters/',fishseas,'/',fishname,'/fish_modG_pb_',fishseas,'_',fishname,'.Rdata',sep=''))   
 
 
 # Add latitude and longitude as interaction terms to 'Fish_modG'
-fish_modG4_pa = gam(pa ~ s(LON, LAT) + s(SURFTEMP, k=15, bs='ts') + s(BOTTEMP, k=15, bs='ts') + s(DEPTH, k=10, bs="ts") + s(Stg, k=4, bs='re') + s(chl9, k=20, bs="cs") + s(grnszmm, k=15, bs='ts') + s(chl2, k=20, bs='ts') + s(chl1, k=20, bs='ts'), data=trainPA, method = "REML", family="binomial", select=T)
-fish_modG4_pb = gam(logbio ~ s(LON, LAT) +s(SURFTEMP, k=15, bs='ts') + s(BOTTEMP, k=15, bs='ts') + s(DEPTH, k=10, bs="ts") + s(Stg, k=4, bs='re') + s(chl9, k=20, bs="cs") + s(grnszmm, k=15, bs='ts') + s(chl2, k=20, bs='ts') + s(chl1, k=20, bs='ts'), data=trainBIO, method = "REML", family="gaussian", select=T)
+fish_modG4_pa = gam(pa ~ s(LON, LAT) + s(SURFTEMP, k=30, bs='ts') + s(BOTTEMP, k=30, bs='ts') + s(DEPTH, k=20, bs="ts") + s(Stg, k=3, bs='re') + s(chl9, k=30, bs="cs") + s(grnszmm, k=15, bs='ts') + s(chl2, k=30, bs='ts') + s(chl1, k=30, bs='ts'), data=trainPA, method = "REML", family="binomial", select=T)
+fish_modG4_pb = gam(logbio ~ s(LON, LAT) +s(SURFTEMP, k=30, bs='ts') + s(BOTTEMP, k=30, bs='ts') + s(DEPTH, k=20, bs="ts") + s(Stg, k=3, bs='re') + s(chl9, k=30, bs="cs") + s(grnszmm, k=15, bs='ts') + s(chl2, k=30, bs='ts') + s(chl1, k=30, bs='ts'), data=trainBIO, method = "REML", family="gaussian", select=T)
 save(fish_modG4_pa, file=paste('/home/ryan/Git/NEhabitat/rasters/',fishseas,'/',fishname,'/fish_modG4_pa_',fishseas,'_',fishname,'.Rdata',sep=''))
 save(fish_modG4_pb, file=paste('/home/ryan/Git/NEhabitat/rasters/',fishseas,'/',fishname,'/fish_modG4_pb_',fishseas,'_',fishname,'.Rdata',sep=''))  
 
@@ -95,40 +106,40 @@ knotsll=knotsll[-37,]
 knotsll=knotsll[-77,]
 knotsll=knotsll[-129,]
 ### Now run soap film smoother with LAT and LON values
-fish_modG4bll_pa = gam(pa ~ s(LON, LAT, bs = "so", xt = list(bnd = boundll)) + s(SURFTEMP, k=15, bs='ts') + s(BOTTEMP, k=15, bs='ts') + s(DEPTH, k=10, bs="ts") + s(Stg, k=4, bs='fs') + s(chl9, k=20, bs="cs") + s(grnszmm, k=15, bs='ts') + s(chl2, k=20, bs='ts') + s(chl1, k=20, bs='ts'), data=trainPA.sub, method = "REML", knots=knotsll, family="binomial", select=T)
-fish_modG4bll_pb = gam(logbio ~ s(LON, LAT, bs = "so", xt = list(bnd = boundll)) + s(SURFTEMP, k=15, bs='ts') + s(BOTTEMP, k=15, bs='ts') + s(DEPTH, k=10, bs="ts") + s(Stg, k=4, bs='fs') + s(chl9, k=20, bs="cs") + s(grnszmm, k=15, bs='ts') + s(chl2, k=20, bs='ts') + s(chl1, k=20, bs='ts'), data=trainBIO.sub, method = "REML", knots=knotsll, family="gaussian", select=T)
+fish_modG4bll_pa = gam(pa ~ s(LON, LAT, bs = "so", xt = list(bnd = boundll)) + s(SURFTEMP, k=30, bs='ts') + s(BOTTEMP, k=30, bs='ts') + s(DEPTH, k=20, bs="ts") + s(Stg, k=3, bs='fs') + s(chl9, k=30, bs="cs") + s(grnszmm, k=15, bs='ts') + s(chl2, k=30, bs='ts') + s(chl1, k=30, bs='ts'), data=trainPA.sub, method = "REML", knots=knotsll, family="binomial", select=T)
+fish_modG4bll_pb = gam(logbio ~ s(LON, LAT, bs = "so", xt = list(bnd = boundll)) + s(SURFTEMP, k=30, bs='ts') + s(BOTTEMP, k=30, bs='ts') + s(DEPTH, k=20, bs="ts") + s(Stg, k=3, bs='fs') + s(chl9, k=30, bs="cs") + s(grnszmm, k=15, bs='ts') + s(chl2, k=30, bs='ts') + s(chl1, k=30, bs='ts'), data=trainBIO.sub, method = "REML", knots=knotsll, family="gaussian", select=T)
 save(fish_modG4bll_pa, file=paste('/home/ryan/Git/NEhabitat/rasters/',fishseas,'/',fishname,'/fish_modG4bll_pa_',fishseas,'_',fishname,'.Rdata',sep=''))
 save(fish_modG4bll_pb, file=paste('/home/ryan/Git/NEhabitat/rasters/',fishseas,'/',fishname,'/fish_modG4bll_pb_',fishseas,'_',fishname,'.Rdata',sep=''))  
 
 
 # GS model: Y~ s(conc, bs='ts') +s(conc, plant, bs='fs')
 # remove lat and lon
-fish_modGSe_pa =  gam(pa ~ s(SURFTEMP, k=15, bs='ts') + s(SURFTEMP, Stg, k=15, bs='fs')  + s(BOTTEMP, k=15, bs='ts') + s(BOTTEMP, Stg, k=15, bs='fs') + s(DEPTH, k=10, bs='ts') + s(DEPTH, Stg, k=10, bs="fs") + s(chl9, k=20, bs='ts') + s(chl9, Stg, k=20, bs="fs") + s(grnszmm, k=15, bs='ts') + s(grnszmm, Stg, k=15, bs='fs') + s(chl2, k=20, bs='ts') + s(chl2, Stg, k=20, bs='fs') +s(chl1, k=20, bs='ts') + s(chl1, Stg, k=20, bs='fs'), data=trainPA, method = "REML", family="binomial", select=T)
-fish_modGSe_pb =  gam(logbio ~ s(SURFTEMP, k=15, bs='ts') + s(SURFTEMP, Stg, k=15, bs='fs') + s(BOTTEMP, k=15, bs='ts') + s(BOTTEMP, Stg, k=15, bs='fs') + s(DEPTH, k=10, bs='ts') + s(DEPTH, Stg, k=10, bs="fs") + s(chl9, k=20, bs='ts') + s(chl9, Stg, k=20, bs="fs") + s(grnszmm, k=15, bs='ts') + s(grnszmm, Stg, k=15, bs='fs') + s(chl2, k=20, bs='ts') + s(chl2, Stg, k=20, bs='fs') +s(chl1, k=20, bs='ts') + s(chl1, Stg, k=20, bs='fs'), data=trainBIO, method = "REML", family="gaussian", select=T)
-save(fish_modGSe_pa, file=paste('/home/ryan/Git/NEhabitat/rasters/',fishseas,'/',fishname,'/fish_modGSe3_pa_',fishseas,'_',fishname,'.Rdata',sep=''))
-save(fish_modGSe_pb, file=paste('/home/ryan/Git/NEhabitat/rasters/',fishseas,'/',fishname,'/fish_modGSe3_pb_',fishseas,'_',fishname,'.Rdata',sep=''))
+fish_modGSe_pa =  gam(pa ~ s(SURFTEMP, k=30, bs='ts') + s(SURFTEMP, Stg, k=30, bs='fs')  + s(BOTTEMP, k=30, bs='ts') + s(BOTTEMP, Stg, k=30, bs='fs') + s(DEPTH, k=20, bs='ts') + s(DEPTH, Stg, k=20, bs="fs") + s(chl9, k=30, bs='ts') + s(chl9, Stg, k=30, bs="fs") + s(grnszmm, k=15, bs='ts') + s(grnszmm, Stg, k=15, bs='fs') + s(chl2, k=30, bs='ts') + s(chl2, Stg, k=30, bs='fs') +s(chl1, k=30, bs='ts') + s(chl1, Stg, k=30, bs='fs'), data=trainPA, method = "REML", family="binomial", select=T)
+fish_modGSe_pb =  gam(logbio ~ s(SURFTEMP, k=30, bs='ts') + s(SURFTEMP, Stg, k=30, bs='fs') + s(BOTTEMP, k=30, bs='ts') + s(BOTTEMP, Stg, k=30, bs='fs') + s(DEPTH, k=20, bs='ts') + s(DEPTH, Stg, k=20, bs="fs") + s(chl9, k=30, bs='ts') + s(chl9, Stg, k=30, bs="fs") + s(grnszmm, k=15, bs='ts') + s(grnszmm, Stg, k=15, bs='fs') + s(chl2, k=30, bs='ts') + s(chl2, Stg, k=30, bs='fs') +s(chl1, k=30, bs='ts') + s(chl1, Stg, k=30, bs='fs'), data=trainBIO, method = "REML", family="gaussian", select=T)
+save(fish_modGSe_pa, file=paste('/home/ryan/Git/NEhabitat/rasters/',fishseas,'/',fishname,'/fish_modGSe_pa_',fishseas,'_',fishname,'.Rdata',sep=''))
+save(fish_modGSe_pb, file=paste('/home/ryan/Git/NEhabitat/rasters/',fishseas,'/',fishname,'/fish_modGSe_pb_',fishseas,'_',fishname,'.Rdata',sep=''))
 
 
 # GI model
 # y ~ s(x, bs='ts') + s(x, by=fac, m=1, bs='ts') + s(fac, bs='re')
-fish_modGI_pa =  gam(pa ~ s(SURFTEMP, k=15, m=2, bs='ts') + s(SURFTEMP, by=Stg, k=15, m=1, bs='ts') + s(BOTTEMP, k=15, m=2, bs='ts') + s(BOTTEMP, by=Stg, k=15, m=1, bs='ts') + s(DEPTH, k=10, m=2, bs="ts") + s(DEPTH, by=Stg, k=10, m=1, bs="ts") + s(chl9, k=20, m=2, bs="ts") + s(chl9, m=1, k=20, by=Stg, bs="ts")+ s(grnszmm, m=2, k=15, bs='ts') + s(grnszmm, by=Stg, k=15, m=1, bs='ts') + s(chl2, m=2, k=20, bs='ts') +s(chl2, by=Stg, k=20, m=1, bs='ts') + s(chl1, m=2, k=20, bs='ts') +s(chl1, by=Stg, k=20, m=1, bs='ts') +s(Stg, k=10, bs='re'), data=trainPA, method = "REML", family="binomial", select=T)
-fish_modGI_pb =  gam(logbio ~ s(SURFTEMP, k=15, m=2, bs='ts') + s(SURFTEMP, by=Stg, k=15, m=1, bs='ts') + s(BOTTEMP, m=2, k=15, bs='ts') + s(BOTTEMP, by=Stg, m=1, k=15, bs='ts') + s(DEPTH, k=10, m=2, bs="ts") + s(DEPTH, by=Stg, k=10, m=1, bs="ts") + s(chl9, k=20, m=2, bs="ts") + s(chl9, m=1, k=20, by=Stg, bs="ts")+ s(grnszmm, m=2, k=15, bs='ts') + s(grnszmm, by=Stg, k=15, m=1, bs='ts') + s(chl2, m=2, k=20, bs='ts') +s(chl2, by=Stg, k=20, m=1, bs='ts') + s(chl1, m=2, k=20, bs='ts') +s(chl1, by=Stg, k=20, m=1, bs='ts') +s(Stg, k=10, bs='re'), data=trainBIO, method = "REML", family="gaussian", select=T)
+fish_modGI_pa =  gam(pa ~ s(SURFTEMP, k=30, m=2, bs='ts') + s(SURFTEMP, by=Stg, k=30, m=1, bs='ts') + s(BOTTEMP, k=30, m=2, bs='ts') + s(BOTTEMP, by=Stg, k=30, m=1, bs='ts') + s(DEPTH, k=20, m=2, bs="ts") + s(DEPTH, by=Stg, k=20, m=1, bs="ts") + s(chl9, k=30, m=2, bs="ts") + s(chl9, m=1, k=30, by=Stg, bs="ts")+ s(grnszmm, m=2, k=15, bs='ts') + s(grnszmm, by=Stg, k=15, m=1, bs='ts') + s(chl2, m=2, k=30, bs='ts') +s(chl2, by=Stg, k=30, m=1, bs='ts') + s(chl1, m=2, k=30, bs='ts') +s(chl1, by=Stg, k=30, m=1, bs='ts') +s(Stg, k=30, bs='re'), data=trainPA, method = "REML", family="binomial", select=T)
+fish_modGI_pb =  gam(logbio ~ s(SURFTEMP, k=30, m=2, bs='ts') + s(SURFTEMP, by=Stg, k=30, m=1, bs='ts') + s(BOTTEMP, m=2, k=30, bs='ts') + s(BOTTEMP, by=Stg, m=1, k=30, bs='ts') + s(DEPTH, k=20, m=2, bs="ts") + s(DEPTH, by=Stg, k=20, m=1, bs="ts") + s(chl9, k=30, m=2, bs="ts") + s(chl9, m=1, k=30, by=Stg, bs="ts")+ s(grnszmm, m=2, k=15, bs='ts') + s(grnszmm, by=Stg, k=15, m=1, bs='ts') + s(chl2, m=2, k=30, bs='ts') +s(chl2, by=Stg, k=30, m=1, bs='ts') + s(chl1, m=2, k=30, bs='ts') +s(chl1, by=Stg, k=30, m=1, bs='ts') +s(Stg, k=30, bs='re'), data=trainBIO, method = "REML", family="gaussian", select=T)
 save(fish_modGI_pa, file=paste('/home/ryan/Git/NEhabitat/rasters/',fishseas,'/',fishname,'/fish_modGI_pa_',fishseas,'_',fishname,'.Rdata',sep=''))
 save(fish_modGI_pb, file=paste('/home/ryan/Git/NEhabitat/rasters/',fishseas,'/',fishname,'/fish_modGI_pb_',fishseas,'_',fishname,'.Rdata',sep=''))
 
 
 # S model
 # y∼s(x, fac, bs="fs") or y∼t2(x1, x2, fac, bs=c("ts", "ts", "re")
-fish_modS_pa =  gam(pa ~ s(SURFTEMP, Stg, k=15, bs='fs') + s(BOTTEMP, Stg, k=15, bs='fs') + s(DEPTH, Stg, k=10, bs="fs") + s(chl9, Stg, k=20, bs="fs") + s(grnszmm, Stg, k=15, bs='fs') + s(chl2, Stg, k=20, bs='fs') +  s(chl1, Stg, k=20, bs='fs'), data=trainPA, method = "REML", family="binomial", select=T)
-fish_modS_pb =  gam(logbio ~ s(SURFTEMP, Stg, k=15, bs='fs') + s(BOTTEMP, Stg, k=15, bs='ts') + s(DEPTH, Stg, k=10, bs="fs") + s(chl9, Stg, k=20, bs="fs") + s(grnszmm, Stg, k=15, bs='fs') + s(chl2, Stg, k=20, bs='fs') +  s(chl1, Stg, k=20, bs='fs'), data=trainBIO, method = "REML", family="gaussian", select=T)
+fish_modS_pa =  gam(pa ~ s(SURFTEMP, Stg, k=30, bs='fs') + s(BOTTEMP, Stg, k=30, bs='fs') + s(DEPTH, Stg, k=20, bs="fs") + s(chl9, Stg, k=30, bs="fs") + s(grnszmm, Stg, k=15, bs='fs') + s(chl2, Stg, k=30, bs='fs') +  s(chl1, Stg, k=30, bs='fs'), data=trainPA, method = "REML", family="binomial", select=T)
+fish_modS_pb =  gam(logbio ~ s(SURFTEMP, Stg, k=30, bs='fs') + s(BOTTEMP, Stg, k=30, bs='fs') + s(DEPTH, Stg, k=20, bs="fs") + s(chl9, Stg, k=30, bs="fs") + s(grnszmm, Stg, k=15, bs='fs') + s(chl2, Stg, k=30, bs='fs') +  s(chl1, Stg, k=30, bs='fs'), data=trainBIO, method = "REML", family="gaussian", select=T)
 save(fish_modS_pa, file=paste('/home/ryan/Git/NEhabitat/rasters/',fishseas,'/',fishname,'/fish_modS_pa_',fishseas,'_',fishname,'.Rdata',sep=''))
 save(fish_modS_pb, file=paste('/home/ryan/Git/NEhabitat/rasters/',fishseas,'/',fishname,'/fish_modS_pb_',fishseas,'_',fishname,'.Rdata',sep='')) 
 
 
 # I model
 # y∼fac+s(x, by=fac) or y∼fac+te(x1,x2, by=fac)
-fish_modI_pa =  gam(pa ~ Stg + s(SURFTEMP, by=Stg, k=15, bs='ts') + s(BOTTEMP, by=Stg, k=15, bs='ts') + s(DEPTH, by=Stg, k=10, bs="ts") + s(chl9, by=Stg, k=20, bs="ts") + s(grnszmm, by=Stg, k=15, bs='ts') + s(chl2, by=Stg, k=20, bs='ts') + s(chl1, by=Stg, k=20, bs='ts'), data=trainPA, method = "REML", family="binomial", select=T)
-fish_modI_pb =  gam(logbio ~ Stg + s(SURFTEMP, by=Stg, k=15, bs='ts') + s(BOTTEMP, by=Stg, k=15, bs='ts') + s(DEPTH, by=Stg, k=10, bs="ts") + s(chl9, by=Stg, k=20, bs="ts") + s(grnszmm, by=Stg, k=15, bs='ts') + s(chl2, by=Stg, k=20, bs='ts') + s(chl1, by=Stg, k=20, bs='ts'), data=trainBIO, method = "REML", family="gaussian", select=T)
+fish_modI_pa =  gam(pa ~ Stg + s(SURFTEMP, by=Stg, k=30, bs='ts') + s(BOTTEMP, by=Stg, k=30, bs='ts') + s(DEPTH, by=Stg, k=20, bs="ts") + s(chl9, by=Stg, k=20, bs="ts") + s(grnszmm, by=Stg, k=15, bs='ts') + s(chl2, by=Stg, k=20, bs='ts') + s(chl1, by=Stg, k=20, bs='ts'), data=trainPA, method = "REML", family="binomial", select=T)
+fish_modI_pb =  gam(logbio ~ Stg + s(SURFTEMP, by=Stg, k=30, bs='ts') + s(BOTTEMP, by=Stg, k=30, bs='ts') + s(DEPTH, by=Stg, k=20, bs="ts") + s(chl9, by=Stg, k=20, bs="ts") + s(grnszmm, by=Stg, k=15, bs='ts') + s(chl2, by=Stg, k=20, bs='ts') + s(chl1, by=Stg, k=20, bs='ts'), data=trainBIO, method = "REML", family="gaussian", select=T)
 save(fish_modI_pa, file=paste('/home/ryan/Git/NEhabitat/rasters/',fishseas,'/',fishname,'/fish_modI_pa_',fishseas,'_',fishname,'.Rdata',sep=''))
 save(fish_modI_pb, file=paste('/home/ryan/Git/NEhabitat/rasters/',fishseas,'/',fishname,'/fish_modI_pb_',fishseas,'_',fishname,'.Rdata',sep=''))
 

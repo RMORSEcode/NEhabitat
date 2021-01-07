@@ -414,7 +414,7 @@ write.csv(format(modeval, digits=2), file=paste(wd2,'model_evaluation_', SEASON,
 #### Save model hindcast output trends (mean, trend, variance)
 ## Load rasters
 p1=paste('/home/ryan/Git/NEhabitat/rasters/',SEASON,'/', fishnm, '/', sep='')
-p2='fish_modGI_spr_Haddock_abundance' #'fish_modG4_spr_Haddock/'
+p2='fish_modGI_spr_Haddock' #'fish_modGI_spr_Haddock' 'fish_modGI_spr_Haddock_select_years_mod' 'fish_modGI_spr_Haddock_abundance'
 p3=paste('/PA_only_stacked_', SEASON, '_', fishnm, '_', sep='') #'PA_only_stacked_Spr_Haddock_'
 p4=paste('/stacked_', SEASON, '_', fishnm, '_', sep='') #'stacked_Spr_Haddock_'
 ichpa=loadRData(paste(p1,p2,p3,'ich.RData', sep=''))
@@ -561,21 +561,23 @@ juvhab_gom=raster::extract(juvpa, gom, fun=mean, na.rm=T)
 plot(juvhab_gom[1,]~yrlist, type='l', las=1)
 
 ### using trawl survey strata for haddock
+pdf(paste(path1, 'PA_Hindcast_',p2,'_extracted_mean_habitat.pdf', sep=''), height=4, width=6)
+
 ichhab_tsGBK=raster::extract(ichpa, tsGBK, fun=mean, na.rm=T)
-plot(ichhab_tsGBK[1,]~yrlist, type='l', las=1)
+plot(ichhab_tsGBK[1,]~yrlist, type='l', las=1, ylab='GBK ich habitat', xlab='')
 ichhab_tsGOM=raster::extract(ichpa, tsGOM, fun=mean, na.rm=T)
-plot(ichhab_tsGOM[1,]~yrlist, type='l', las=1)
+plot(ichhab_tsGOM[1,]~yrlist, type='l', las=1, ylab='GOM ich habitat', xlab='')
 
 adthab_tsGBK=raster::extract(adtpa, tsGBK, fun=mean, na.rm=T)
-plot(adthab_tsGBK[1,]~yrlist, type='l', las=1)
+plot(adthab_tsGBK[1,]~yrlist, type='l', las=1, ylab='GBK adt habitat', xlab='')
 adthab_tsGOM=raster::extract(adtpa, tsGOM, fun=mean, na.rm=T)
-plot(adthab_tsGOM[1,]~yrlist, type='l', las=1)
+plot(adthab_tsGOM[1,]~yrlist, type='l', las=1, ylab='GOM adt habitat', xlab='')
 
 juvhab_tsGBK=raster::extract(juvpa, tsGBK, fun=mean, na.rm=T)
-plot(juvhab_tsGBK[1,]~yrlist, type='l', las=1)
+plot(juvhab_tsGBK[1,]~yrlist, type='l', las=1, ylab='GBK juv habitat', xlab='')
 juvhab_tsGOM=raster::extract(juvpa, tsGOM, fun=mean, na.rm=T)
-plot(juvhab_tsGOM[1,]~yrlist, type='l', las=1)
-
+plot(juvhab_tsGOM[1,]~yrlist, type='l', las=1, ylab='GOM juv habitat', xlab='')
+dev.off()
 
 ### plot model residuals against variables
 modchoice=5 # possible different lengths for PA and BIO (e.g. haddock)
@@ -592,6 +594,7 @@ plot(x~trainBIO$chl2)
 plot(x~trainBIO$chl10)
 plot(x~trainBIO$Stg)
 ### for PA model, predict and residual is (obs-pred), using fish2(->fishtest) formatted like trainPA (long on stg, modified data)
+## using `format_data_for_testing_HGAMS.R`
 modchoice=3 # possible different lengths for PA and BIO (e.g. haddock)
 modlistpa[modchoice]
 usemodel=loadRData(paste(path1,modlistpa[modchoice], sep=''))
@@ -607,6 +610,19 @@ plot(fishtest$resid~fishtest$grnszmm, ylab='PA residual', main=modlistpa[modchoi
 plot(fishtest$resid~fishtest$chl2, ylab='PA residual', main=modlistpa[modchoice])
 plot(fishtest$resid~fishtest$chl10, ylab='PA residual', main=modlistpa[modchoice])
 plot(fishtest$resid~fishtest$Stg, ylab='PA residual', main=modlistpa[modchoice])
+### PDF of residuals for each stage (rather than all together as above)
+modused=strsplit(modlistpa[modchoice], '.Rdata')[[1]][1]
+stage='Adt' #choose: 'Adt' 'Juv' 'ich'
+pdf(paste(p1,stage,'_', modused,'_residuals.pdf', sep=''), height=4, width=6)
+fishtest.stg=fishtest[which(fishtest$Stg==stage),]
+plot(fishtest.stg$resid~fishtest.stg$SURFTEMP, ylab=paste(stage, 'PA residual'), main=modlistpa[modchoice])
+plot(fishtest.stg$resid~fishtest.stg$DEPTH, ylab=paste(stage, 'PA residual'), main=modlistpa[modchoice])
+plot(fishtest.stg$resid~fishtest.stg$ctyp_100m3, ylab=paste(stage, 'PA residual'), main=modlistpa[modchoice])
+plot(fishtest.stg$resid~fishtest.stg$grnszmm, ylab=paste(stage, 'PA residual'), main=modlistpa[modchoice])
+plot(fishtest.stg$resid~fishtest.stg$chl2, ylab=paste(stage, 'PA residual'), main=modlistpa[modchoice])
+plot(fishtest.stg$resid~fishtest.stg$chl10, ylab=paste(stage, 'PA residual'), main=modlistpa[modchoice])
+# plot(fishtest.stg$resid~fishtest.stg$Stg, ylab=paste(stage, 'PA residual'), main=modlistpa[modchoice])
+dev.off()
 
 show_palette <- function(colors) {
   image(1:n, 1, as.matrix(1:n), col = colors, 
@@ -614,7 +630,12 @@ show_palette <- function(colors) {
         yaxt = "n", bty = "n")
 }
 
-pdf(paste(p1,p2,'/', 'Adt_BIO_model_residuals.pdf', sep=''), height=4, width=6)
+### plot residuals spatially using fishtest.stg (from above)
+pdf(paste(p1,p2,'/', stage,'_PA_model_residuals.pdf', sep=''), height=4, width=6)
+pdf(paste(p1,'/', stage,'Trawl_survey_catch.pdf', sep=''), height=4, width=6)
+
+x2=fishtest.stg=fishtest[which(fishtest$Stg==stage),]
+x=x2$resid
 for(i in (1:length(yrlist))){
   j=yrlist[i]
   # par(mar = c(0,0,0,0))
@@ -635,7 +656,9 @@ for(i in (1:length(yrlist))){
   cl=colorRampPalette(brewer.pal(9,"RdBu"))(length(br))
   # rng=c(floor(min(x)), ceiling(max(x)))
   # arg=list(at=rng, labels=round(rng,2))
-  points(trainBIO$LON[which(trainBIO$YEAR==j)], trainBIO$LAT[which(trainBIO$YEAR==j)], col=cl, pch=19)#, breaks=br,axis.args=arg,las=1)
+  # points(x2$LON[which(x2$YEAR==j)], x2$LAT[which(x2$YEAR==j)], col=cl, pch=19)#, breaks=br,axis.args=arg,las=1)
+  points(x2$LON[which(x2$YEAR==j)], x2$LAT[which(x2$YEAR==j)], col=ifelse(x2$pa[which(x2$YEAR==j)]==1, 'red', 'black'), pch=19)#, breaks=br,axis.args=arg,las=1)
+  # points(trainBIO$LON[which(trainBIO$YEAR==j)], trainBIO$LAT[which(trainBIO$YEAR==j)], col=cl, pch=19)#, breaks=br,axis.args=arg,las=1)
   plot(nesbath,deep=-200, shallow=-200, step=1,add=T,lwd=1,col=addTrans('black',150),lty=1)
 }
 # show_palette(cl)
@@ -647,6 +670,19 @@ image(xx,y,z,col=cl,axes=FALSE,xlab="",ylab="")
 axis(2)
 text(1,2, 'Deviance Residual')
 dev.off()
+
+
+
+### check on correlation between covariates
+library(corrplot)
+t=fishtest.stg[,5:35]
+M=cor(t)
+corrplot(M, method='circle')
+t=fishtest.stg[,c(5,6,9,20,23,25,33)] # spring haddock
+M=cor(t)
+corrplot(M, method='number', type='lower')
+
+
 
 ### haddock WG data for recruits and SSB
 haddocksr=read.csv('/home/ryan/Downloads/SR.csv', header=T, stringsAsFactors = F)

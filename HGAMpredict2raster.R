@@ -8,11 +8,11 @@ library(lubridate)
 library(raster)
 library(ROCR)
 library(dplyr)
-
 library(maps)
 library(mapdata)
 library(RColorBrewer)
 library(colorspace)
+library(marmap)
 
 ### set up year list to match files with
 yrlist=seq(from=1977, to=2019, by=1)
@@ -45,19 +45,19 @@ fishnm='Haddock' #'Cod' # 'Haddock'  #'SilverHake'
 
 ## get path and list of models
 path1=paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/', fishnm,'/', sep='') # Spr/Haddock'
-modlist=list.files(path1)
+# modlist=list.files(path1)
 
 ## CHOOSE MODEL AND VERIFY
-modlist
-modchoice=9
-modlist[modchoice]
-usemodel=loadRData(paste(path1,modlist[modchoice], sep='')) #fish_modS #_spr_had
+# modlist
+# modchoice=9
+# modlist[modchoice]
+# usemodel=loadRData(paste(path1,modlist[modchoice], sep='')) #fish_modS #_spr_had
 
 #### VERIFY MODEL SPECIES AND SEASON ####
 trainPA$SVSPP[1] #verify species
 trainPA$SEASON[1] #verify season
-modlistpa=list.files(path1, pattern = '_pa_') # presence-absence models
-modlistpb=list.files(path1, pattern = '_pb_') # positive biomass models
+modlistpa=list.files(path1, pattern = glob2rx("*_pa_*Rdata")) # presence-absence models
+modlistpb=list.files(path1, pattern = glob2rx("*_pb_*Rdata")) # positive biomass models
 
 
 ## draw GAM smooths, save to pdf
@@ -229,25 +229,30 @@ rug2=resample(rugscl, bt)
 ex=extent(bt)
 rug2=crop(rug2, ex)
 rug2=mask(rug2, bt)
-chl10=loadRData('/home/ryan/1_habitat_analysis_2017/chl/NESREG/clim/RAST.CLIMMO_1998.10.01.GB.CHR1.MNTH.000072227.RData')
-chl10b=crop(chl10, bt)
-chl10b=resample(chl10b, bt)
-chl10b2=mask(chl10b, bt)
-chl2=loadRData('/home/ryan/1_habitat_analysis_2017/chl/NESREG/clim/RAST.CLIMMO_1998.02.01.GB.CHR1.MNTH.000072350.RData')
-chl2b=crop(chl2, bt)
-chl2b=resample(chl2b, bt)
-chl2b2=mask(chl2b, bt)
 
+# load Chlorophyll climatology rasters, resample, rename
+chllist=list.files('/home/ryan/1_habitat_analysis_2017/chl/NESREG/clim/', pattern='.RData')
+for (i in (1:12)){
+load(paste('/home/ryan/1_habitat_analysis_2017/chl/NESREG/clim/', chllist[i], sep=''))
+masked.raster=crop(masked.raster, bt)
+masked.raster=resample(masked.raster, bt)
+masked.raster=mask(masked.raster, bt)
+newname=paste("chl.", i, sep='')
+assign(newname, masked.raster)
+rm(masked.raster)
+}
 ## Remove bottom temp raster
 rm(bt)
 fl=levels=c("Adt", "Juv", "ich")
+fl=levels=c("Adt", "Juv")
 # fishnm='SilverHake'
 wd2=paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/', fishnm, '/', sep='')
 modchoice=4
+modchoicepb=5
 usemodel=loadRData(paste(path1,modlistpa[modchoice], sep=''))
-usemodelbio=loadRData(paste(path1,modlistpb[modchoice], sep=''))
+usemodelbio=loadRData(paste(path1,modlistpb[modchoicepb], sep=''))
 ### NOW loop over files, load yearly dynamic raster files and predict habitat from HGAM models
-for (jj in 1:3){
+for (jj in 1:length(fl)){
   for (i in 1:length(yrlist)){
     bi=which(yrlist[i]==ttb2) # index of year
     bt=loadRData(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/BT2/', btlist[[bi]], sep=''))
@@ -255,16 +260,26 @@ for (jj in 1:3){
     st=loadRData(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/ST2/', stlist[[bi]], sep=''))
     bi=which(yrlist[i]==ttz2) # index of year
     # pse=loadRData(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/pseudo/', zlist[[bi]], sep=''))
-    cty=loadRData(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/ctyp/', zlist[[bi]], sep=''))
+    # cty=loadRData(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/ctyp/', zlist[[bi]], sep=''))
     ef <- data.frame(coordinates(bt), val=values(bt))
     colnames(ef)=c("LON", "LAT", "BOTTEMP")
     ef$SURFTEMP=values(st)
     ef$DEPTH=values(gd4)
-    ef$Stg=factor(fl[jj], levels=c('Adt', 'Juv', 'ich'))
+    ef$Stg=factor(fl[jj])#, levels=c('Adt', 'Juv', 'ich'))
     # ef$pseudo_100m3=values(pse)
     ef$ctyp_100m3=values(cty)
-    ef$chl2=values(chl2b2)
-    ef$chl10=values(chl10b2)
+    ef$chl1=values(chl.1)
+    ef$chl2=values(chl.2)
+    ef$chl3=values(chl.3)
+    ef$chl4=values(chl.4)
+    ef$chl5=values(chl.5)
+    ef$chl6=values(chl.6)
+    ef$chl7=values(chl.7)
+    ef$chl8=values(chl.8)
+    ef$chl9=values(chl.9)
+    ef$chl10=values(chl.10)
+    ef$chl11=values(chl.11)
+    ef$chl12=values(chl.12)
     ef$grnszmm=values(phi2)
     ef$rug=values(rug2)
     ef2=ef
@@ -394,12 +409,12 @@ for (i in 1:length(modlistpa)){
   modeval[i,11]=((df.residual(usemodelbio)+sum(usemodelbio$edf))/3)-sum(usemodelbio$edf)
 }
 colnames(modeval)=c('model', 'PA.dev.exp','BIO.dev.exp','PA.aic','BIO.aic','PA.edf','BIO.edf','PA.res.df','BIO.res.df', 'PA.corr.res.df','BIO.corr.res.df')
-write.csv(modeval, file=paste(wd2,'model_evaluation_', SEASON, '_', fishnm, '_', '.csv', sep=""), row.names = F)
+write.csv(format(modeval, digits=2), file=paste(wd2,'model_evaluation_', SEASON, '_', fishnm, '_', '.csv', sep=""), row.names = F)
 
 #### Save model hindcast output trends (mean, trend, variance)
 ## Load rasters
 p1=paste('/home/ryan/Git/NEhabitat/rasters/',SEASON,'/', fishnm, '/', sep='')
-p2='fish_modG_Spr_Haddock' #'fish_modG4_spr_Haddock/'
+p2='fish_modGSe_fall_haddock' #'fish_modGI_spr_Haddock' 'fish_modGI_spr_Haddock_select_years_mod' 'fish_modGI_spr_Haddock_abundance'
 p3=paste('/PA_only_stacked_', SEASON, '_', fishnm, '_', sep='') #'PA_only_stacked_Spr_Haddock_'
 p4=paste('/stacked_', SEASON, '_', fishnm, '_', sep='') #'stacked_Spr_Haddock_'
 ichpa=loadRData(paste(p1,p2,p3,'ich.RData', sep=''))
@@ -428,6 +443,43 @@ pdf(paste(path1, 'Bio_Hindcast_',p2,'_Adt.pdf', sep=''), height=4, width=6)
 plotRasterTrends(adt)
 dev.off()
 
+### plot out raster stacks to visualize changes
+pdf(paste(p1,p2,'/', 'Juv_hindcast.pdf', sep=''), height=4, width=6)
+for (i in (1:length(yrlist))){
+  plot(juvpa[[i]], zlim=c(0,1), col=viridis::viridis(64), main=paste(yrlist[i], SEASON, fishnm, sep=" "))
+  }
+dev.off()
+
+pdf(paste(p1,p2,'/', 'Adt_hindcast.pdf', sep=''), height=4, width=6)
+for (i in (1:length(yrlist))){
+  plot(adtpa[[i]], zlim=c(0,1), col=viridis::viridis(64), main=paste(yrlist[i], SEASON, fishnm, sep=" "))
+}
+dev.off()
+
+pdf(paste(p1,p2,'/', 'Ich_hindcast.pdf', sep=''), height=4, width=6)
+for (i in (1:length(yrlist))){
+  plot(ichpa[[i]], zlim=c(0,1), col=viridis::viridis(64), main=paste(yrlist[i], SEASON, fishnm, sep=" "))
+}
+dev.off()
+
+## Biomass (or abundance) models
+pdf(paste(p1,p2,'/', 'Adt_abund_hindcast.pdf', sep=''), height=4, width=6)
+for (i in (1:length(yrlist))){
+  plot(adt[[i]], zlim=c(0,65), main=paste(yrlist[i], SEASON, fishnm, sep=" "))
+}
+dev.off()
+## Biomass (or abundance) models
+pdf(paste(p1,p2,'/', 'Juv_abund_hindcast.pdf', sep=''), height=4, width=6)
+for (i in (1:length(yrlist))){
+  plot(juv[[i]], zlim=c(0,65), main=paste(yrlist[i], SEASON, fishnm, sep=" "))
+}
+dev.off()
+## Biomass (or abundance) models
+pdf(paste(p1,p2,'/', 'Ich_abund_hindcast.pdf', sep=''), height=4, width=6)
+for (i in (1:length(yrlist))){
+  plot(ich[[i]], zlim=c(0,65), main=paste(yrlist[i], SEASON, fishnm, sep=" "))
+}
+dev.off()
 
 
 plot(keepstack[[28]], zlim=c(0,5), col=viridis::viridis(64))
@@ -494,30 +546,301 @@ plotrasterNES(ichpa[[37]], mn=0, mx=1, titlex=paste(yrlist[37]))
 plotrasterNES(ichpa[[38]], mn=0, mx=1, titlex=paste(yrlist[38]))
 
 ichhab_gbk=raster::extract(ichpa, gbk, fun=mean, na.rm=T)
-plot(ichhab_gbk[1,]~yrlist, type='l')
+plot(ichhab_gbk[1,]~yrlist, type='l', las=1)
 ichhab_gom=raster::extract(ichpa, gom, fun=mean, na.rm=T)
-plot(ichhab_gom[1,]~yrlist, type='l')
+plot(ichhab_gom[1,]~yrlist, type='l', las=1)
 
 adthab_gbk=raster::extract(adtpa, gbk, fun=mean, na.rm=T)
-plot(adthab_gbk[1,]~yrlist, type='l')
+plot(adthab_gbk[1,]~yrlist, type='l', las=1)
 adthab_gom=raster::extract(adtpa, gom, fun=mean, na.rm=T)
-plot(adthab_gom[1,]~yrlist, type='l')
+plot(adthab_gom[1,]~yrlist, type='l', las=1)
 
 juvhab_gbk=raster::extract(juvpa, gbk, fun=mean, na.rm=T)
-plot(juvhab_gbk[1,]~yrlist, type='l')
+plot(juvhab_gbk[1,]~yrlist, type='l', las=1)
 juvhab_gom=raster::extract(juvpa, gom, fun=mean, na.rm=T)
-plot(juvhab_gom[1,]~yrlist, type='l')
+plot(juvhab_gom[1,]~yrlist, type='l', las=1)
 
+### using trawl survey strata for haddock
+pdf(paste(path1, 'PA_Hindcast_',p2,'_extracted_mean_habitat.pdf', sep=''), height=4, width=6)
+
+ichhab_tsGBK=raster::extract(ichpa, tsGBK, fun=mean, na.rm=T)
+plot(ichhab_tsGBK[1,]~yrlist, type='l', las=1, ylab='GBK ich habitat', xlab='')
+ichhab_tsGOM=raster::extract(ichpa, tsGOM, fun=mean, na.rm=T)
+plot(ichhab_tsGOM[1,]~yrlist, type='l', las=1, ylab='GOM ich habitat', xlab='')
+
+adthab_tsGBK=raster::extract(adtpa, tsGBK, fun=mean, na.rm=T)
+plot(adthab_tsGBK[1,]~yrlist, type='l', las=1, ylab='GBK adt habitat', xlab='')
+adthab_tsGOM=raster::extract(adtpa, tsGOM, fun=mean, na.rm=T)
+plot(adthab_tsGOM[1,]~yrlist, type='l', las=1, ylab='GOM adt habitat', xlab='')
+
+juvhab_tsGBK=raster::extract(juvpa, tsGBK, fun=mean, na.rm=T)
+plot(juvhab_tsGBK[1,]~yrlist, type='l', las=1, ylab='GBK juv habitat', xlab='')
+juvhab_tsGOM=raster::extract(juvpa, tsGOM, fun=mean, na.rm=T)
+plot(juvhab_tsGOM[1,]~yrlist, type='l', las=1, ylab='GOM juv habitat', xlab='')
+dev.off()
+
+### plot model residuals against variables
+modchoice=5 # possible different lengths for PA and BIO (e.g. haddock)
+modlistpb[modchoice]
+usemodelbio=loadRData(paste(path1,modlistpb[modchoice], sep=''))
+x=resid(usemodelbio, type = 'deviance')
+test1 <- predict.gam(usemodelbio, trainBIO, type='response')
+plot(x~test1)
+plot(x~trainBIO$SURFTEMP)
+plot(x~trainBIO$DEPTH)
+plot(x~trainBIO$ctyp_100m3)
+plot(x~trainBIO$grnszmm)
+plot(x~trainBIO$chl2)
+plot(x~trainBIO$chl10)
+plot(x~trainBIO$Stg)
+### for PA model, predict and residual is (obs-pred), using fish2(->fishtest) formatted like trainPA (long on stg, modified data)
+## using `format_data_for_testing_HGAMS.R`
+modchoice=5 # possible different lengths for PA and BIO (e.g. haddock)
+modlistpa[modchoice]
+usemodel=loadRData(paste(path1,modlistpa[modchoice], sep=''))
+# x=resid(usemodel, type = 'deviance')
+# test1 <- predict.gam(usemodel, trainPA, type='response')
+test1 <- predict.gam(usemodel, fishtest, type='response')
+fishtest$pred=test1
+fishtest$resid=fishtest$pa-fishtest$pred
+plot(fishtest$resid~fishtest$SURFTEMP, ylab='PA residual', main=modlistpa[modchoice])
+plot(fishtest$resid~fishtest$DEPTH, ylab='PA residual', main=modlistpa[modchoice])
+plot(fishtest$resid~fishtest$ctyp_100m3, ylab='PA residual', main=modlistpa[modchoice])
+plot(fishtest$resid~fishtest$grnszmm, ylab='PA residual', main=modlistpa[modchoice])
+plot(fishtest$resid~fishtest$chl2, ylab='PA residual', main=modlistpa[modchoice])
+plot(fishtest$resid~fishtest$chl10, ylab='PA residual', main=modlistpa[modchoice])
+plot(fishtest$resid~fishtest$Stg, ylab='PA residual', main=modlistpa[modchoice])
+### PDF of residuals for each stage (rather than all together as above)
+modused=strsplit(modlistpa[modchoice], '.Rdata')[[1]][1]
+stage='Adt' #choose: 'Adt' 'Juv' 'ich'
+pdf(paste(p1,stage,'_', modused,'_residuals.pdf', sep=''), height=4, width=6)
+fishtest.stg=fishtest[which(fishtest$Stg==stage),]
+plot(fishtest.stg$resid~fishtest.stg$SURFTEMP, ylab=paste(stage, 'PA residual'), main=modlistpa[modchoice])
+plot(fishtest.stg$resid~fishtest.stg$DEPTH, ylab=paste(stage, 'PA residual'), main=modlistpa[modchoice])
+plot(fishtest.stg$resid~fishtest.stg$ctyp_100m3, ylab=paste(stage, 'PA residual'), main=modlistpa[modchoice])
+plot(fishtest.stg$resid~fishtest.stg$grnszmm, ylab=paste(stage, 'PA residual'), main=modlistpa[modchoice])
+plot(fishtest.stg$resid~fishtest.stg$chl2, ylab=paste(stage, 'PA residual'), main=modlistpa[modchoice])
+plot(fishtest.stg$resid~fishtest.stg$chl10, ylab=paste(stage, 'PA residual'), main=modlistpa[modchoice])
+# plot(fishtest.stg$resid~fishtest.stg$Stg, ylab=paste(stage, 'PA residual'), main=modlistpa[modchoice])
+dev.off()
+
+show_palette <- function(colors) {
+  image(1:n, 1, as.matrix(1:n), col = colors, 
+        xlab = "", ylab = "", xaxt = "n", 
+        yaxt = "n", bty = "n")
+}
+
+### plot residuals spatially using fishtest.stg (from above)
+pdf(paste(p1,p2,'/', stage,'_PA_model_residuals.pdf', sep=''), height=4, width=6)
+pdf(paste(p1,'/', stage,'Trawl_survey_catch.pdf', sep=''), height=4, width=6)
+
+x2=fishtest.stg=fishtest[which(fishtest$Stg==stage),]
+x=x2$resid
+for(i in (1:length(yrlist))){
+  j=yrlist[i]
+  # par(mar = c(0,0,0,0))
+  # par(oma = c(0,0,0,0))
+  map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="gray70")
+  text(-74,44, j)
+  map.axes(las=1)
+  # rng=c(floor(min(x)), ceiling(max(x)))
+  # myrng=modelr::seq_range(rng, by=1)
+  # mylen=length(unique(round(x,1)))
+  # myord=order(unique(round(x,1)))
+  # mycolor=colorRampPalette(brewer.pal(length(myrng+1),"RdBu"))(mylen)
+  # points(trainPA$LON[which(trainPA$YEAR==j)], trainPA$LAT[which(trainPA$YEAR==j)], col=mycolor[round(x,1)], pch=19)
+  mn=floor(min(x))
+  mx=ceiling(max(x))
+  high=max(abs(mn), mx)
+  br <- seq(-high, high, by = high/15) 
+  cl=colorRampPalette(brewer.pal(9,"RdBu"))(length(br))
+  # rng=c(floor(min(x)), ceiling(max(x)))
+  # arg=list(at=rng, labels=round(rng,2))
+  # points(x2$LON[which(x2$YEAR==j)], x2$LAT[which(x2$YEAR==j)], col=cl, pch=19)#, breaks=br,axis.args=arg,las=1)
+  points(x2$LON[which(x2$YEAR==j)], x2$LAT[which(x2$YEAR==j)], col=ifelse(x2$pa[which(x2$YEAR==j)]==1, 'red', 'black'), pch=19)#, breaks=br,axis.args=arg,las=1)
+  # points(trainBIO$LON[which(trainBIO$YEAR==j)], trainBIO$LAT[which(trainBIO$YEAR==j)], col=cl, pch=19)#, breaks=br,axis.args=arg,las=1)
+  plot(nesbath,deep=-200, shallow=-200, step=1,add=T,lwd=1,col=addTrans('black',150),lty=1)
+}
+# show_palette(cl)
+# text(1,2,'br')
+z=matrix(1:length(br),nrow=1)
+xx=1
+y=br
+image(xx,y,z,col=cl,axes=FALSE,xlab="",ylab="")
+axis(2)
+text(1,2, 'Deviance Residual')
+dev.off()
+
+
+
+### check on correlation between covariates
+library(corrplot)
+t=fishtest.stg[,5:35]
+M=cor(t)
+corrplot(M, method='circle')
+t=fishtest.stg[,c(5,6,9,20,23,25,33)] # spring haddock
+t=fishtest.stg[,c(5,6,7,20,24,25,32)] # fall haddock
+M=cor(t)
+corrplot(M, method='number', type='lower')
+
+
+
+### haddock WG data for recruits and SSB
 haddocksr=read.csv('/home/ryan/Downloads/SR.csv', header=T, stringsAsFactors = F)
-hdts=haddocksr[60:88,]
 
-plot(haddocksr$year, log(haddocksr$recr), type='l')
-plot(hdts$year, log10(hdts$recr), type='l')
+## RSSB from Kevin (Peretti)
+ssbr=read.csv('/home/ryan/1_habitat_analysis_2017/SSB and recruits.csv',header=T, stringsAsFactors = F)
+ssbr2=read.csv('/home/ryan/1_habitat_analysis_2017/SSB and recruits.csv',header=T, skip=3, stringsAsFactors = F)
+plot(ssbr2[10:44,1], ssbr2[10:44,13], type='l', las=1) #GOM cod rssb
+plot(ssbr2[10:44,1], ssbr2[10:44,19], type='l', las=1) #GBK haddock rssb
 
-plot(hdts$year, log10(hdts$recr)/hdts$ssb, type='l')
+# from Liz Brooks survey based RSSB data for GB haddock
+lbhad=readxl::read_xlsx('/home/ryan/Desktop/Haddock/SSB.yr_and_R.xlsx', skip=4)
+plot(lbhad$ssb.yr.Spring~lbhad$years, type='l', main='SSB')
+plot(lbhad$Age0.Fall ~lbhad$years, type='l', main='Age 0 Fall')
+lines(lbhad$`Age1.Spring(lagged)` ~lbhad$years, type='l', col='red')
+lbhad$r0ssb=lbhad$Age0.Fall/lbhad$ssb.yr.Spring
+lbhad$r1ssb=lbhad$`Age1.Spring(lagged)`/lbhad$ssb.yr.Spring
+
+lbhad2=lbhad[complete.cases(lbhad),]
+lbhad2$anom0=log10(lbhad2$r0ssb)-mean(log10(lbhad2$r0ssb))/sd(log10(lbhad2$r0ssb))
+lbhad2$anom1=log10(lbhad2$r1ssb)-mean(log10(lbhad2$r1ssb))/sd(log10(lbhad2$r1ssb))
+
+# log10(hdts$recr)-mean(log10(hdts$recr))/sd(log10(hdts$recr))
+plot(log10(lbhad2$r0ssb)~lbhad2$years, type='l')
+plot(lbhad2$anom0~lbhad2$years, type='l', main='age0 rssb'); abline(h=0, lty=2)
+plot(lbhad2$anom1~lbhad2$years, type='l', main='age1 rssb'); abline(h=0, lty=2)
+
+# trying dynamic time warping GBK RSSB vs Juv habitat
+library(dtw)
+juvts=(juvhab_gbk[1,2:36]-mean(juvhab_gbk[1,2:36]))/sd(juvhab_gbk[1,2:36])
+adtts=(adthab_gbk[1,4:38]-mean(adthab_gbk[1,2:36]))/sd(adthab_gbk[1,2:36])
+ichts=(ichhab_gbk[1,4:38]-mean(ichhab_gbk[1,2:36]))/sd(ichhab_gbk[1,2:36])
+rssbts=ssbr2[10:44,19]
+
+# cross correlation coefficient plots
+ccf(ichts, rssbts)
+ccf(juvts, rssbts)
+ccf(adtts, rssbts)
+# DTW plots
+alignment<-dtw(ichts,rssbts,keep=TRUE)
+plot(alignment,type="threeway", main='Ich')
+dtwPlotDensity(alignment, main='Ich')
+alignment<-dtw(juvts,rssbts,keep=TRUE)
+plot(alignment,type="threeway", main='Juv')
+dtwPlotDensity(alignment, main='Juv')
+alignment<-dtw(adtts,rssbts,keep=TRUE)
+plot(alignment,type="threeway", main='Adt')
+dtwPlotDensity(alignment, main='Adt')
+
+plot(dtw(ichts,rssbts,keep=TRUE,
+      step=rabinerJuangStepPattern(6,"c")),
+  type="twoway",offset=-2, main='Ich vs RSSB');
+plot(dtw(juvts,rssbts,keep=TRUE,
+         step=rabinerJuangStepPattern(6,"c")),
+     type="twoway",offset=-2, main='Juv vs RSSB');
+plot(dtw(adtts,rssbts,keep=TRUE,
+         step=rabinerJuangStepPattern(6,"c")),
+     type="twoway",offset=-2, main='Adt vs RSSB');
+
+
+hdts=haddocksr[46:88,] #1977-2019
+hdts$ra=log10(hdts$recr)-mean(log10(hdts$recr))/sd(log10(hdts$recr))
+hdts$ssba=hdts$ssb-mean(hdts$ssb)/sd(hdts$ssb)
+hdts$rssb=hdts$ra/hdts$ssba
+# hdts=haddocksr[61:88,] #1992-2019
+# plot(haddocksr$year, log(haddocksr$recr), type='l')
+plot(hdts$year, log10(hdts$recr), type='b', ylab='log10 recruits', xlab='', pch=20) #log recruits
+plot(hdts$year, hdts$recr/hdts$ssb, type='b', pch=20, ylab='recr/SSB', xlab='') # recruits per ssb
+plot(hdts$year, log10(hdts$recr)/log10(hdts$ssb), type='l', pch=20, ylab='log10(R)/ log10(SSB)', xlab='', las=1) # recruits per ssb
+
+plot(hdts$year, log10(hdts$recr-mean(hdts$recr))/log10(hdts$ssb-mean(hdts$ssb)), type='b', pch=20, ylab='log10(R)/ log10(SSB)', xlab='') # recruits per ssb
+
+plot(hdts$year, hdts$ssb, type='b', pch=20, ylab='SSB', xlab='')
+plot(hdts$year, log10(hdts$ssb), type='b', pch=20, ylab='log10 SSB', xlab='')
 
 test=data.frame(log10(hdts$recr), ichhab_gbk[1,])
 cor(test)
+
+test=data.frame(ssbr2[10:44,13], juvhab_gom[1,4:38])
+test=test[complete.cases(test),]
+cor(test)
+
+
+### load Kevin's RF model hindcast output for haddock biomass and PA 1976-2019 for comparison (drop 1976)
+fbms=list.files('/home/ryan/1_habitat_analysis_2017/KEVIN_HADDOCK_2020/for ryan/',pattern = glob2rx("*BM.spri.*"))
+fbmf=list.files('/home/ryan/1_habitat_analysis_2017/KEVIN_HADDOCK_2020/for ryan/',pattern = glob2rx("*BM.fall.*"))
+fpas=list.files('/home/ryan/1_habitat_analysis_2017/KEVIN_HADDOCK_2020/for ryan/',pattern = glob2rx("*PA.spri.*"))
+fpaf=list.files('/home/ryan/1_habitat_analysis_2017/KEVIN_HADDOCK_2020/for ryan/',pattern = glob2rx("*PA.fall.*"))
+# RAST_haddoc_1978.00.00.BM.spri.0155.000000000.RData
+tb=strsplit(fbms, split=('RAST_haddoc_'))
+ttb=sapply(tb, function(x) strsplit(x, "[.]")[[2]][1], USE.NAMES=FALSE) # check order
+wd='/home/ryan/1_habitat_analysis_2017/KEVIN_HADDOCK_2020/for ryan/'
+i=2
+kfbms=loadRData(paste(wd, fbms[i], sep=''))
+for (i in 3:length(fbms)){
+  r2=loadRData(paste(wd, fbms[i], sep=''))
+  kfbms=stack(kfbms, r2)
+}
+i=2
+kfpas=loadRData(paste(wd, fpas[i], sep=''))
+for (i in 3:length(fpas)){
+  r2=loadRData(paste(wd, fpas[i], sep=''))
+  kfpas=stack(kfpas, r2)
+}
+i=2
+kfbmf=loadRData(paste(wd, fbmf[i], sep=''))
+for (i in 3:length(fbmf)){
+  r2=loadRData(paste(wd, fbmf[i], sep=''))
+  kfbmf=stack(kfbmf, r2)
+}
+i=2
+kfpaf=loadRData(paste(wd, fpaf[i], sep=''))
+for (i in 3:length(fpaf)){
+  r2=loadRData(paste(wd, fpaf[i], sep=''))
+  kfpaf=stack(kfpaf, r2)
+}
+
+#load spring stacked hindcasts select years only model
+adtpa=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/Haddock/fish_modGI_spr_Haddock_select_years_mod/PA_only_stacked_Spr_Haddock_Adt.RData')
+juvpa=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/Haddock/fish_modGI_spr_Haddock_select_years_mod/PA_only_stacked_Spr_Haddock_Juv.RData')
+#load spring stacked hindcasts
+adtpa=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/Haddock/fish_modGI_spr_Haddock/PA_only_stacked_Spr_Haddock_Adt.RData')
+juvpa=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/Haddock/fish_modGI_spr_Haddock/PA_only_stacked_Spr_Haddock_Juv.RData')
+#load fall stacked hindcasts
+juvpa=loadRData('/home/ryan/Git/NEhabitat/rasters/Fall/Haddock/fish_modGSe_fall_haddock/PA_only_stacked_Sstacked_Fall_Haddock_Juv.RData')
+adtpa=loadRData('/home/ryan/Git/NEhabitat/rasters/Fall/Haddock/fish_modGSe_fall_haddock/PA_only_stacked_Sstacked_Fall_Haddock_Adt.RData')
+# r=stack(adtpa, juvpa) # may need to do it year by year
+r=stack(adtpa[[1]], juvpa[[1]])
+combr=(max(r))
+for (i in 2:dim(adtpa)[[3]]){
+r2=stack(adtpa[[i]], juvpa[[i]])
+a2=(max(r2))
+combr=stack(combr, a2)
+}
+kdiff=kfpas-combr
+
+plotRasterMeanNegBinom=function(rastck){
+  time <- 1:nlayers(rastck) 
+  newrast.m=calc(rastck, fun=mean, na.rm=T)
+  mn=cellStats(newrast.m, min)
+  mx=cellStats(newrast.m, max)
+  high=max(abs(mn), mx)
+  br <- seq(-high, high, by = high/15) 
+  cl=colorRampPalette(brewer.pal(9,"RdBu"))(length(br))
+  rng=range(newrast.m[],na.rm=T)
+  arg=list(at=rng, labels=round(rng,3))
+  plot(newrast.m, col=cl, breaks=br,axis.args=arg,las=1, main=paste('mean')) # Yearly slope
+  maps::map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="black", add=T)
+}
+
+i=1
+plot(adtpa[[i]], zlim=c(0,1), main=paste('HGAM adt ', yrlist[i]))
+plot(juvpa[[i]], zlim=c(0,1), main=paste('HGAM juv', yrlist[i]))
+plot(combr[[i]], zlim=c(0,1), main=paste('HGAM comb max', yrlist[i]))
+plot(kfpas[[i]], zlim=c(0,1), main=paste('RF', yrlist[i]))
+plot(kdiff[[i]], zlim=c(-1,1), col=colorRampPalette(brewer.pal(9,"RdBu"))(30), main=paste('RF-HGAM comb', yrlist[i]))
+plotRasterMeanNegBinom(kdiff)
 
 ### load and stack Bottom temperaure
 btlist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/BT2', sep=''))
@@ -544,7 +867,8 @@ BS_gbk=raster::extract(rastBS, gbk, fun=mean, na.rm=T)
 plot(BS_gbk[1,]~yrlist[16:43], type='l')
 BT_gom=raster::extract(rastBT, gom, fun=mean, na.rm=T)
 plot(BT_gom[1,]~yrlist, type='l')
-### load and stack Bottom temperaure
+
+### load and stack PSeudocalanus
 zlist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/pseudo', sep=''))
 wd3=paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/pseudo', sep='')
 rastPSE=loadRData(paste(wd3,'/',zlist[1], sep=''))
@@ -557,6 +881,19 @@ plot(PSE_gbk[1,]~yrlist, type='l')
 PSE_gom=raster::extract(rastPSE, gom, fun=mean, na.rm=T)
 plot(PSE_gom[1,]~yrlist, type='l')
 
+### load and stack Ctyp
+zlist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/ctyp', sep=''))
+wd3=paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/ctyp', sep='')
+rastCTY=loadRData(paste(wd3,'/',zlist[1], sep=''))
+for (i in 2:length(zlist)){
+  rastDF=loadRData(paste(wd3,'/',zlist[i], sep=''))
+  rastCTY=stack(rastCTY, rastDF)
+}
+CTY_gbk=raster::extract(rastCTY, gbk, fun=mean, na.rm=T)
+plot(CTY_gbk[1,]~yrlist, type='l')
+CTY_gom=raster::extract(rastCTY, gom, fun=mean, na.rm=T)
+plot(CTY_gom[1,]~yrlist, type='l')
+
 ## check GAM pseudocal
 PSE=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/zoop/pseudocal/zoo_modG/stacked_Spr_pseudocal_ich.RData')
 PSE_gbk=raster::extract(PSE, gbk, fun=mean, na.rm=T)
@@ -568,14 +905,46 @@ plot(PSE_gom[1,]~yrlist[16:43], type='l')
 tt1=loadRData("/home/ryan/Downloads/zoo_abun_anom.rdata")
 plot(tt1$value[which(tt1$variable=='Pse' & tt1$Region=='GB' & tt1$Time > 1991)] ~ 
        tt1$Time[which(tt1$variable=='Pse' & tt1$Region=='GB' & tt1$Time > 1991)], 
-     type='b', ylab='Pse GB anom')
+     type='b', ylab='Pse GB anom', xlab='')
+abline(h=0, lty=3)
 
-
+plot(tt1$value[which(tt1$variable=='Cty' & tt1$Region=='GB' & tt1$Time > 1991)] ~ 
+       tt1$Time[which(tt1$variable=='Cty' & tt1$Region=='GB' & tt1$Time > 1991)], 
+     type='b', ylab='Cty GB anom', xlab='')
+abline(h=0, lty=3)
 
 gbk=rgdal::readOGR('/home/ryan/Desktop/shapefiles/epu_shapes/EPU_GBKPoly.shp')
 gom=rgdal::readOGR('/home/ryan/Desktop/shapefiles/epu_shapes/EPU_GOMPoly.shp')
 
+
+### Load Bottom trawl survey strata - filter to offhsore areas N of Hatteras and subset to strata used for stocks
+polygons <- sf::st_read('/home/ryan/Desktop/shapefiles/TrawlSurvey/strata.shp') %>% 
+  dplyr::filter(STRATA > 0) %>% filter(SET_ == 1) %>%
+  dplyr::mutate(STRATUM=stringr::str_sub(as.character(STRATA),start=2L,end=3L))
+tsgb=c(13:25,29,30) #GBK strata for haddock
+tsgom=c(26:28,36:40) #GOM strata for haddock
+test2=polygons$STR2 %in% tsgb
+tsGBK=polygons[test2,]
+plot(tsGBK)
+test2=polygons$STR2 %in% tsgom
+tsGOM=polygons[test2,]
+plot(tsGOM)
+
+
+# CoreOffshoreStrata<-c(seq(1010,1300,10),1340, seq(1360,1400,10),seq(1610,1760,10))
+# inshore strata to use, still sampled by Bigelow
+# CoreInshore73to12=c(3020, 3050, 3080 ,3110 ,3140 ,3170, 3200, 3230, 3260, 3290, 3320, 3350 ,3380, 3410 ,3440)
+# combine
+# strata_used=c(CoreOffshoreStrata,CoreInshore73to12)
+# test=tstratas$STRATA %in% strata_used
+# subt=tstratas[test,]
+# plot(subt)
+
+
+
 NES5=rgdal::readOGR('/home/ryan/Desktop/nes_gbk_gome_gomw_mabn_mabsPoly.shp')
+
+
 ### Function to extract data using a shapefile
 extract_calc=function(x, shp){
   v2=list()
@@ -699,6 +1068,18 @@ map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="gray70")
 map.axes(las=1)
 points(testPA$LON[which(testPA$pa==1 & testPA$Stg=='ich')], testPA$LAT[which(testPA$pa==1& testPA$Stg=='ich')], col=addTrans('green', 255), pch=19)
 plot(nesbath,deep=-200, shallow=-200, step=1,add=T,lwd=1,col=addTrans('black',150),lty=1)
+
+sbfish=fish2 %>% dplyr::filter(YEAR==2010)
+map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="gray70", mar=c(4,0,0,0))
+map.axes(las=1)
+points(sbfish$LON[which(sbfish[,8]>0)], sbfish$LAT[which(sbfish[,8]>0)], col=addTrans('red', 255), pch=19)
+points(sbfish$LON[which(sbfish[,8]==0)], sbfish$LAT[which(sbfish[,8]==0)], col=addTrans('black', 125), pch=19)
+plot(nesbath,deep=-200, shallow=-200, step=1, add=T,lwd=1,col=addTrans('black',150),lty=1)
+map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="gray70", mar=c(4,0,0,0))
+map.axes(las=1)
+points(sbfish$LON[which(sbfish[,9]>0)], sbfish$LAT[which(sbfish[,9]>0)], col=addTrans('red', 255), pch=19)
+points(sbfish$LON[which(sbfish[,9]==0)], sbfish$LAT[which(sbfish[,9]==0)], col=addTrans('black', 125), pch=19)
+plot(nesbath,deep=-200, shallow=-200, step=1, add=T,lwd=1,col=addTrans('black',150),lty=1)
 
 ##### _______________________________________________________________________________________________________
 # Correlation routine

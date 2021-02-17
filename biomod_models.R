@@ -67,20 +67,23 @@ fname='SilverHake' #72
 
 ###____________________________________________________________________
 ## use for zooplankton only
-# fish=FData.abn %>% dplyr::select(YEAR, SEASON:`197_ich`, ctyp_100m3:rug)
-# fish$MONTH=month(FData.abn$EST_TOWDATE)
-# fish=fish[complete.cases(fish),]
-# fish$pa=ifelse(fish$calfin_100m3>0, 1, 0)
-# # fish2=fish %>% dplyr::select(-`calfin_100m3`) # change to PA and drop column
+fish=FData.abn %>% dplyr::select(YEAR, SEASON:`197_ich`, volume_100m3:chl12)
+fish$MONTH=month(FData.abn$EST_TOWDATE)
+fish=fish[complete.cases(fish),]
+### change this ###
+fish$pa=ifelse(fish$ctyp_100m3>0, 1, 0)
+# fish2=fish %>% dplyr::select(-`calfin_100m3`) # change to PA and drop column
 # fish2=fish %>% dplyr::select(-`pseudo_100m3`) # change to PA and drop column
-# fish2=fish2[which(fish2$SEASON==slctseason),]
-# logd=fish2[,56:65]
-# logd=log10(logd+1)
-# fish2[,56:65]=logd
-# trainPA=fish2[complete.cases(fish2),]
-# trainPA.ss=trainPA[,c(3:9, 56:69)]
-# stage='zoo'
-# fname='pseudo' #'calfin'
+fish2=fish %>% dplyr::select(-`ctyp_100m3`) # change to PA and drop column
+
+fish2=fish2[which(fish2$SEASON==slctseason),]
+logd=fish2[,56:66]
+logd=log10(logd+1)
+fish2[,56:66]=logd
+trainPA=fish2[complete.cases(fish2),]
+trainPA.ss=trainPA[,c(3:9, 57:66, 71:82)]
+stage='zoo'
+fname='ctyp' #'pseudo' #'calfin'
 ###_______________________________________________________________________
 
 
@@ -137,15 +140,18 @@ modname2=paste(stage, '_',fname,'_', slctseason, sep='')
 resp.var=trainPA.ss$pa
 # resp.var[resp.var 0]=1 # presence absence
 latlon=as.matrix((data.frame(trainPA.ss$LON, trainPA.ss$LAT)))
-expl.var=trainPA.ss %>% select(DEPTH, SURFTEMP, BOTTEMP, volume_100m3:chl12)
+# expl.var=trainPA.ss %>% select(DEPTH, SURFTEMP, BOTTEMP, volume_100m3:chl12)
+expl.var=trainPA.ss %>% select(-LAT, -LON)
+eval.expl.var.ss= data.frame(testPA.ss %>% select(-LAT, -LON))
 
 ### subset to only those found important from full suite (run that first)
-# expl.var=expl.var %>% select(DEPTH, SURFTEMP,BOTTEMP,ctyp_100m3, chl10, chl2, grnszmm)
-# xdt=paste(xdt,'selectedvarsonly', sep=')
+expl.var=expl.var %>% select(DEPTH:BOTSALIN, chl1:chl12)
+xdt=paste(xdt,'selectedvarsonly', sep='')
+eval.expl.var.ss= data.frame(testPA.ss %>% select(DEPTH:BOTSALIN, chl1:chl12)) #data.frame(testPA.ss %>% select(DEPTH, SURFTEMP, BOTTEMP, volume_100m3:chl12))
 
 expl.var=data.frame(expl.var)
 eval.resp.var.ss=testPA.ss$pa
-eval.expl.var.ss=data.frame(testPA.ss %>% select(DEPTH, SURFTEMP, BOTTEMP, volume_100m3:chl12))
+eval.expl.var.ss= eval.expl.var.ss  #data.frame(testPA.ss %>% select(DEPTH, SURFTEMP, BOTTEMP, volume_100m3:chl12))
 latlon2=as.matrix((data.frame(testPA.ss$LON, testPA.ss$LAT)))
 myBiomodData=BIOMOD_FormatingData(resp.var,
                                   expl.var,
@@ -197,9 +203,12 @@ write.csv(format(test2, digits=3), file=paste(modname2, '_', xdt,'_variable_impo
 
 ### open saved list of variable importance and select important factors:
 wd='/home/ryan/Biomod models'
+wd='/home/ryan/Git/NEhabitat'
 varlist=list.files(wd, pattern="variable_importance.csv")
+varlist
+i=2
 # test2=read.csv('/home/ryan/Biomod models/Ich_Haddock_SPRINGvariable_importance.csv', stringsAsFactors = F, row.names = 1)
-test2=read.csv(paste(wd,'/',varlist[1],sep=''), stringsAsFactors = F, row.names = 1)
+test2=read.csv(paste(wd,'/',varlist[i],sep=''), stringsAsFactors = F, row.names = 1)
 
 test3=matrix(data=NA, nrow=dim(test2)[1], ncol=dim(test2)[2])
 for (i in 1:dim(test2)[2]){
@@ -208,6 +217,7 @@ for (i in 1:dim(test2)[2]){
 colnames(test3)=colnames(test2)
 # table(test3[1:7,])
 rev(sort(table(test3[1:7,])))
+rev(sort(table(test3[1:5,])))
 
 ### Plot model performance:
 ### by models

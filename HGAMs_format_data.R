@@ -39,7 +39,7 @@ load('/home/ryan/Git/NEhabitat/Final_merged_fish_corBIO_Zoo_Ich.Rda') # Biomass
 load('/home/ryan/Git/NEhabitat/Final_merged_fish_corABN_Zoo_Ich.Rda') # Abundance
 
 ### Select season for GAMs
-# slctseason="FALL"; fishseas="Fall"
+slctseason="FALL"; fishseas="Fall"
 slctseason="SPRING"; fishseas="Spr"
 
 ### Choose fish to run, adjust by searching on and changing " `74_ " to new ID **** ###

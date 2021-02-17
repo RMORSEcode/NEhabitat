@@ -414,7 +414,7 @@ write.csv(format(modeval, digits=2), file=paste(wd2,'model_evaluation_', SEASON,
 #### Save model hindcast output trends (mean, trend, variance)
 ## Load rasters
 p1=paste('/home/ryan/Git/NEhabitat/rasters/',SEASON,'/', fishnm, '/', sep='')
-p2='fish_modGI_spr_Haddock' #'fish_modGI_spr_Haddock' 'fish_modGI_spr_Haddock_select_years_mod' 'fish_modGI_spr_Haddock_abundance'
+p2='fish_modGSe_fall_haddock' #'fish_modGI_spr_Haddock' 'fish_modGI_spr_Haddock_select_years_mod' 'fish_modGI_spr_Haddock_abundance'
 p3=paste('/PA_only_stacked_', SEASON, '_', fishnm, '_', sep='') #'PA_only_stacked_Spr_Haddock_'
 p4=paste('/stacked_', SEASON, '_', fishnm, '_', sep='') #'stacked_Spr_Haddock_'
 ichpa=loadRData(paste(p1,p2,p3,'ich.RData', sep=''))
@@ -595,7 +595,7 @@ plot(x~trainBIO$chl10)
 plot(x~trainBIO$Stg)
 ### for PA model, predict and residual is (obs-pred), using fish2(->fishtest) formatted like trainPA (long on stg, modified data)
 ## using `format_data_for_testing_HGAMS.R`
-modchoice=3 # possible different lengths for PA and BIO (e.g. haddock)
+modchoice=5 # possible different lengths for PA and BIO (e.g. haddock)
 modlistpa[modchoice]
 usemodel=loadRData(paste(path1,modlistpa[modchoice], sep=''))
 # x=resid(usemodel, type = 'deviance')
@@ -679,6 +679,7 @@ t=fishtest.stg[,5:35]
 M=cor(t)
 corrplot(M, method='circle')
 t=fishtest.stg[,c(5,6,9,20,23,25,33)] # spring haddock
+t=fishtest.stg[,c(5,6,7,20,24,25,32)] # fall haddock
 M=cor(t)
 corrplot(M, method='number', type='lower')
 
@@ -755,7 +756,6 @@ plot(hdts$year, log10(hdts$recr)/log10(hdts$ssb), type='l', pch=20, ylab='log10(
 
 plot(hdts$year, log10(hdts$recr-mean(hdts$recr))/log10(hdts$ssb-mean(hdts$ssb)), type='b', pch=20, ylab='log10(R)/ log10(SSB)', xlab='') # recruits per ssb
 
-
 plot(hdts$year, hdts$ssb, type='b', pch=20, ylab='SSB', xlab='')
 plot(hdts$year, log10(hdts$ssb), type='b', pch=20, ylab='log10 SSB', xlab='')
 
@@ -765,6 +765,82 @@ cor(test)
 test=data.frame(ssbr2[10:44,13], juvhab_gom[1,4:38])
 test=test[complete.cases(test),]
 cor(test)
+
+
+### load Kevin's RF model hindcast output for haddock biomass and PA 1976-2019 for comparison (drop 1976)
+fbms=list.files('/home/ryan/1_habitat_analysis_2017/KEVIN_HADDOCK_2020/for ryan/',pattern = glob2rx("*BM.spri.*"))
+fbmf=list.files('/home/ryan/1_habitat_analysis_2017/KEVIN_HADDOCK_2020/for ryan/',pattern = glob2rx("*BM.fall.*"))
+fpas=list.files('/home/ryan/1_habitat_analysis_2017/KEVIN_HADDOCK_2020/for ryan/',pattern = glob2rx("*PA.spri.*"))
+fpaf=list.files('/home/ryan/1_habitat_analysis_2017/KEVIN_HADDOCK_2020/for ryan/',pattern = glob2rx("*PA.fall.*"))
+# RAST_haddoc_1978.00.00.BM.spri.0155.000000000.RData
+tb=strsplit(fbms, split=('RAST_haddoc_'))
+ttb=sapply(tb, function(x) strsplit(x, "[.]")[[2]][1], USE.NAMES=FALSE) # check order
+wd='/home/ryan/1_habitat_analysis_2017/KEVIN_HADDOCK_2020/for ryan/'
+i=2
+kfbms=loadRData(paste(wd, fbms[i], sep=''))
+for (i in 3:length(fbms)){
+  r2=loadRData(paste(wd, fbms[i], sep=''))
+  kfbms=stack(kfbms, r2)
+}
+i=2
+kfpas=loadRData(paste(wd, fpas[i], sep=''))
+for (i in 3:length(fpas)){
+  r2=loadRData(paste(wd, fpas[i], sep=''))
+  kfpas=stack(kfpas, r2)
+}
+i=2
+kfbmf=loadRData(paste(wd, fbmf[i], sep=''))
+for (i in 3:length(fbmf)){
+  r2=loadRData(paste(wd, fbmf[i], sep=''))
+  kfbmf=stack(kfbmf, r2)
+}
+i=2
+kfpaf=loadRData(paste(wd, fpaf[i], sep=''))
+for (i in 3:length(fpaf)){
+  r2=loadRData(paste(wd, fpaf[i], sep=''))
+  kfpaf=stack(kfpaf, r2)
+}
+
+#load spring stacked hindcasts select years only model
+adtpa=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/Haddock/fish_modGI_spr_Haddock_select_years_mod/PA_only_stacked_Spr_Haddock_Adt.RData')
+juvpa=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/Haddock/fish_modGI_spr_Haddock_select_years_mod/PA_only_stacked_Spr_Haddock_Juv.RData')
+#load spring stacked hindcasts
+adtpa=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/Haddock/fish_modGI_spr_Haddock/PA_only_stacked_Spr_Haddock_Adt.RData')
+juvpa=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/Haddock/fish_modGI_spr_Haddock/PA_only_stacked_Spr_Haddock_Juv.RData')
+#load fall stacked hindcasts
+juvpa=loadRData('/home/ryan/Git/NEhabitat/rasters/Fall/Haddock/fish_modGSe_fall_haddock/PA_only_stacked_Sstacked_Fall_Haddock_Juv.RData')
+adtpa=loadRData('/home/ryan/Git/NEhabitat/rasters/Fall/Haddock/fish_modGSe_fall_haddock/PA_only_stacked_Sstacked_Fall_Haddock_Adt.RData')
+# r=stack(adtpa, juvpa) # may need to do it year by year
+r=stack(adtpa[[1]], juvpa[[1]])
+combr=(max(r))
+for (i in 2:dim(adtpa)[[3]]){
+r2=stack(adtpa[[i]], juvpa[[i]])
+a2=(max(r2))
+combr=stack(combr, a2)
+}
+kdiff=kfpas-combr
+
+plotRasterMeanNegBinom=function(rastck){
+  time <- 1:nlayers(rastck) 
+  newrast.m=calc(rastck, fun=mean, na.rm=T)
+  mn=cellStats(newrast.m, min)
+  mx=cellStats(newrast.m, max)
+  high=max(abs(mn), mx)
+  br <- seq(-high, high, by = high/15) 
+  cl=colorRampPalette(brewer.pal(9,"RdBu"))(length(br))
+  rng=range(newrast.m[],na.rm=T)
+  arg=list(at=rng, labels=round(rng,3))
+  plot(newrast.m, col=cl, breaks=br,axis.args=arg,las=1, main=paste('mean')) # Yearly slope
+  maps::map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="black", add=T)
+}
+
+i=1
+plot(adtpa[[i]], zlim=c(0,1), main=paste('HGAM adt ', yrlist[i]))
+plot(juvpa[[i]], zlim=c(0,1), main=paste('HGAM juv', yrlist[i]))
+plot(combr[[i]], zlim=c(0,1), main=paste('HGAM comb max', yrlist[i]))
+plot(kfpas[[i]], zlim=c(0,1), main=paste('RF', yrlist[i]))
+plot(kdiff[[i]], zlim=c(-1,1), col=colorRampPalette(brewer.pal(9,"RdBu"))(30), main=paste('RF-HGAM comb', yrlist[i]))
+plotRasterMeanNegBinom(kdiff)
 
 ### load and stack Bottom temperaure
 btlist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/BT2', sep=''))

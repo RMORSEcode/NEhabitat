@@ -9,6 +9,12 @@ library(ggplot2)
 load('/home/ryan/Documents/Git/NEhabitat/Final_merged_fish_corBIO_Zoo_Ich.Rda') # Biomass
 load('/home/ryan/Documents/Git/NEhabitat/Final_merged_fish_corABN_Zoo_Ich.Rda') # Abundance
 
+loadRData <- function(fileName){
+  #loads an RData file, and returns it
+  load(fileName)
+  get(ls()[ls() != "fileName"])
+}
+
 setwd('/home/ryan/Biomod models')
 # get date to save in file names
 xdt=today()
@@ -193,7 +199,7 @@ write.csv(format(test2, digits=3), file=paste(modname2, '_', xdt,'_variable_impo
 wd='/home/ryan/Biomod models'
 varlist=list.files(wd, pattern="variable_importance.csv")
 # test2=read.csv('/home/ryan/Biomod models/Ich_Haddock_SPRINGvariable_importance.csv', stringsAsFactors = F, row.names = 1)
-test2=read.csv(paste(wd,'/',varlist[3],sep=''), stringsAsFactors = F, row.names = 1)
+test2=read.csv(paste(wd,'/',varlist[1],sep=''), stringsAsFactors = F, row.names = 1)
 
 test3=matrix(data=NA, nrow=dim(test2)[1], ncol=dim(test2)[2])
 for (i in 1:dim(test2)[2]){
@@ -233,8 +239,9 @@ myRespPlot2D=response.plot2(
 # rm(myBiomodModelOut)
 # rm(myBiomodModelEval)
 # load("~/Biomod models/Adt.Haddock.SPRING/Adt.Haddock.SPRING.Adt_Haddock_SPRING20200928.models.out")
-# myBiomodModelOut=Adt.Haddock.SPRING.Adt_Haddock_SPRING20200928.models.out 
-# myBiomodModelEval <- get_evaluations(myBiomodModelOut)
+# myBiomodModelOut=Adt.Haddock.SPRING.Adt_Haddock_SPRING20200928.models.out
+# myBiomodModelOut=loadRData("~/Biomod models/SilverHake/adult.haddock.spr/adult.haddock.Adult HaddockFirstModeling.models.out")
+myBiomodModelEval <- get_evaluations(myBiomodModelOut)
 
 myBiomodProj <- BIOMOD_Projection(
   modeling.output = myBiomodModelOut,

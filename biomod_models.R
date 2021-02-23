@@ -9,6 +9,12 @@ library(ggplot2)
 load('/home/ryan/Documents/Git/NEhabitat/Final_merged_fish_corBIO_Zoo_Ich.Rda') # Biomass
 load('/home/ryan/Documents/Git/NEhabitat/Final_merged_fish_corABN_Zoo_Ich.Rda') # Abundance
 
+loadRData <- function(fileName){
+  #loads an RData file, and returns it
+  load(fileName)
+  get(ls()[ls() != "fileName"])
+}
+
 setwd('/home/ryan/Biomod models')
 # get date to save in file names
 xdt=today()
@@ -55,8 +61,8 @@ slctseason="FALL"
 
 ### Choose fish to run, adjust by searching on and changing " `72_ " to new ID ****
 # fname='Cod' #73
-# fname='Haddock' #74
-fname='SilverHake' #72
+fname='Haddock' #74
+# fname='SilverHake' #72
 # fname='Pollock' #75
 
 ###____________________________________________________________________
@@ -82,11 +88,14 @@ fname='ctyp' #'pseudo' #'calfin'
 
 
 ### change fish to whatever species you are modeling!!!
-fish=FData.abn %>% dplyr::select(YEAR, SEASON, LAT:BOTTEMP, `72_Adt`, `72_Juv`, `72_ich`, volume_100m3:chl12)
+fish=FData.abn %>% dplyr::select(YEAR, SEASON, LAT:BOTTEMP, `74_Adt`, `74_Juv`, `74_ich`, volume_100m3:chl12)
 fish$MONTH=month(FData.abn$EST_TOWDATE)
 fish=fish[complete.cases(fish),]
-fish$`72_ich`=ceiling(fish$`72_ich`) # make integer from numbers per 100 m/3
+fish$`74_ich`=ceiling(fish$`74_ich`) # make integer from numbers per 100 m/3
 fish2=fish[which(fish$SEASON==slctseason),] # subset to season
+
+## subset to models used for HGAMs (after running all initially)
+fish2=fish2 %>% select(YEAR:BOTTEMP, DEPTH, chl10, chl2, grnszmm, ctyp_100m3, `74_Adt`, `74_Juv`, `74_ich`)
 
 
 # # ### now split data into training and testing set (75% train 25% test, randomly chosen)
@@ -97,7 +106,7 @@ fish2=fish[which(fish$SEASON==slctseason),] # subset to season
 # testPA  <- fish2[-sample, ]
 
 ### pivot longer so stage is repeated
-trainPA=fish2 %>% pivot_longer(c(`72_Adt`, `72_Juv`, `72_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Number")
+trainPA=fish2 %>% pivot_longer(c(`74_Adt`, `74_Juv`, `74_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Number")
 trainPA$Stg=factor(trainPA$Stg, ordered=F)
 # table(trainPA$MONTH)
 ## log transform plankton for training set
@@ -106,6 +115,9 @@ logd=log10(logd+1)
 trainPA[,8:19]=logd
 trainPA$pa=ifelse(trainPA$Number>0, 1, 0)
 trainPA=trainPA[complete.cases(trainPA),]
+
+### only used if running select vars for ensemble approach
+trainPA$ctyp_100m3=log10(trainPA$ctyp_100m3+1)
 
 # Now set up traing and testing data; split data sets
 # 1) Train model w/ data through 1999, predict 2000-2018
@@ -122,6 +134,7 @@ trainPA.ss=trainPA %>% filter(., Stg=='Adt'); stage='Adt'
 trainPA.ss=trainPA %>% filter(., Stg=='Juv'); stage='Juv'
 trainPA.ss=trainPA %>% filter(., Stg=='ich'); stage='Ich'
 
+# trainPA.ss=trainPA.ss %>% select(., -SEASON)
 # ### now split data into training and testing set (75% train 25% test, randomly chosen)
 set.seed(101) # Set Seed so that same sample can be reproduced in future also
 sample <- sample.int(n = nrow(trainPA.ss), size = floor(.75*nrow(trainPA.ss)), replace = F)
@@ -135,18 +148,28 @@ resp.var=trainPA.ss$pa
 # resp.var[resp.var 0]=1 # presence absence
 latlon=as.matrix((data.frame(trainPA.ss$LON, trainPA.ss$LAT)))
 # expl.var=trainPA.ss %>% select(DEPTH, SURFTEMP, BOTTEMP, volume_100m3:chl12)
-expl.var=trainPA.ss %>% select(-LAT, -LON)
-eval.expl.var.ss= data.frame(testPA.ss %>% select(-LAT, -LON))
+# expl.var=trainPA.ss %>% select(-LAT, -LON,-YEAR, -SEASON)
+# eval.expl.var.ss= data.frame(testPA.ss %>% select(-LAT, -LON, -YEAR, -SEASON))
 
 ### subset to only those found important from full suite (run that first)
-expl.var=expl.var %>% select(DEPTH:BOTSALIN, chl1:chl12)
+# expl.var=expl.var %>% select(DEPTH:BOTSALIN, chl1:chl12)
+# xdt=paste(xdt,'selectedvarsonly', sep='')
+# eval.expl.var.ss= data.frame(testPA.ss %>% select(DEPTH:BOTSALIN, chl1:chl12)) #data.frame(testPA.ss %>% select(DEPTH, SURFTEMP, BOTTEMP, volume_100m3:chl12))
+
+# for spring haddock models
+expl.var=trainPA.ss %>% select(DEPTH, SURFTEMP, ctyp_100m3, grnszmm, chl10, chl2)
+expl.var$DEPTH=as.numeric(expl.var$DEPTH)
+eval.expl.var.ss=testPA.ss %>% select(DEPTH, SURFTEMP, ctyp_100m3, grnszmm, chl10, chl2)
+eval.expl.var.ss$DEPTH=as.numeric(eval.expl.var.ss$DEPTH)
 xdt=paste(xdt,'selectedvarsonly', sep='')
-eval.expl.var.ss= data.frame(testPA.ss %>% select(DEPTH:BOTSALIN, chl1:chl12)) #data.frame(testPA.ss %>% select(DEPTH, SURFTEMP, BOTTEMP, volume_100m3:chl12))
 
 expl.var=data.frame(expl.var)
 eval.resp.var.ss=testPA.ss$pa
-eval.expl.var.ss= eval.expl.var.ss  #data.frame(testPA.ss %>% select(DEPTH, SURFTEMP, BOTTEMP, volume_100m3:chl12))
+# eval.expl.var.ss= eval.expl.var.ss  #data.frame(testPA.ss %>% select(DEPTH, SURFTEMP, BOTTEMP, volume_100m3:chl12))
 latlon2=as.matrix((data.frame(testPA.ss$LON, testPA.ss$LAT)))
+
+class(expl.var)="data.frame"
+class(eval.expl.var.ss)="data.frame"
 myBiomodData=BIOMOD_FormatingData(resp.var,
                                   expl.var,
                                   resp.xy = latlon,
@@ -239,12 +262,31 @@ myRespPlot2D=response.plot2(
   data_species = get_formal_data(myBiomodModelOut, 'resp.var'),
   plot = TRUE)
 
+myEnsembleOut=BIOMOD_EnsembleModeling( modeling.output=myBiomodModelOut,
+                         chosen.models = 'all',
+                         em.by = 'PA_dataset+repet',
+                         eval.metric = 'all',
+                         eval.metric.quality.threshold = NULL,
+                         models.eval.meth = c('KAPPA','TSS','ROC'),
+                         prob.mean = TRUE,
+                         prob.cv = FALSE,
+                         prob.ci = FALSE,
+                         prob.ci.alpha = 0.05,
+                         prob.median = FALSE,
+                         committee.averaging = FALSE,
+                         prob.mean.weight = FALSE,
+                         prob.mean.weight.decay = 'proportional',
+                         VarImport = 0)
+
+get_evaluations(myEnsembleOut)
+
 ### load saved model example:
 # rm(myBiomodModelOut)
 # rm(myBiomodModelEval)
 # load("~/Biomod models/Adt.Haddock.SPRING/Adt.Haddock.SPRING.Adt_Haddock_SPRING20200928.models.out")
-# myBiomodModelOut=Adt.Haddock.SPRING.Adt_Haddock_SPRING20200928.models.out 
-# myBiomodModelEval <- get_evaluations(myBiomodModelOut)
+# myBiomodModelOut=Adt.Haddock.SPRING.Adt_Haddock_SPRING20200928.models.out
+# myBiomodModelOut=loadRData("~/Biomod models/SilverHake/adult.haddock.spr/adult.haddock.Adult HaddockFirstModeling.models.out")
+myBiomodModelEval <- get_evaluations(myBiomodModelOut)
 
 myBiomodProj <- BIOMOD_Projection(
   modeling.output = myBiomodModelOut,

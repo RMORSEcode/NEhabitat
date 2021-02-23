@@ -56,6 +56,12 @@ fish=fish[complete.cases(fish),]
 fish$`74_ich`=ceiling(fish$`74_ich`) # make integer from numbers per 100 m/3
 fish2=fish[which(fish$SEASON==slctseason),] # subset to season
 
+### REMOVE replicate values from zooplankton for the entire data set
+tunq=fish2 %>% group_by(LAT, LON, MONTH, YEAR, SURFTEMP) %>% filter(n()==1) %>% mutate(num=n())
+tdup=fish2 %>% group_by(LAT, LON, MONTH, YEAR, SURFTEMP) %>% filter(n()>1) %>% mutate(num=n())
+tdupmn=tdup %>% mutate_if(is.numeric, median) %>% mutate_if(is.character, funs(paste(unique(.), collapse = "_"))) %>% slice(1)
+fish2=bind_rows(tunq, tdupmn) #reassign name
+
 # ### now split data into training and testing set (75% train 25% test, randomly chosen)
 set.seed(101) # Set Seed so that same sample can be reproduced in future also
 sample <- sample.int(n = nrow(fish2), size = floor(.75*nrow(fish2)), replace = F)

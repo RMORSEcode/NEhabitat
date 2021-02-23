@@ -128,8 +128,9 @@ fishname='Haddock' #74
 # fishname='SilverHake' #72
 # fishname='Pollock' #75
 
-fish=FData.abn %>% dplyr::select(YEAR, SEASON, LAT:BOTTEMP, `74_Adt`, `74_Juv`, `74_ich`, volume_100m3:chl12)
+fish=FData.abn %>% dplyr::select(YEAR, SEASON, date, LAT:BOTTEMP, `74_Adt`, `74_Juv`, `74_ich`, volume_100m3:chl12)
 fish$MONTH=month(FData.abn$EST_TOWDATE)
+fish$DAY=day(FData.abn$EST_TOWDATE)
 fish=fish[complete.cases(fish),]
 fish$`74_ich`=ceiling(fish$`74_ich`) # make integer from numbers per 100 m/3
 fish2=fish[which(fish$SEASON==slctseason),] # subset to season
@@ -140,9 +141,10 @@ fishtest=fish2
 ### pivot longer so stage is repeated
 fishtest=fishtest %>% pivot_longer(c(`74_Adt`, `74_Juv`, `74_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Number")
 fishtest$Stg=factor(fishtest$Stg, ordered=F)
-logd=fishtest[,8:19]
+logd=fishtest[,9:20] #fishtest[,8:19]
 logd=log10(logd+1)
-fishtest[,8:19]=logd
+# fishtest[,8:19]=logd
+fishtest[,9:20]=logd
 fishtest$pa=ifelse(fishtest$Number > 0, 1, 0)
 # testBIO=testBIO %>%  
 #   filter(., Biomass >0) %>%
@@ -178,7 +180,81 @@ test=tt[,c("LAT", "LON","YEAR", "TOW", "SVSPP", "stg")] # needs SVSPP...
 tt2=tt[!duplicated(test),]
 
 length(unique(c(tt2$LON, tt2$LAT)))
-
+### plot samples
 map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="gray70", mar=c(4,0,0,0))
 map.axes(las=1)
 points(tt2$LON, tt2$LAT)
+# br=c(-Inf, 0,10,50,100,1000)
+br=c(-1,0,1,10,100,1000)
+# labs=c('0', '1', '>1', '>10', '>100')
+labs2=c(-Inf,0,1,2,3) # log10 breaks
+labs3=c(0.5, 1, 1.25, 1.5, 2) # plotting size breaks
+labs3=c(0.25, 0.5, 1, 1.5, 2) # plotting size breaks
+
+t=fish2 %>% filter(YEAR==2004)
+t$bin=cut(t$`74_ich`, breaks=br, labels=labs3, right=T)
+map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="gray70", mar=c(4,0,0,0))
+points(t$LON, t$LAT, pch=1, cex=as.numeric(as.character(t$bin)), col=ifelse(as.numeric(as.character(t$bin))<0.5, 'black', 'red'))
+legend(-70, 38, pch=1, pt.cex=labs3, legend=c('0', '1', '>1', '>10', '>100'), col=ifelse(labs3<0.5, 'black', 'red'))
+# points(t$LON, t$LAT, pch=19, cex=as.numeric(t$bin)/2, col=ifelse(as.numeric(t$bin)/2<1, 'black', 'red'))
+# legend(-70, 38, pch=19, cex=unique(as.numeric(t2))/2, legend=c('0', '< 10', '< 50'))
+
+# checking on frequency years with higher positive tows in the MAB
+t=fish2 %>% filter(`74_ich`>0 & LAT<40.5)
+table(t$YEAR)
+barplot(table(t$YEAR))
+t=fish2 %>% filter(`74_ich`>0 & LAT<40)
+
+m=t[rev(order(t$`74_ich`)),]
+table(m$YEAR[1:20])
+
+### checking on duplicated data points...
+t5=fish2 %>% group_by(LAT, LON, MONTH, YEAR, SURFTEMP) %>% filter(n() ==1) # drops from 9470 to ~3600 samples!
+table(t5$YEAR)
+
+#CHECK on single year duplicate stations
+t=fish2 %>% filter(YEAR==2004)
+t$bin=cut(t$`74_ich`, breaks=br, labels=labs3, right=T)
+
+tdup=t %>% group_by(LAT, LON, MONTH, YEAR, SURFTEMP) %>% filter(n()>1) %>% mutate(num=n())
+tdupmn=tdup %>% group_by(LAT, LON, MONTH, YEAR, SURFTEMP) %>% filter(n()>1) %>% summarise_at(vars(`74_Adt`:chaeto_100m3), mean, na.rm=T) # take mean of all duplicate rows
+tdupmd=t %>% group_by(LAT, LON, MONTH, YEAR, SURFTEMP) %>% filter(n()>1) %>% summarise_all(funs(med)) # take mean of all duplicate rows
+
+### this works to average duplicates, triplicates, (etc) and select only first (after taking mean of values)
+tdupmn=t %>% group_by(LAT, LON, MONTH, YEAR, SURFTEMP) %>% filter(n()>1) %>% mutate(num=n()) %>% mutate_if(is.numeric, mean) %>%
+  mutate_if(is.character, funs(paste(unique(.), collapse = "_"))) %>% slice(1) #distinct()
+
+tunq=t %>% group_by(LAT, LON, MONTH, YEAR, SURFTEMP) %>% filter(n()==1) %>% mutate(num=n())
+tdup=t %>% group_by(LAT, LON, MONTH, YEAR, SURFTEMP) %>% filter(n()>1) %>% mutate(num=n())
+tdupmn=tdup %>% mutate_if(is.numeric, median) %>% mutate_if(is.character, funs(paste(unique(.), collapse = "_"))) %>% slice(1)
+tfin=bind_rows(tunq, tdupmn)
+map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="gray70", mar=c(4,0,0,0))
+points(tfin$LON, tfin$LAT, pch=1, cex=as.numeric(as.character(tfin$bin)), col=ifelse(as.numeric(as.character(tfin$bin))<0.5, 'black', 'red'))
+legend(-70, 38, pch=1, pt.cex=labs3, legend=c('0', '1', '>1', '>10', '>100'),
+       col=ifelse(labs3<0.5, 'black', 'red'))
+
+### now try it on the entire data set
+tunq=fish2 %>% group_by(LAT, LON, MONTH, YEAR, SURFTEMP) %>% filter(n()==1) %>% mutate(num=n())
+tdup=fish2 %>% group_by(LAT, LON, MONTH, YEAR, SURFTEMP) %>% filter(n()>1) %>% mutate(num=n())
+tdupmn=tdup %>% mutate_if(is.numeric, median) %>% mutate_if(is.character, funs(paste(unique(.), collapse = "_"))) %>% slice(1)
+tfin=bind_rows(tunq, tdupmn)
+
+tunq=t %>% group_by(LAT, LON, MONTH, YEAR) %>% filter(n()>1) %>% mutate(num=n()) %>% mutate_if(is.numeric, mean) %>%
+  mutate_if(is.character, funs(paste(unique(.), collapse = "_"))) %>% slice(1)
+
+
+map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="gray70", mar=c(4,0,0,0))
+points(tdup$LON, tdup$LAT, pch=1, cex=as.numeric(as.character(tdup$bin)), col=ifelse(as.numeric(as.character(tdup$bin))<0.5, 'black', 'red'))
+legend(-70, 38, pch=1, pt.cex=labs3, legend=c('0', '1', '>1', '>10', '>100'),
+       col=ifelse(labs3<0.5, 'black', 'red'))
+
+tunq=t %>% group_by(LAT, LON, MONTH, YEAR, SURFTEMP) %>% filter(n()==1) %>% mutate(num=n())
+map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="gray70", mar=c(4,0,0,0))
+points(tunq$LON, tunq$LAT, pch=1, cex=as.numeric(as.character(tunq$bin)), col=ifelse(as.numeric(as.character(tunq$bin))<0.5, 'black', 'red'))
+legend(-70, 38, pch=1, pt.cex=labs3, legend=c('0', '1', '>1', '>10', '>100'),
+       col=ifelse(labs3<0.5, 'black', 'red'))
+
+
+
+
+

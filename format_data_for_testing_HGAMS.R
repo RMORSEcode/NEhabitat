@@ -138,8 +138,8 @@ fish2=fish[which(fish$SEASON==slctseason),] # subset to season
 ### REMOVE replicate zooplankton data - added to formatting for HGAMS script 2/23/21
 tunq=fish2 %>% group_by(LAT, LON, MONTH, YEAR, SURFTEMP) %>% filter(n()==1) %>% mutate(num=n())
 tdup=fish2 %>% group_by(LAT, LON, MONTH, YEAR, SURFTEMP) %>% filter(n()>1) %>% mutate(num=n())
-tdupmn=tdup %>% mutate_if(is.numeric, median) %>% mutate_if(is.character, funs(paste(unique(.), collapse = "_"))) %>% slice(1)
-fish2=bind_rows(tunq, tdupmn)
+tdupmn=tdup %>% mutate_if(is.numeric, mean) %>% mutate_if(is.character, funs(paste(unique(.), collapse = "_"))) %>% slice(1)
+fish2=bind_rows(tunq, tdupmn) %>% ungroup()
 
 
 ## to use in HGAM testing residuals for PA

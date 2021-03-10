@@ -59,8 +59,8 @@ fish2=fish[which(fish$SEASON==slctseason),] # subset to season
 ### REMOVE replicate values from zooplankton for the entire data set
 tunq=fish2 %>% group_by(LAT, LON, MONTH, YEAR, SURFTEMP) %>% filter(n()==1) %>% mutate(num=n())
 tdup=fish2 %>% group_by(LAT, LON, MONTH, YEAR, SURFTEMP) %>% filter(n()>1) %>% mutate(num=n())
-tdupmn=tdup %>% mutate_if(is.numeric, median) %>% mutate_if(is.character, funs(paste(unique(.), collapse = "_"))) %>% slice(1)
-fish2=bind_rows(tunq, tdupmn) #reassign name
+tdupmn=tdup %>% mutate_if(is.numeric, mean) %>% mutate_if(is.character, funs(paste(unique(.), collapse = "_"))) %>% slice(1)
+fish2=bind_rows(tunq, tdupmn) %>% ungroup() #reassign name
 
 # ### now split data into training and testing set (75% train 25% test, randomly chosen)
 set.seed(101) # Set Seed so that same sample can be reproduced in future also
@@ -118,6 +118,11 @@ fish2.b=fish.b[which(fish.b$SEASON==slctseason),] # subset to season
 # https://www.int-res.com/articles/meps/32/m032p229.pdf -> 1 mg wet weight avg
 fish.b$`74_ich`=fish.b$`74_ich`*1e-6
 
+### REMOVE replicate values from zooplankton for the entire data set
+tunq=fish2.b %>% group_by(LAT, LON, MONTH, YEAR, SURFTEMP) %>% filter(n()==1) %>% mutate(num=n())
+tdup=fish2.b %>% group_by(LAT, LON, MONTH, YEAR, SURFTEMP) %>% filter(n()>1) %>% mutate(num=n())
+tdupmn=tdup %>% mutate_if(is.numeric, mean) %>% mutate_if(is.character, funs(paste(unique(.), collapse = "_"))) %>% slice(1)
+fish2.b=bind_rows(tunq, tdupmn) %>% ungroup() #reassign name
 
 
 ### Split data into training and testing set (75% train 25% test, randomly chosen)

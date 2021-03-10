@@ -676,6 +676,9 @@ dev.off()
 ### check on correlation between covariates
 library(corrplot)
 t=fishtest.stg[,5:35]
+t=fish2[,c(5:7,12:38)]
+t=fish2[,c(5:7,12:20,22:23,25,26,28,30,36)] #drop mud, keep chl 2,4,9 use for spring biomod all vars run
+
 M=cor(t)
 corrplot(M, method='circle')
 t=fishtest.stg[,c(5,6,9,20,23,25,33)] # spring haddock

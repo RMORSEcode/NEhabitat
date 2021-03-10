@@ -59,43 +59,53 @@ slctseason="SPRING" #"FALL"
 slctseason="FALL"
 
 
-### Choose fish to run, adjust by searching on and changing " `72_ " to new ID ****
-# fname='Cod' #73
-fname='Haddock' #74
+### Choose fish to run, adjust by searching on and changing " `73_ " to new ID ****
+fname='Cod' #73
+# fname='Haddock' #74
 # fname='SilverHake' #72
 # fname='Pollock' #75
 
 ###____________________________________________________________________
 ## use for zooplankton only
-fish=FData.abn %>% dplyr::select(YEAR, SEASON:`197_ich`, volume_100m3:chl12)
-fish$MONTH=month(FData.abn$EST_TOWDATE)
-fish=fish[complete.cases(fish),]
-### change this ###
-fish$pa=ifelse(fish$ctyp_100m3>0, 1, 0)
-# fish2=fish %>% dplyr::select(-`calfin_100m3`) # change to PA and drop column
-# fish2=fish %>% dplyr::select(-`pseudo_100m3`) # change to PA and drop column
-fish2=fish %>% dplyr::select(-`ctyp_100m3`) # change to PA and drop column
-
-fish2=fish2[which(fish2$SEASON==slctseason),]
-logd=fish2[,56:66]
-logd=log10(logd+1)
-fish2[,56:66]=logd
-trainPA=fish2[complete.cases(fish2),]
-trainPA.ss=trainPA[,c(3:9, 57:66, 71:82)]
-stage='zoo'
-fname='ctyp' #'pseudo' #'calfin'
+# fish=FData.abn %>% dplyr::select(YEAR, SEASON:`197_ich`, volume_100m3:chl12)
+# fish$MONTH=month(FData.abn$EST_TOWDATE)
+# fish=fish[complete.cases(fish),]
+# ### change this ###
+# fish$pa=ifelse(fish$ctyp_100m3>0, 1, 0)
+# # fish2=fish %>% dplyr::select(-`calfin_100m3`) # change to PA and drop column
+# # fish2=fish %>% dplyr::select(-`pseudo_100m3`) # change to PA and drop column
+# fish2=fish %>% dplyr::select(-`ctyp_100m3`) # change to PA and drop column
+# 
+# fish2=fish2[which(fish2$SEASON==slctseason),]
+# logd=fish2[,56:66]
+# logd=log10(logd+1)
+# fish2[,56:66]=logd
+# trainPA=fish2[complete.cases(fish2),]
+# trainPA.ss=trainPA[,c(3:9, 57:66, 71:82)]
+# stage='zoo'
+# fname='ctyp' #'pseudo' #'calfin'
 ###_______________________________________________________________________
 
 
 ### change fish to whatever species you are modeling!!!
-fish=FData.abn %>% dplyr::select(YEAR, SEASON, LAT:BOTTEMP, `74_Adt`, `74_Juv`, `74_ich`, volume_100m3:chl12)
+fish=FData.abn %>% dplyr::select(YEAR, SEASON, LAT:BOTTEMP, `73_Adt`, `73_Juv`, `73_ich`, volume_100m3:chl12)
 fish$MONTH=month(FData.abn$EST_TOWDATE)
 fish=fish[complete.cases(fish),]
-fish$`74_ich`=ceiling(fish$`74_ich`) # make integer from numbers per 100 m/3
+fish$`73_ich`=ceiling(fish$`73_ich`) # make integer from numbers per 100 m/3
 fish2=fish[which(fish$SEASON==slctseason),] # subset to season
 
+### REMOVE replicate values from zooplankton for the entire data set
+tunq=fish2 %>% group_by(LAT, LON, MONTH, YEAR, SURFTEMP) %>% filter(n()==1) %>% mutate(num=n())
+tdup=fish2 %>% group_by(LAT, LON, MONTH, YEAR, SURFTEMP) %>% filter(n()>1) %>% mutate(num=n())
+tdupmn=tdup %>% mutate_if(is.numeric, mean) %>% mutate_if(is.character, funs(paste(unique(.), collapse = "_"))) %>% slice(1)
+fish2=bind_rows(tunq, tdupmn) %>% ungroup()#reassign name
+
 ## subset to models used for HGAMs (after running all initially)
-fish2=fish2 %>% select(YEAR:BOTTEMP, DEPTH, chl10, chl2, grnszmm, ctyp_100m3, `74_Adt`, `74_Juv`, `74_ich`)
+# fish2=fish2 %>% select(YEAR:BOTTEMP, DEPTH, chl10, chl2, grnszmm, ctyp_100m3, `73_Adt`, `73_Juv`, `73_ich`)
+# for spring haddock limited models 20210225
+# fish2=fish2 %>% select(YEAR:`73_ich`, ctyp_100m3,grnszmm,chl2, chl4,chl9, num)
+
+
 
 
 # # ### now split data into training and testing set (75% train 25% test, randomly chosen)
@@ -106,7 +116,7 @@ fish2=fish2 %>% select(YEAR:BOTTEMP, DEPTH, chl10, chl2, grnszmm, ctyp_100m3, `7
 # testPA  <- fish2[-sample, ]
 
 ### pivot longer so stage is repeated
-trainPA=fish2 %>% pivot_longer(c(`74_Adt`, `74_Juv`, `74_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Number")
+trainPA=fish2 %>% pivot_longer(c(`73_Adt`, `73_Juv`, `73_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Number")
 trainPA$Stg=factor(trainPA$Stg, ordered=F)
 # table(trainPA$MONTH)
 ## log transform plankton for training set
@@ -117,7 +127,7 @@ trainPA$pa=ifelse(trainPA$Number>0, 1, 0)
 trainPA=trainPA[complete.cases(trainPA),]
 
 ### only used if running select vars for ensemble approach
-trainPA$ctyp_100m3=log10(trainPA$ctyp_100m3+1)
+# trainPA$ctyp_100m3=log10(trainPA$ctyp_100m3+1)
 
 # Now set up traing and testing data; split data sets
 # 1) Train model w/ data through 1999, predict 2000-2018
@@ -133,6 +143,7 @@ trainPA$ctyp_100m3=log10(trainPA$ctyp_100m3+1)
 trainPA.ss=trainPA %>% filter(., Stg=='Adt'); stage='Adt'
 trainPA.ss=trainPA %>% filter(., Stg=='Juv'); stage='Juv'
 trainPA.ss=trainPA %>% filter(., Stg=='ich'); stage='Ich'
+# trainPA.ss$DEPTH=as.numeric(trainPA.ss$DEPTH)
 
 # trainPA.ss=trainPA.ss %>% select(., -SEASON)
 # ### now split data into training and testing set (75% train 25% test, randomly chosen)
@@ -140,10 +151,11 @@ set.seed(101) # Set Seed so that same sample can be reproduced in future also
 sample <- sample.int(n = nrow(trainPA.ss), size = floor(.75*nrow(trainPA.ss)), replace = F)
 testPA.ss  <- trainPA.ss[-sample, ]
 trainPA.ss <- trainPA.ss[sample, ]
-modname=paste(slctseason, ' ', stage, ' ',fname)
-modname2=paste(stage, '_',fname,'_', slctseason, sep='')
+explvardata='full'# 'limited' #'full' ## whether all or limited data used for explanatory vars
+modname=paste(slctseason, ' ', stage, ' ',explvardata,' ', fname)
+modname2=paste(stage, '_',fname,'_', explvardata,'_', slctseason, sep='')
 
-### biomod2 ####
+### biomod2 #### 
 resp.var=trainPA.ss$pa
 # resp.var[resp.var 0]=1 # presence absence
 latlon=as.matrix((data.frame(trainPA.ss$LON, trainPA.ss$LAT)))
@@ -156,14 +168,20 @@ latlon=as.matrix((data.frame(trainPA.ss$LON, trainPA.ss$LAT)))
 # xdt=paste(xdt,'selectedvarsonly', sep='')
 # eval.expl.var.ss= data.frame(testPA.ss %>% select(DEPTH:BOTSALIN, chl1:chl12)) #data.frame(testPA.ss %>% select(DEPTH, SURFTEMP, BOTTEMP, volume_100m3:chl12))
 
-# for spring haddock models
-expl.var=trainPA.ss %>% select(DEPTH, SURFTEMP, ctyp_100m3, grnszmm, chl10, chl2)
-expl.var$DEPTH=as.numeric(expl.var$DEPTH)
-eval.expl.var.ss=testPA.ss %>% select(DEPTH, SURFTEMP, ctyp_100m3, grnszmm, chl10, chl2)
-eval.expl.var.ss$DEPTH=as.numeric(eval.expl.var.ss$DEPTH)
-xdt=paste(xdt,'selectedvarsonly', sep='')
+### limited models -- for spring haddock models
+# expl.var=trainPA.ss %>% select(DEPTH, SURFTEMP, ctyp_100m3, grnszmm, chl10, chl2)
+# expl.var=trainPA.ss %>% select(DEPTH:chl9) # 20210225 spring haddock adt limited
+# expl.var$DEPTH=as.numeric(expl.var$DEPTH)
+# eval.expl.var.ss=testPA.ss %>% select(DEPTH, SURFTEMP, ctyp_100m3, grnszmm, chl10, chl2)
+# eval.expl.var.ss=testPA.ss %>% select(DEPTH:chl9)
+# eval.expl.var.ss$DEPTH=as.numeric(eval.expl.var.ss$DEPTH)
+# xdt=paste(xdt,'selectedvarsonly', sep='')
 
-expl.var=data.frame(expl.var)
+# USE FOR INITIAL RUN full suite of vars for initial models
+expl.var=trainPA.ss %>% select(DEPTH:grnszmm,sand_pct,rug,chl2,chl10,chl4) #drop co-linear vars
+eval.expl.var.ss=testPA.ss %>% select(DEPTH:grnszmm,sand_pct,rug,chl2,chl10,chl4)
+
+# expl.var=data.frame(expl.var)
 eval.resp.var.ss=testPA.ss$pa
 # eval.expl.var.ss= eval.expl.var.ss  #data.frame(testPA.ss %>% select(DEPTH, SURFTEMP, BOTTEMP, volume_100m3:chl12))
 latlon2=as.matrix((data.frame(testPA.ss$LON, testPA.ss$LAT)))
@@ -187,7 +205,7 @@ myBiomodData=BIOMOD_FormatingData(resp.var,
                                   na.rm = TRUE)
 
 myBiomodData
-plot(myBiomodData)
+# plot(myBiomodData)
 myBiomodOption <- BIOMOD_ModelingOptions()
 
 # 3-fold cross validation with 80/20 random split
@@ -216,10 +234,18 @@ get_variables_importance(myBiomodModelOut)
 test=get_variables_importance(myBiomodModelOut)
 test2=apply(test, c(1,2), 'mean')
 write.csv(format(test2, digits=3), file=paste(modname2, '_', xdt,'_variable_importance.csv', sep=''))
+test3=matrix(data=NA, nrow=dim(test2)[1], ncol=dim(test2)[2])
+for (i in 1:dim(test2)[2]){
+  test3[,i]=rownames(test2)[rev(order(test2[,i]))]
+}
+colnames(test3)=colnames(test2)
+# table(test3[1:7,])
+rev(sort(table(test3[1:7,])))
+rev(sort(table(test3[1:5,])))
 
 
 ### open saved list of variable importance and select important factors:
-wd='/home/ryan/Biomod models'
+wd='/home/ryan/Biomod models' 
 wd='/home/ryan/Git/NEhabitat'
 varlist=list.files(wd, pattern="variable_importance.csv")
 varlist

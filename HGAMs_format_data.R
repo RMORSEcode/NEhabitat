@@ -104,7 +104,17 @@ logd=log10(logd+1)
 testPA[,8:19]=logd
 testPA$pa=ifelse(testPA$Number > 0, 1, 0)
 
-### Do likewise for biomass data, to be combined with PA later for final model
+#### IF USING ABUNDANCE RUN THIS AND STOP -
+# (logbio is used in the HGAM code as the dependent variable name)
+trainBIO=trainPA %>% filter(Number >0)
+trainBIO$Abundance=trainBIO$Number
+trainBIO$logbio=log10(trainBIO$Number)
+testBIO=testPA %>% filter(Number >0)
+testBIO$Abundance=testBIO$Number
+testBIO$logbio=log10(testBIO$Number)
+
+### IF USING BIOMASS AS SECOND PART SKIP ABOVE SECTION AND RUN BELOW:
+# Do likewise for biomass data, to be combined with PA later for final model
 fish.b=FData.bio %>% dplyr::select(YEAR, SEASON, LAT:BOTTEMP, `74_Adt`, `74_Juv`, `74_ich`, volume_100m3:chl12)
 fish.b$MONTH=month(FData.bio$EST_TOWDATE)
 fish.b=fish.b[complete.cases(fish.b),]
@@ -152,7 +162,7 @@ dim(testBIO)[1]/dim(fish2.b)[1]
 
 ### pivot longer so stage is repeated
 trainBIO=trainBIO %>% pivot_longer(c(`74_Adt`, `74_Juv`, `74_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Biomass")
-trainBIO=trainBIO %>% pivot_longer(c(`74_Adt`, `74_Juv`, `74_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Abundance")
+# trainBIO=trainBIO %>% pivot_longer(c(`74_Adt`, `74_Juv`, `74_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Abundance")
 
 trainBIO$Stg=factor(trainBIO$Stg, ordered=F)
 logd=trainBIO[,8:19]
@@ -163,12 +173,12 @@ trainBIO=trainBIO %>%
   filter(., Biomass >0) %>%
   mutate(., "logbio"=log10(Biomass+1))
 ## IF USING ABUNDANCE
-trainBIO=trainBIO %>%  
-  filter(., Abundance >0) %>%
-  mutate(., "logbio"=log10(Abundance))
+# trainBIO=trainBIO %>%  
+  # filter(., Abundance >0) %>%
+  # mutate(., "logbio"=log10(Abundance))
 ## now do likewise for testing data
 testBIO=testBIO %>% pivot_longer(c(`74_Adt`, `74_Juv`, `74_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Biomass")
-testBIO=testBIO %>% pivot_longer(c(`74_Adt`, `74_Juv`, `74_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Abundance")
+# testBIO=testBIO %>% pivot_longer(c(`74_Adt`, `74_Juv`, `74_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Abundance")
 
 testBIO$Stg=factor(testBIO$Stg, ordered=F)
 logd=testBIO[,8:19]
@@ -179,9 +189,9 @@ testBIO=testBIO %>%
   filter(., Biomass >0) %>%
   mutate(., "logbio"=log10(Biomass+1))
 ### IF USING ABUNDANCE ONLY
-testBIO=testBIO %>%  
-  filter(., Abundance >0) %>%
-  mutate(., "logbio"=log10(Abundance))
+# testBIO=testBIO %>%  
+  # filter(., Abundance >0) %>%
+  # mutate(., "logbio"=log10(Abundance))
 ### verify data
 test=trainPA[,c('YEAR', 'Stg', 'pa')]
 traindatsum=test %>%  group_by(YEAR, Stg) %>%  add_count() %>% mutate('sum'=sum(pa)) %>% 

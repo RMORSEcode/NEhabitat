@@ -18,6 +18,42 @@ colnames(test3)=colnames(test2)
 rev(sort(table(test3[1:7,])))
 rev(sort(table(test3[1:5,])))
 
+
+impvarlist2=impvarlist[grepl("*Haddock_full_SPRING*", impvarlist)] # select all stages from a season
+xxi=3
+test2=read.csv(paste(wd,'/',impvarlist[xxi],sep=''), stringsAsFactors = F, row.names = 1)
+test3=matrix(data=NA, nrow=dim(test2)[1], ncol=dim(test2)[2])
+for (i in 1:dim(test2)[2]){
+  test3[,i]=rownames(test2)[rev(order(test2[,i]))]
+}
+colnames(test3)=colnames(test2)
+# table(test3[1:7,])
+im1=rev(sort(table(test3[1:7,])))
+im2=rev(sort(table(test3[1:7,])))
+im3=rev(sort(table(test3[1:7,])))
+
+test1=data.frame(im1) %>% filter(Freq>=3)
+test2=data.frame(im2) %>% filter(Freq>=3)
+test3=data.frame(im3) %>% filter(Freq>=3)
+
+# Reduce(intersect, list(test1[,1], test3[,1], test2[,1])) # too limiting...
+## this isnt working right, need to sort first I think
+# t4=test1 %>% full_join(test2, keep=T, by = c("Var1", "Freq"))
+# t5=t4 %>% full_join(test3, keep=T, by = c("Var1.x"="Var1", "Freq.x"="Freq"))
+
+x1=sort(as.character(test1$Var1))
+x2=sort(as.character(test2$Var1))
+x3=sort(as.character(test3$Var1))
+xf=paste(c(x1,x2,x3))
+unique(xf)
+
+### variables to use for Spring Haddock updated 20210312
+# "BOTTEMP"    "chl2"       "chl4"       "DEPTH"      "grnszmm"    "sand_pct"   "SURFTEMP"   "chl10"      "ctyp_100m3"
+# (dropping chl6 chl8, chl9) due to colinearity
+### currently in models: SURFTEMP DEPTH Stg ctyp_100m3 grnszmm chl2 chl10
+### to add: "BOTTEMP" "chl4" "sand_pct"
+
+
 # 1) Model G: single global smoother for all stages
 # y ~ s(x, bs='ts') + s(fac, bs='re')
 # Use binomial distribution for presence absence model, gaussian for biomass model, combine later with predict in 'HGAMpredict2raster.R'

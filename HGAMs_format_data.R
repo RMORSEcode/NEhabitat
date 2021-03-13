@@ -1,6 +1,6 @@
 library(mgcv)
 library(gratia)
-library(car)
+# library(car)
 library(MASS)
 library(stringr)
 library(tidyr)
@@ -37,6 +37,7 @@ loadRData <- function(fileName){
 ### Load the data and rename ichthyoplankton
 load('/home/ryan/Git/NEhabitat/Final_merged_fish_corBIO_Zoo_Ich.Rda') # Biomass
 load('/home/ryan/Git/NEhabitat/Final_merged_fish_corABN_Zoo_Ich.Rda') # Abundance
+load('/home/ryan/Documents/Git/NEhabitat/Final_merged_fish_corABN_Zoo_Ich.Rda') # Abundance
 
 ### Select season for GAMs
 slctseason="FALL"; fishseas="Fall"

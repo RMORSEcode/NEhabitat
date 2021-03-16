@@ -14,6 +14,11 @@ library(RColorBrewer)
 library(colorspace)
 library(marmap)
 
+
+library(lubridate)
+xdt=today()
+xdt=gsub('-','',xdt)
+
 ### set up year list to match files with
 yrlist=seq(from=1977, to=2019, by=1)
 
@@ -41,7 +46,9 @@ SEASON='Spr' # Fall
 SEASON='Fall'
 
 ### NAME OF FISH
-fishnm='Haddock' #'Cod' # 'Haddock'  #'SilverHake'
+# fishnm='Haddock' #74
+# fishnm='SilverHake' #72
+fishnm='Cod' #73
 
 ## get path and list of models
 path1=paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/', fishnm,'/', sep='') # Spr/Haddock'
@@ -59,6 +66,11 @@ trainPA$SEASON[1] #verify season
 modlistpa=list.files(path1, pattern = glob2rx("*_pa_*Rdata")) # presence-absence models
 modlistpb=list.files(path1, pattern = glob2rx("*_pb_*Rdata")) # positive biomass models
 
+modlistpa2=modlistpa[grepl("*2021*", modlistpa)]
+modlistpb2=modlistpb[grepl("*2021*", modlistpb)]
+
+modlistpa=modlistpa2
+modlistpb=modlistpb2
 
 ## draw GAM smooths, save to pdf
 # pdf(paste(path1, 'PAmodels_smooths.pdf', sep=''), height=8, width=12)
@@ -72,7 +84,7 @@ for (i in (1:length(modlistpa))){
 # dev.off()
 
 ### Plot ROC curves
-pdf(paste(path1, 'PAmodels_AUC.pdf', sep=''), height=4, width=6)
+pdf(paste(path1, 'PAmodels_AUC_',xdt,'.pdf', sep=''), height=4, width=6)
 for (i in (1:length(modlistpa))){
   modchoice=i
   modlistpa[modchoice]
@@ -84,16 +96,16 @@ for (i in (1:length(modlistpa))){
   plotROC(preds.obs2$observed,preds.obs2$predicted, colorize = TRUE, main=paste('All Stages ', modlistpa[i], sep=''))
   sset=which(testPA$Stg=='Adt')
   preds.obs2=preds.obs[sset,]
-  preds.obs2[complete.cases(preds.obs2$predicted),]
-  plotROC(preds.obs2$observed[sset],preds.obs2$predicted[sset], colorize = TRUE, main=paste('Adt only ',modlistpa[i], sep=''))
+  preds.obs2=preds.obs2[complete.cases(preds.obs2$predicted),]
+  plotROC(preds.obs2$observed,preds.obs2$predicted, colorize = TRUE, main=paste('Adt only ',modlistpa[i], sep=''))
   sset=which(testPA$Stg=='Juv')
   preds.obs2=preds.obs[sset,]
-  preds.obs2[complete.cases(preds.obs2$predicted),]
-  plotROC(preds.obs2$observed[sset],preds.obs2$predicted[sset], colorize = TRUE, main=paste('Juv only ',modlistpa[i], sep=''))
+  preds.obs2=preds.obs2[complete.cases(preds.obs2$predicted),]
+  plotROC(preds.obs2$observed,preds.obs2$predicted, colorize = TRUE, main=paste('Juv only ',modlistpa[i], sep=''))
   sset=which(testPA$Stg=='ich')
   preds.obs2=preds.obs[sset,]
-  preds.obs2[complete.cases(preds.obs2$predicted),]
-  plotROC(preds.obs2$observed[sset],preds.obs2$predicted[sset], colorize = TRUE, main=paste('Ich only ',modlistpa[i], sep=''))
+  preds.obs2=preds.obs2[complete.cases(preds.obs2$predicted),]
+  plotROC(preds.obs2$observed,preds.obs2$predicted, colorize = TRUE, main=paste('Ich only ',modlistpa[i], sep=''))
 }
 dev.off()
 
@@ -192,13 +204,13 @@ tz=strsplit(zlist, split=('RAST_ctypZZ_')) # for new 7-year series
 ttz=sapply(tz, function(x) strsplit(x, "[.]")[[2]][1], USE.NAMES=FALSE)
 ttz2=as.numeric(ttz)
 #Surface salinity
-tss=strsplit(sslist, split=('RAST_NESREG_'))
-ttss=sapply(tss, function(x) strsplit(x, "[.]")[[2]][1], USE.NAMES=FALSE)
-ttss2=as.numeric(ttss)
+# tss=strsplit(sslist, split=('RAST_NESREG_'))
+# ttss=sapply(tss, function(x) strsplit(x, "[.]")[[2]][1], USE.NAMES=FALSE)
+# ttss2=as.numeric(ttss)
 #Bottom salinity
-tbs=strsplit(bslist, split=('RAST_NESREG_'))
-ttbs=sapply(tbs, function(x) strsplit(x, "[.]")[[2]][1], USE.NAMES=FALSE)
-ttbs2=as.numeric(ttbs)
+# tbs=strsplit(bslist, split=('RAST_NESREG_'))
+# ttbs=sapply(tbs, function(x) strsplit(x, "[.]")[[2]][1], USE.NAMES=FALSE)
+# ttbs2=as.numeric(ttbs)
 
 ### load bottom temp file to use as template for non conforming rasters (remove before load dynamic files)
 bt=loadRData('/home/ryan/Git/NEhabitat/rasters/test/RAST_NESREG_1977.04.03.BT.TEMP.YEAR.000066596.RData') #BT
@@ -219,20 +231,25 @@ phi2mm=loadRData('/home/ryan/Git/NEhabitat/rasters/test/grainsizeMM.RData') #phi
 phi2=resample(phi2mm, bt)
 phi2=crop(phi2, bt)
 phi2=mask(phi2, bt)
+## sand_pct raster
+sandpct=loadRData('/home/ryan/1_habitat_analysis_2017/static_vars/rast_sand_fraction.rdata') #sand_pct
+sand2=resample(sandpct, bt)
+sand2=crop(sand2, bt)
+sand2=mask(sand2, bt)
 ## rugosity raster
 # load('/home/ryan/Git/NEhabitat/rasters/test/scaledrugosity.RData') #rugscl
-rug=loadRData('/home/ryan/Git/NEhabitat/rast_rugosity.rdata')
-mmin=cellStats(rug, 'min')
-mmax=cellStats(rug, 'max')
-rugscl=calc(rug, fun=function(x){(x-mmin)/(mmax-mmin)}) # rescale from -4:2 -> 0:1
-rug2=resample(rugscl, bt)
-ex=extent(bt)
-rug2=crop(rug2, ex)
-rug2=mask(rug2, bt)
+# rug=loadRData('/home/ryan/Git/NEhabitat/rast_rugosity.rdata')
+# mmin=cellStats(rug, 'min')
+# mmax=cellStats(rug, 'max')
+# rugscl=calc(rug, fun=function(x){(x-mmin)/(mmax-mmin)}) # rescale from -4:2 -> 0:1
+# rug2=resample(rugscl, bt)
+# ex=extent(bt)
+# rug2=crop(rug2, ex)
+# rug2=mask(rug2, bt)
 
 # load Chlorophyll climatology rasters, resample, rename
 chllist=list.files('/home/ryan/1_habitat_analysis_2017/chl/NESREG/clim/', pattern='.RData')
-for (i in (1:12)){
+for (i in (c(2,4,10))){
 load(paste('/home/ryan/1_habitat_analysis_2017/chl/NESREG/clim/', chllist[i], sep=''))
 masked.raster=crop(masked.raster, bt)
 masked.raster=resample(masked.raster, bt)
@@ -244,11 +261,11 @@ rm(masked.raster)
 ## Remove bottom temp raster
 rm(bt)
 fl=levels=c("Adt", "Juv", "ich")
-fl=levels=c("Adt", "Juv")
+# fl=levels=c("Adt", "Juv")
 # fishnm='SilverHake'
 wd2=paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/', fishnm, '/', sep='')
 modchoice=4
-modchoicepb=5
+modchoicepb=4
 usemodel=loadRData(paste(path1,modlistpa[modchoice], sep=''))
 usemodelbio=loadRData(paste(path1,modlistpb[modchoicepb], sep=''))
 ### NOW loop over files, load yearly dynamic raster files and predict habitat from HGAM models
@@ -268,20 +285,21 @@ for (jj in 1:length(fl)){
     ef$Stg=factor(fl[jj])#, levels=c('Adt', 'Juv', 'ich'))
     # ef$pseudo_100m3=values(pse)
     ef$ctyp_100m3=values(cty)
-    ef$chl1=values(chl.1)
+    # ef$chl1=values(chl.1)
     ef$chl2=values(chl.2)
-    ef$chl3=values(chl.3)
+    # ef$chl3=values(chl.3)
     ef$chl4=values(chl.4)
-    ef$chl5=values(chl.5)
-    ef$chl6=values(chl.6)
-    ef$chl7=values(chl.7)
-    ef$chl8=values(chl.8)
-    ef$chl9=values(chl.9)
+    # ef$chl5=values(chl.5)
+    # ef$chl6=values(chl.6)
+    # ef$chl7=values(chl.7)
+    # ef$chl8=values(chl.8)
+    # ef$chl9=values(chl.9)
     ef$chl10=values(chl.10)
-    ef$chl11=values(chl.11)
-    ef$chl12=values(chl.12)
+    # ef$chl11=values(chl.11)
+    # ef$chl12=values(chl.12)
     ef$grnszmm=values(phi2)
-    ef$rug=values(rug2)
+    ef$sand_pct=values(sand2)
+    # ef$rug=values(rug2)
     ef2=ef
     # ef2=ef[complete.cases(ef),]
     # tt=ef2$Stg
@@ -323,67 +341,67 @@ for (jj in 1:length(fl)){
 }
 
 
-## DO for zooplankton species to model abundance
-usemodelpa=zoo_modG_pa #loadRData(paste(path1,modlist[modchoice], sep='')) #fish_modS #_spr_had
-usemodelbio=zoo_modG_pb
-zooyrlist=seq(from=1992, to=2019, by=1)
-fishnm='zoop'
-zoosp='pseudocal' #'calfin' #'pseudocal'
-rm(bt)
-wd2=paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/', fishnm, '/', zoosp, '/', sep='')
-### NOW loop over files, load yearly dynamic raster files and predict habitat from HGAM models
-for (i in 1:length(zooyrlist)){
-  bi=which(zooyrlist[i]==ttb2) # index of year
-  bt=loadRData(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/BT2/', btlist[[bi]], sep=''))
-  bi=which(zooyrlist[i]==tts2) # index of year
-  st=loadRData(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/ST2/', stlist[[bi]], sep=''))
-  bi=which(zooyrlist[i]==ttss2) # index of year
-  ss=loadRData(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/SS2/', sslist[[bi]], sep=''))
-  bi=which(zooyrlist[i]==ttbs2) # index of year
-  bs=loadRData(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/BS2/', bslist[[bi]], sep=''))
-  ef <- data.frame(coordinates(bt), val=values(bt))
-  colnames(ef)=c("LON", "LAT", "BOTTEMP")
-  ef$SURFTEMP=values(st)
-  ef$DEPTH=values(gd4)
-  ef$SURFSALIN=values(ss)
-  ef$BOTSALIN=values(bs)
-  ef$grnszmm=values(phi2)
-  ef$rug=values(rug2)
-  ef2=ef[complete.cases(ef),]
-  # tt=ef2$Stg
-  # tt2=fl[[1]][[1]][2][[1]][tt] # subsets to stage 
-  # ef$Stg=factor(ef$Stg, levels=c("Adt", "Juv", "ich"))
-  test1 <- predict.gam(usemodelpa, ef2, type='response')
-  test2 <- predict.gam(usemodelbio, ef2, type='response')
-  ef2$predpa=test1
-  ef2$predbio=test2
-  ef2$combinedout=test1*test2
-  wd3=paste(zooyrlist[i], '_', SEASON, '_', zoosp, '_', '.RData', sep="")
-  save(ef2, file=paste(wd2, wd3, sep=""))
-  spg1=ef2[,c('LON', 'LAT', 'combinedout')]
-  wd4=paste(zooyrlist[i], '_', 'RASTER', '_', SEASON, '_', zoosp, '_', '.RData', sep="")
-  # tes1=rasterFromXYZ(spg1[complete.cases(spg1$Stg),])
-  # save(tes1, file=paste(wd2,wd4, sep=''))
-  coordinates(spg1)= ~ LON + LAT
-  gridded(spg1)=T
-  rastDF=raster(spg1)
-  if (i == 1){
-    keepstack=rastDF
-  }
-  # plot(rastDF)
-  # save(rastDF, file=paste(wd2,wd4, sep=''))
-  if (i >1){
-    keepstack=stack(keepstack, rastDF)
-  }
-  save(keepstack, file=paste(wd2,'stacked_', SEASON, '_', zoosp, '_', '.RData', sep=""))
-}
+# ## DO for zooplankton species to model abundance
+# usemodelpa=zoo_modG_pa #loadRData(paste(path1,modlist[modchoice], sep='')) #fish_modS #_spr_had
+# usemodelbio=zoo_modG_pb
+# zooyrlist=seq(from=1992, to=2019, by=1)
+# fishnm='zoop'
+# zoosp='pseudocal' #'calfin' #'pseudocal'
+# rm(bt)
+# wd2=paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/', fishnm, '/', zoosp, '/', sep='')
+# ### NOW loop over files, load yearly dynamic raster files and predict habitat from HGAM models
+# for (i in 1:length(zooyrlist)){
+#   bi=which(zooyrlist[i]==ttb2) # index of year
+#   bt=loadRData(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/BT2/', btlist[[bi]], sep=''))
+#   bi=which(zooyrlist[i]==tts2) # index of year
+#   st=loadRData(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/ST2/', stlist[[bi]], sep=''))
+#   bi=which(zooyrlist[i]==ttss2) # index of year
+#   ss=loadRData(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/SS2/', sslist[[bi]], sep=''))
+#   bi=which(zooyrlist[i]==ttbs2) # index of year
+#   bs=loadRData(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/BS2/', bslist[[bi]], sep=''))
+#   ef <- data.frame(coordinates(bt), val=values(bt))
+#   colnames(ef)=c("LON", "LAT", "BOTTEMP")
+#   ef$SURFTEMP=values(st)
+#   ef$DEPTH=values(gd4)
+#   ef$SURFSALIN=values(ss)
+#   ef$BOTSALIN=values(bs)
+#   ef$grnszmm=values(phi2)
+#   ef$rug=values(rug2)
+#   ef2=ef[complete.cases(ef),]
+#   # tt=ef2$Stg
+#   # tt2=fl[[1]][[1]][2][[1]][tt] # subsets to stage 
+#   # ef$Stg=factor(ef$Stg, levels=c("Adt", "Juv", "ich"))
+#   test1 <- predict.gam(usemodelpa, ef2, type='response')
+#   test2 <- predict.gam(usemodelbio, ef2, type='response')
+#   ef2$predpa=test1
+#   ef2$predbio=test2
+#   ef2$combinedout=test1*test2
+#   wd3=paste(zooyrlist[i], '_', SEASON, '_', zoosp, '_', '.RData', sep="")
+#   save(ef2, file=paste(wd2, wd3, sep=""))
+#   spg1=ef2[,c('LON', 'LAT', 'combinedout')]
+#   wd4=paste(zooyrlist[i], '_', 'RASTER', '_', SEASON, '_', zoosp, '_', '.RData', sep="")
+#   # tes1=rasterFromXYZ(spg1[complete.cases(spg1$Stg),])
+#   # save(tes1, file=paste(wd2,wd4, sep=''))
+#   coordinates(spg1)= ~ LON + LAT
+#   gridded(spg1)=T
+#   rastDF=raster(spg1)
+#   if (i == 1){
+#     keepstack=rastDF
+#   }
+#   # plot(rastDF)
+#   # save(rastDF, file=paste(wd2,wd4, sep=''))
+#   if (i >1){
+#     keepstack=stack(keepstack, rastDF)
+#   }
+#   save(keepstack, file=paste(wd2,'stacked_', SEASON, '_', zoosp, '_', '.RData', sep=""))
+# }
 ### save raster layers to new file:
-t1=subset(keepstack, 26)
-save(t1, file='/home/ryan/Git/NEhabitat/rasters/Fall/pseudo/RAST_NESREG_2017.04.01.07.TEMP.YEAR.000066596.RData')
-t1=subset(keepstack, 27)
-save(t1, file='/home/ryan/Git/NEhabitat/rasters/Fall/pseudo/RAST_NESREG_2018.04.01.07.TEMP.YEAR.000066596.RData')
-t1=subset(keepstack, 28)
-save(t1, file='/home/ryan/Git/NEhabitat/rasters/Fall/pseudo/RAST_NESREG_2019.04.01.07.TEMP.YEAR.000066596.RData')
+# t1=subset(keepstack, 26)
+# save(t1, file='/home/ryan/Git/NEhabitat/rasters/Fall/pseudo/RAST_NESREG_2017.04.01.07.TEMP.YEAR.000066596.RData')
+# t1=subset(keepstack, 27)
+# save(t1, file='/home/ryan/Git/NEhabitat/rasters/Fall/pseudo/RAST_NESREG_2018.04.01.07.TEMP.YEAR.000066596.RData')
+# t1=subset(keepstack, 28)
+# save(t1, file='/home/ryan/Git/NEhabitat/rasters/Fall/pseudo/RAST_NESREG_2019.04.01.07.TEMP.YEAR.000066596.RData')
 
 modlistpa[modchoice]
 
@@ -414,7 +432,7 @@ write.csv(format(modeval, digits=2), file=paste(wd2,'model_evaluation_', SEASON,
 #### Save model hindcast output trends (mean, trend, variance)
 ## Load rasters
 p1=paste('/home/ryan/Git/NEhabitat/rasters/',SEASON,'/', fishnm, '/', sep='')
-p2='fish_modGSe_fall_haddock' #'fish_modGI_spr_Haddock' 'fish_modGI_spr_Haddock_select_years_mod' 'fish_modGI_spr_Haddock_abundance'
+p2='fish_modGI_Spr_cod' #fall_haddock' #'fish_modGI_spr_Haddock' 'fish_modGI_spr_Haddock_select_years_mod' 'fish_modGI_spr_Haddock_abundance'
 p3=paste('/PA_only_stacked_', SEASON, '_', fishnm, '_', sep='') #'PA_only_stacked_Spr_Haddock_'
 p4=paste('/stacked_', SEASON, '_', fishnm, '_', sep='') #'stacked_Spr_Haddock_'
 ichpa=loadRData(paste(p1,p2,p3,'ich.RData', sep=''))

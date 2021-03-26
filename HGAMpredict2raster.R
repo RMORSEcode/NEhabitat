@@ -66,6 +66,7 @@ trainPA$SEASON[1] #verify season
 modlistpa=list.files(path1, pattern = glob2rx("*_pa_*Rdata")) # presence-absence models
 modlistpb=list.files(path1, pattern = glob2rx("*_pb_*Rdata")) # positive biomass models
 
+## subset to newest models - (added date to sort)
 modlistpa2=modlistpa[grepl("*2021*", modlistpa)]
 modlistpb2=modlistpb[grepl("*2021*", modlistpb)]
 
@@ -261,11 +262,11 @@ rm(masked.raster)
 ## Remove bottom temp raster
 rm(bt)
 fl=levels=c("Adt", "Juv", "ich")
-# fl=levels=c("Adt", "Juv")
+fl=levels=c("Adt", "Juv")
 # fishnm='SilverHake'
 wd2=paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/', fishnm, '/', sep='')
-modchoice=4
-modchoicepb=4
+modchoice=2
+modchoicepb=2
 usemodel=loadRData(paste(path1,modlistpa[modchoice], sep=''))
 usemodelbio=loadRData(paste(path1,modlistpb[modchoicepb], sep=''))
 ### NOW loop over files, load yearly dynamic raster files and predict habitat from HGAM models
@@ -432,7 +433,7 @@ write.csv(format(modeval, digits=2), file=paste(wd2,'model_evaluation_', SEASON,
 #### Save model hindcast output trends (mean, trend, variance)
 ## Load rasters
 p1=paste('/home/ryan/Git/NEhabitat/rasters/',SEASON,'/', fishnm, '/', sep='')
-p2='fish_modGI_Spr_cod' #fall_haddock' #'fish_modGI_spr_Haddock' 'fish_modGI_spr_Haddock_select_years_mod' 'fish_modGI_spr_Haddock_abundance'
+p2='fish_modGI_Fall_cod' #fall_haddock' #'fish_modGI_spr_Haddock' 'fish_modGI_spr_Haddock_select_years_mod' 'fish_modGI_spr_Haddock_abundance'
 p3=paste('/PA_only_stacked_', SEASON, '_', fishnm, '_', sep='') #'PA_only_stacked_Spr_Haddock_'
 p4=paste('/stacked_', SEASON, '_', fishnm, '_', sep='') #'stacked_Spr_Haddock_'
 ichpa=loadRData(paste(p1,p2,p3,'ich.RData', sep=''))
@@ -460,6 +461,9 @@ dev.off()
 pdf(paste(path1, 'Bio_Hindcast_',p2,'_Adt.pdf', sep=''), height=4, width=6)
 plotRasterTrends(adt)
 dev.off()
+
+
+
 
 ### plot out raster stacks to visualize changes
 pdf(paste(p1,p2,'/', 'Juv_hindcast.pdf', sep=''), height=4, width=6)

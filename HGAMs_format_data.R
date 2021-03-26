@@ -46,15 +46,15 @@ slctseason="SPRING"; fishseas="Spr"
 ### Choose fish to run, adjust by searching on and changing " `74_ " to new ID **** ###
 ### Subset the formatted data for a single species (see Lmf)
 # Lmf=read_excel('/home/ryan/Git/NEhabitat/Lm_included.xlsx')
-fishname='Cod' #73
-# fishname='Haddock' #74
+# fishname='Cod' #73
+fishname='Haddock' #74
 # fishname='SilverHake' #72
 # fishname='Pollock' #75
 
-fish=FData.abn %>% dplyr::select(YEAR, SEASON, LAT:BOTTEMP, `73_Adt`, `73_Juv`, `73_ich`, volume_100m3:chl12)
+fish=FData.abn %>% dplyr::select(YEAR, SEASON, LAT:BOTTEMP, `74_Adt`, `74_Juv`, `74_ich`, volume_100m3:chl12)
 fish$MONTH=month(FData.abn$EST_TOWDATE)
 fish=fish[complete.cases(fish),]
-fish$`73_ich`=ceiling(fish$`73_ich`) # make integer from numbers per 100 m/3
+fish$`74_ich`=ceiling(fish$`74_ich`) # make integer from numbers per 100 m/3
 fish2=fish[which(fish$SEASON==slctseason),] # subset to season
 
 ### REMOVE replicate values from zooplankton for the entire data set
@@ -91,14 +91,14 @@ dim(testPA)[1]/dim(fish2)[1]
 
 
 ### pivot longer so stage is repeated
-trainPA=trainPA %>% pivot_longer(c(`73_Adt`, `73_Juv`, `73_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Number")
+trainPA=trainPA %>% pivot_longer(c(`74_Adt`, `74_Juv`, `74_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Number")
 trainPA$Stg=factor(trainPA$Stg, ordered=F)
 logd=trainPA[,8:19]
 logd=log10(logd+1)
 trainPA[,8:19]=logd
 trainPA$pa=ifelse(trainPA$Number > 0, 1, 0)
 ## now do likewise for testing data
-testPA=testPA %>% pivot_longer(c(`73_Adt`, `73_Juv`, `73_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Number")
+testPA=testPA %>% pivot_longer(c(`74_Adt`, `74_Juv`, `74_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Number")
 testPA$Stg=factor(testPA$Stg, ordered=F)
 logd=testPA[,8:19]
 logd=log10(logd+1)
@@ -114,12 +114,20 @@ testBIO=testPA %>% filter(Number >0)
 testBIO$Abundance=testBIO$Number
 testBIO$logbio=log10(testBIO$Number)
 
+### UPDATE DATA to remove ichtyhyoplankton for "FALL HADDOCK" AND COD (only 6 positive samples 1977-2017)
+trainPA=trainPA %>% filter(Stg!='ich') %>% droplevels(exclude="ich")
+# levels(trainPA$Stg)
+testPA=testPA %>% filter(Stg!='ich') %>% droplevels(exclude="ich")
+trainBIO=trainBIO %>% filter(Stg!='ich') %>% droplevels(exclude="ich")
+testBIO=testBIO %>% filter(Stg!='ich') %>% droplevels(exclude="ich")
+
+###______________________________________________________________________-
 ### IF USING BIOMASS AS SECOND PART SKIP ABOVE SECTION AND RUN BELOW:
 # Do likewise for biomass data, to be combined with PA later for final model
-fish.b=FData.bio %>% dplyr::select(YEAR, SEASON, LAT:BOTTEMP, `73_Adt`, `73_Juv`, `73_ich`, volume_100m3:chl12)
+fish.b=FData.bio %>% dplyr::select(YEAR, SEASON, LAT:BOTTEMP, `74_Adt`, `74_Juv`, `74_ich`, volume_100m3:chl12)
 fish.b$MONTH=month(FData.bio$EST_TOWDATE)
 fish.b=fish.b[complete.cases(fish.b),]
-fish.b$`73_ich`=ceiling(fish.b$`73_ich`) # make integer from numbers per 100 m/3
+fish.b$`74_ich`=ceiling(fish.b$`74_ich`) # make integer from numbers per 100 m/3
 fish2.b=fish.b[which(fish.b$SEASON==slctseason),] # subset to season
 ### Transform numbers per 100_m3 to KG using below conversions
 # For positive logbiomass model need to update the ichthyoplankton from (numbers per 100 m^3) to biomass
@@ -127,7 +135,7 @@ fish2.b=fish.b[which(fish.b$SEASON==slctseason),] # subset to season
 # Cod avg of experiments w/ good and poor diet: mean dry weight of fish 5-30days = 0.25 mg DW
 # mg->kg = x* 1e-6
 # https://www.int-res.com/articles/meps/32/m032p229.pdf -> 1 mg wet weight avg
-fish.b$`73_ich`=fish.b$`73_ich`*1e-6
+fish.b$`74_ich`=fish.b$`74_ich`*1e-6
 
 ### REMOVE replicate values from zooplankton for the entire data set
 tunq=fish2.b %>% group_by(LAT, LON, MONTH, YEAR, SURFTEMP) %>% filter(n()==1) %>% mutate(num=n())
@@ -162,8 +170,8 @@ dim(testBIO)[1]/dim(fish2.b)[1]
 
 
 ### pivot longer so stage is repeated
-trainBIO=trainBIO %>% pivot_longer(c(`73_Adt`, `73_Juv`, `73_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Biomass")
-# trainBIO=trainBIO %>% pivot_longer(c(`73_Adt`, `73_Juv`, `73_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Abundance")
+trainBIO=trainBIO %>% pivot_longer(c(`74_Adt`, `74_Juv`, `74_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Biomass")
+# trainBIO=trainBIO %>% pivot_longer(c(`74_Adt`, `74_Juv`, `74_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Abundance")
 
 trainBIO$Stg=factor(trainBIO$Stg, ordered=F)
 logd=trainBIO[,8:19]
@@ -178,8 +186,8 @@ trainBIO=trainBIO %>%
   # filter(., Abundance >0) %>%
   # mutate(., "logbio"=log10(Abundance))
 ## now do likewise for testing data
-testBIO=testBIO %>% pivot_longer(c(`73_Adt`, `73_Juv`, `73_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Biomass")
-# testBIO=testBIO %>% pivot_longer(c(`73_Adt`, `73_Juv`, `73_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Abundance")
+testBIO=testBIO %>% pivot_longer(c(`74_Adt`, `74_Juv`, `74_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Biomass")
+# testBIO=testBIO %>% pivot_longer(c(`74_Adt`, `74_Juv`, `74_ich`), names_to = c("SVSPP", "Stg"), names_sep ="_", values_to = "Abundance")
 
 testBIO$Stg=factor(testBIO$Stg, ordered=F)
 logd=testBIO[,8:19]

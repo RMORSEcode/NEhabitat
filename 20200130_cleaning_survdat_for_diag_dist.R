@@ -15,10 +15,48 @@ library(tidyr)
 # load("C:/Users/ryan.morse/Downloads/SurvdatBio (3).RData") #loads survdat.bio
 load("C:/Users/ryan.morse/Downloads/survdat_lw.RData") # loads survdat.lw ; from Sean Lucey data into 2019
 load("/home/ryan/Downloads/survdat_lw.RData")# loads survdat.lw ; from Sean Lucey data into 2019
-test=survdat.lw$SVSPP %in% Lmf$SVSPP
-survdat.lw=survdat.lw[test,]
-sort(unique(survdat.lw$SVSPP)) #verify
-length(unique(survdat.lw$SVSPP))
+newsurvdat=loadRData('/home/ryan/Downloads/NEFSC_BTS_2021.RData') # new data from Sean 2021, possible updates to haddock due to code q correction
+test=newsurvdat$survdat$SVSPP %in% Lmf$SVSPP
+nsdat=newsurvdat$survdat[test,]
+
+## 20210326 conversion factor issue from Sean Lucey - checking on differences between survdats
+nsdat2=nsdat %>% filter(SVSPP==74)
+sdat=survdat.lw %>% filter(SVSPP==74)
+colnames(sdat)
+colnames(nsdat)
+# test1=nsdat2 %>% filter(YEAR==2010)
+# test2=sdat %>% filter(YEAR==2010)
+# test3=test1$BIOMASS==test2$BIOMASS
+# test3=(test1$BIOMASS < 1.025*test2$BIOMASS) & (test1$BIOMASS > 0.975*test2$BIOMASS)
+# sum(test3)/length(test3)
+yyyy=unique(nsdat2$YEAR)
+csdat=matrix(NA, ncol=5, nrow=length(unique(nsdat2$YEAR)))
+colnames(csdat)=c('Year', 'Abundance', 'Biomass', 'Length', 'NumLen')
+for (i in 1:length(unique(nsdat2$YEAR))){
+  test1=nsdat2 %>% filter(YEAR==yyyy[i])
+  test2=sdat %>% filter(YEAR==yyyy[i])
+  csdat[i,1]=yyyy[i]
+  test3=test1$ABUNDANCE==test2$ABUNDANCE
+  csdat[i,2]=sum(test3)/length(test3)
+  test3=test1$BIOMASS==test2$BIOMASS
+  csdat[i,3]=sum(test3)/length(test3)
+  test3=test1$LENGTH==test2$LENGTH
+  csdat[i,4]=sum(test3)/length(test3)
+  test3=test1$NUMLEN==test2$NUMLEN
+  csdat[i,5]=sum(test3)/length(test3)
+}
+# test3=test1$ABUNDANCE==test2$ABUNDANCE
+# test3=(test1$ABUNDANCE < 1.025*test2$ABUNDANCE) & (test1$ABUNDANCE > 0.975*test2$ABUNDANCE)
+# sum(test3)/length(test3)
+# test3=test1[test1$ABUNDANCE!=test2$ABUNDANCE,]
+# test3$newABUNDANCE=test2$ABUNDANCE[test1$ABUNDANCE!=test2$ABUNDANCE]
+
+
+
+
+#### 20210326 IMPORTANT NOTE:
+#### YES THERE IS A LARGE DIFFERENCE DUE TO WRONG CONVERVERSION FACTORS APPLIED FOR HADDOCK (074), WINDOWPANE (108), AND BUTTERFISH (131)
+
 
 test=survdat$SVSPP %in% Lmf$SVSPP
 survdat=survdat[test,]
@@ -29,7 +67,17 @@ length(unique(survdat$SVSPP))
 rm(survdat)
 survdat=survdat.lw
 survdat=survdat.bio
+survdat=nsdat
 
+## newest survdat missing INDWT, WGTLEN, SIZECAT from survdat.lw, remove 2020 and add back
+test=survdat %>% filter(YEAR!=2020)
+test2=test %>% filter(SVSPP==074, YEAR==2010)
+test3=survdat.lw %>% filter(SVSPP==074, YEAR==2010)
+## they are the same
+test$INDWT=survdat.lw$INDWT
+test$WGTLEN=survdat.lw$WGTLEN
+test$SIZECAT=survdat.lw$SIZECAT
+survdat=test
 
 ### loop to split taxa into juvenile or adult using Lm data
 # survdat$stg=NA
@@ -54,12 +102,12 @@ survdat=survdat %>% group_by_at(vars(SVSPP,CRUISE6,STATION,STRATUM,ABUNDANCE, st
 
 
 # barplot(table(round(survdat$biodiff[(abs(survdat$biodiff>12))],1)))
-# y=survdat$SVSPP
-# x=abs(survdat$biodiff)
-# y=y[x>120]
-# x=x[x>120]
-# barplot(table(round(y))) #which species have the highest mismatches in biomass
-# barplot(table(round(x))) #how many
+y=survdat$SVSPP
+x=abs(survdat$biodiff)
+y=y[x>120]
+x=x[x>120]
+barplot(table(round(y))) #which species have the highest mismatches in biomass
+barplot(table(round(x))) #how many
 
 ### now create dataframe with unique tows only, separated by stage
 test=survdat[,c("CRUISE6","STATION","STRATUM","YEAR", "SVSPP", "stg")] # needs SVSPP...
@@ -95,21 +143,25 @@ svdtunq=survdat[!duplicated(test),]
 
 ### change survdat long to wide, select biomass based (corBIO) or abundance based (corABN) ###
 svdtunq=ungroup(svdtunq) #not needed
-svdwide.bio=svdtunq %>% select(SVSPP, stg, CRUISE6, STATION, STRATUM,SVVESSEL,YEAR,EST_TOWDATE, SEASON,LAT,LON,DEPTH,
+svdwide.bio=svdtunq %>% dplyr::select(SVSPP, stg, CRUISE6, STATION, STRATUM,SVVESSEL,YEAR,EST_TOWDATE, SEASON,LAT,LON,DEPTH,
                            SURFTEMP,BOTTEMP,SURFSALIN,BOTSALIN,corBIO) %>%
   pivot_wider(names_from=c(SVSPP, stg), values_from = corBIO, values_fill = list(corBIO=0))
 
-svdwide.abn=svdtunq %>% select(SVSPP, stg, CRUISE6, STATION, STRATUM,SVVESSEL,YEAR,EST_TOWDATE, SEASON,LAT,LON,DEPTH,
+svdwide.abn=svdtunq %>% dplyr::select(SVSPP, stg, CRUISE6, STATION, STRATUM,SVVESSEL,YEAR,EST_TOWDATE, SEASON,LAT,LON,DEPTH,
                                SURFTEMP,BOTTEMP,SURFSALIN,BOTSALIN,corABN) %>%
   pivot_wider(names_from=c(SVSPP, stg), values_from = corABN, values_fill = list(corABN=0))
 
 #remove column names with 'x_NA'
-svdwide.bio=svdwide.bio%>% select(-`72_NA`, -`73_NA`, -`74_NA`,-`75_NA`,-`76_NA`,-`77_NA`,-`101_NA`,-`102_NA`,-`103_NA`,-`105_NA`,
+svdwide.bio=svdwide.bio%>% dplyr::select(-`72_NA`, -`73_NA`, -`74_NA`,-`75_NA`,-`76_NA`,-`77_NA`,-`101_NA`,-`102_NA`,-`103_NA`,-`105_NA`,
                           -`106_NA`,-`107_NA`,-`108_NA`,-`155_NA`,-`193_NA`,-`197_NA`)
-svdwide.abn=svdwide.abn%>% select(-`72_NA`, -`73_NA`, -`74_NA`,-`75_NA`,-`76_NA`,-`77_NA`,-`101_NA`,-`102_NA`,-`103_NA`,-`105_NA`,
+svdwide.abn=svdwide.abn%>% dplyr::select(-`72_NA`, -`73_NA`, -`74_NA`,-`75_NA`,-`76_NA`,-`77_NA`,-`101_NA`,-`102_NA`,-`103_NA`,-`105_NA`,
                               -`106_NA`,-`107_NA`,-`108_NA`,-`155_NA`,-`193_NA`,-`197_NA`)
-save(svdwide.bio, file='unique_wide_format_corBIO_by_stage.Rda')
-save(svdwide.abn, file='unique_wide_format_corABN_by_stage.Rda')
+
+library(lubridate)
+xdt=today()
+xdt=gsub('-','',xdt)
+save(svdwide.bio, file=paste('/home/ryan/Git/NEhabitat/', xdt, '_unique_wide_format_corBIO_by_stage.Rda', sep=''))
+save(svdwide.abn, file=paste('/home/ryan/Git/NEhabitat/', xdt, '_unique_wide_format_corABN_by_stage.Rda', sep=''))
 
 ### create date and binned lat lon for mathching to other surveys
 # svdate=data.frame(month(survdat$EST_TOWDATE))

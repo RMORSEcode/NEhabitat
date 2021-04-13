@@ -19,6 +19,12 @@ newsurvdat=loadRData('/home/ryan/Downloads/NEFSC_BTS_2021.RData') # new data fro
 test=newsurvdat$survdat$SVSPP %in% Lmf$SVSPP
 nsdat=newsurvdat$survdat[test,]
 
+load('/home/ryan/Downloads/NEFSC_BTS_2021.RData')
+survdat <- survey$survdat %>% filter(YEAR!=2020)
+test=survdat$SVSPP %in% Lmf$SVSPP
+survdat=survdat[test,]
+nsurvday=survdat
+
 ## 20210326 conversion factor issue from Sean Lucey - checking on differences between survdats
 nsdat2=nsdat %>% filter(SVSPP==74)
 sdat=survdat.lw %>% filter(SVSPP==74)
@@ -100,6 +106,12 @@ survdat=survdat %>% group_by_at(vars(SVSPP,CRUISE6,STATION,STRATUM,ABUNDANCE)) %
 survdat=survdat %>% group_by_at(vars(SVSPP,CRUISE6,STATION,STRATUM,ABUNDANCE, stg)) %>%
   mutate(stgpctabn=stgsum/totlen, stgpctwgt=stgwtsum/totwgt, corABN=round(stgpctabn*ABUNDANCE,digits = 0), corBIO=round(stgpctwgt*BIOMASS, digits=2))
 
+# 20210406 ONLY for newest survdat - missing wgtlen, only correct abundance
+survdat=survdat %>% group_by_at(vars(SVSPP,CRUISE6,STATION,STRATUM,ABUNDANCE,stg)) %>% mutate(stgsum=sum(NUMLEN)) #, stgwtsum=sum(WGTLEN))
+survdat=survdat %>% group_by_at(vars(SVSPP,CRUISE6,STATION,STRATUM,ABUNDANCE)) %>% mutate(totlen=sum(NUMLEN), abndiff=ABUNDANCE-totlen)
+survdat=survdat %>% group_by_at(vars(SVSPP,CRUISE6,STATION,STRATUM,ABUNDANCE, stg)) %>%
+  mutate(stgpctabn=stgsum/totlen, corABN=round(stgpctabn*ABUNDANCE,digits = 0))
+
 
 # barplot(table(round(survdat$biodiff[(abs(survdat$biodiff>12))],1)))
 y=survdat$SVSPP
@@ -112,6 +124,9 @@ barplot(table(round(x))) #how many
 ### now create dataframe with unique tows only, separated by stage
 test=survdat[,c("CRUISE6","STATION","STRATUM","YEAR", "SVSPP", "stg")] # needs SVSPP...
 svdtunq=survdat[!duplicated(test),]
+
+svdtunq=survdat ## keep all stations for now, remove later
+
 ### calc percent of biomass by stage(adt, juv) per unique tow to be applied to BIOMASS for corrected values
 # svdtunq$stgwgtpct=round(svdtunq$stgwtsum/svdtunq$totwgt, 2)
 # svdtunq$corBIOMASS=svdtunq$stgwgtpct*svdtunq$BIOMASS
@@ -149,7 +164,17 @@ svdwide.bio=svdtunq %>% dplyr::select(SVSPP, stg, CRUISE6, STATION, STRATUM,SVVE
 
 svdwide.abn=svdtunq %>% dplyr::select(SVSPP, stg, CRUISE6, STATION, STRATUM,SVVESSEL,YEAR,EST_TOWDATE, SEASON,LAT,LON,DEPTH,
                                SURFTEMP,BOTTEMP,SURFSALIN,BOTSALIN,corABN) %>%
-  pivot_wider(names_from=c(SVSPP, stg), values_from = corABN, values_fill = list(corABN=0))
+  pivot_wider(names_from=c(SVSPP, stg), values_from = corABN, values_fill = list(corABN=0), values_fn = {mean})
+
+
+## 20210406 not using corrected biomass, take mean of multiple stations
+svdwide.bio=svdtunq %>% dplyr::select(SVSPP, stg, CRUISE6, STATION, STRATUM,SVVESSEL,YEAR,EST_TOWDATE, SEASON,LAT,LON,DEPTH,
+                                      SURFTEMP,BOTTEMP,SURFSALIN,BOTSALIN,BIOMASS) %>%
+  pivot_wider(names_from=c(SVSPP, stg), values_from = BIOMASS, values_fill = list(BIOMASS=0), values_fn = {mean})
+
+svdwide.abn=svdtunq %>% dplyr::select(SVSPP, stg, CRUISE6, STATION, STRATUM,SVVESSEL,YEAR,EST_TOWDATE, SEASON,LAT,LON,DEPTH,
+                                      SURFTEMP,BOTTEMP,SURFSALIN,BOTSALIN,corABN) %>%
+  pivot_wider(names_from=c(SVSPP, stg), values_from = corABN, values_fill = list(corABN=0), values_fn = {mean})
 
 #remove column names with 'x_NA'
 svdwide.bio=svdwide.bio%>% dplyr::select(-`72_NA`, -`73_NA`, -`74_NA`,-`75_NA`,-`76_NA`,-`77_NA`,-`101_NA`,-`102_NA`,-`103_NA`,-`105_NA`,

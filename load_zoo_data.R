@@ -80,8 +80,17 @@ rm(test)
 # ZPD=read_excel('/home/ryan/1_habitat_analysis_2017/EcoMon_Plankton_Data_v3_6.xlsx', sheet='Data' , col_names=T) 
 ZPD=read_excel('C:/Users/ryan.morse/Desktop/1_habitat_analysis_2017/EcoMon_Plankton_Data_v3_6.xlsx', sheet='Data' , col_names=T)
 ZPD=read_excel('/home/ryan/1_habitat_analysis_2017/EcoMon_Plankton_Data_v3_6.xlsx', sheet='Data', col_names = T)
+
+### 20210330 read newest data for 2021 SOE, from Harvey Walsh
+ZPD=read.csv('/home/ryan/Desktop/Z/SOE_2021_PlanktonData/EcoMon_Plankton_Data_v3_7_DoNotDistribute.csv', stringsAsFactors = F)
+
+
+
 dt=as_date(ZPD$date)#, origin = "1899-12-30")
+dt=as.Date(ZPD$date, format="%d-%b-%y")
+
 ichnms=read.csv('C:/Users/ryan.morse/Desktop/Iomega Drive Backup 20171012/1 RM/JHare data/ichthyonames.csv', header = F, stringsAsFactors = F)
+ichnms=read.csv('/home/ryan/1_habitat_analysis_2017/ichthyonames.csv', header = F, stringsAsFactors = F)
 nms=c('nofish_100m3',	'urospp_100m3',	'gadmor_100m3',	'melaeg_100m3',
       'polvir_100m3',	'merbil_100m3',	'sebspp_100m3',	'anaspp_100m3',	'parden_100m3',
       'pseame_100m3',	'glycyn_100m3',	'scoaqu_100m3',	'lopame_100m3')
@@ -106,6 +115,7 @@ gnms$sp2=tolower(gnms$spp)
 # colnames(Lmf)[4]="SVSPP"
 # colnames(Lmf)[5]="Lm"
 svspplu=read.csv('C:/Users/ryan.morse/Desktop/1_habitat_analysis_2017/svspp_lookup.csv', stringsAsFactors = F)
+svspplu=read.csv('/home/ryan/1_habitat_analysis_2017/svspp_lookup.csv', stringsAsFactors = F)
 svnms=svspplu[svspplu$SCINAME %in% gnms$spp,]
 svnms2=left_join(svnms, gnms, by=c("SCINAME"="spp"))
 svnms$ich=svnms2$V1
@@ -139,7 +149,7 @@ GFall$season=ifelse(GFall$month<7, "SPRING", "FALL")
 # red$wt=0.018*(red$LENGTH^2.966) # K. Duclos 2015 thesis UNH
 
 
-
+ZPD$date=dt
 ZPD$DOY=yday(ZPD$date) #day of year
 # month=as.numeric(format(dt, '%m'))
 # year=as.numeric(format(dt, '%Y'))
@@ -180,7 +190,7 @@ ich$lon=test$lon
 ich$latbin=round(ich$lat/0.25)*0.25
 ich$lonbin=round(ich$lon/0.25)*0.25
 vars=test[,c('date', 'lat', 'lon', 'latbin', 'lonbin', 'station', 'depth', 'sfc_temp', 'sfc_salt', 'btm_temp', 'btm_salt', 'month', 'year')]
-## add SVSPP and stage to ich, thransform to long format
+## add SVSPP and stage to ich, transform to long format
 ich$stg="ich"
 ich=select(ich, -c(nofish_100m3)) #drop nofish (all zeros)
 ichlong=ich %>% gather(ichsp, abundance, urospp_100m3:lopame_100m3)
@@ -296,7 +306,7 @@ t=dt3[which(dt3$svspp==svnms$SVSPP[i]),]
 ZPDb=ZPD[,c(seq(1,14,1), seq(198,296,1))] # check to make sure these are correct against 'nms' if data source changes!!!
 ZPDb=ZPDb[order(ZPDb$date),]
 ZPDb=ZPDb[which(ZPDb$year > 1976),] # remove NA data in years prior to 1977
-
+ZPDa=ZPDb[complete.cases(ZPDb$melaeg_100m3),]
 
 #### Select only taxa present in yearly data > x percent of samples
 X=15 # criteria to use as minimum percent in samples

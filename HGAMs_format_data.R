@@ -37,6 +37,179 @@ loadRData <- function(fileName){
 ### Load the data and rename ichthyoplankton
 load('/home/ryan/Git/NEhabitat/Final_merged_fish_corBIO_Zoo_Ich.Rda') # Biomass
 load('/home/ryan/Git/NEhabitat/Final_merged_fish_corABN_Zoo_Ich.Rda') # Abundance
+## newest with updated survdat values
+load('/home/ryan/Git/NEhabitat/20210326_unique_wide_format_corABN_by_stage.Rda')# Abundance
+load('/home/ryan/Git/NEhabitat/20210326_unique_wide_format_corBIO_by_stage.Rda')# Biomass
+test=FData.abn %>% left_join(svdwide.abn, by = c("CRUISE6", "STATION", "STRATUM", "SVVESSEL", 
+                                                 "YEAR", "EST_TOWDATE", "SEASON", "LAT", "LON"))
+
+og=FData.abn %>% filter(YEAR>1976)
+og$MONTH=month(og$EST_TOWDATE)
+tunq=og %>% group_by(LAT, LON, MONTH, YEAR, SURFTEMP) %>% filter(n()==1) %>% mutate(num=n())
+tdup=og %>% group_by(LAT, LON, MONTH, YEAR, SURFTEMP) %>% filter(n()>1) %>% mutate(num=n())
+tdupmn=tdup %>% mutate_if(is.numeric, mean) %>% mutate_if(is.character, funs(paste(unique(.), collapse = "_"))) %>% slice(1)
+og2=bind_rows(tunq, tdupmn) %>% ungroup() #reassign name
+og2[with(og2, order("EST_TOWDATE", "YEAR", "MONTH", "STATION", "STRATUM", "LAT", "LON")),]
+og2$EST_TOWDATE=as.character(og2$EST_TOWDATE)
+
+new=svdwide.abn %>% filter(YEAR>1976)
+new$MONTH=month(new$EST_TOWDATE)
+tunq=new %>% group_by(LAT, LON, MONTH, YEAR, SURFTEMP) %>% filter(n()==1) %>% mutate(num=n())
+tdup=new %>% group_by(LAT, LON, MONTH, YEAR, SURFTEMP) %>% filter(n()>1) %>% mutate(num=n())
+tdupmn=tdup %>% mutate_if(is.numeric, mean) %>% mutate_if(is.character, funs(paste(unique(.), collapse = "_"))) %>% slice(1)
+new2=bind_rows(tunq, tdupmn) %>% ungroup() #reassign name
+new2[with(new2, order("EST_TOWDATE", "YEAR", "MONTH", "STATION", "STRATUM", "LAT", "LON")),]
+new2$EST_TOWDATE=as.character(new2$EST_TOWDATE)
+# keep original, merge in new values
+test=og2 %>% left_join(new2, by = c("CRUISE6", "STATION", "STRATUM", "SVVESSEL", 
+                                                 "YEAR", "EST_TOWDATE", "LAT", "LON"))
+## keep new values from survdat, merge ich and zoo
+test=new2 %>% left_join(og3, by =c("CRUISE6", "STATION", "STRATUM", "SVVESSEL", "YEAR",  
+                                   "LAT", "LON", "DEPTH")) #, "SURFTEMP", "BOTTEMP", "SURFSALIN", 
+                                   # "BOTSALIN", "72_Juv", "72_Adt", "73_Juv", "73_Adt", "74_Juv", "74_Adt", 
+                                   # "75_Adt", "75_Juv", "76_Adt", "76_Juv", "77_Juv", "77_Adt", "101_Juv", 
+                                   # "101_Adt", "102_Juv", "102_Adt", "103_Adt", "103_Juv", "105_Juv", 
+                                   # "105_Adt", "106_Adt", "106_Juv", "107_Juv", "107_Adt", "108_Adt", 
+                                   # "108_Juv", "155_Juv", "155_Adt", "192_Juv", "192_Adt", "193_Adt", 
+                                   # "193_Juv", "197_Juv", "197_Adt"))
+test=new2 %>% left_join(og2, by =c("CRUISE6", "STATION", "STRATUM", "SVVESSEL", "YEAR",  
+                                   "LAT", "LON", "DEPTH", "SURFTEMP", "BOTTEMP", "SURFSALIN", 
+"BOTSALIN", "72_Juv", "72_Adt", "73_Juv", "73_Adt", "74_Juv", "74_Adt",
+"75_Adt", "75_Juv", "76_Adt", "76_Juv", "77_Juv", "77_Adt", "101_Juv",
+"101_Adt", "102_Juv", "102_Adt", "103_Adt", "103_Juv", "105_Juv",
+"105_Adt", "106_Adt", "106_Juv", "107_Juv", "107_Adt", "108_Adt",
+"108_Juv", "155_Juv", "155_Adt", "192_Juv", "192_Adt", "193_Adt",
+"193_Juv", "197_Juv", "197_Adt"))# %>% filter(complete.cases(`74_ich`))
+
+## something is not right, many NAs where there should be matchups
+og2[1,c("CRUISE6", "STATION", "STRATUM", "SVVESSEL", "YEAR", "EST_TOWDATE", 
+       "SEASON", "LAT", "LON", "DEPTH")]
+new2[1,c("CRUISE6", "STATION", "STRATUM", "SVVESSEL", "YEAR", "EST_TOWDATE", 
+         "SEASON", "LAT", "LON", "DEPTH")]
+
+new3=new2[1:15,]
+og4=og3[1:15,]
+og4$STATION[which(!(og4$STATION %in% new3$STATION))]
+# new3$EST_TOWDATE=as.character(new3$EST_TOWDATE)
+# og3$EST_TOWDATE=as.character(og3$EST_TOWDATE)
+# og3[1,c("CRUISE6", "STATION", "STRATUM", "SVVESSEL", "YEAR", "EST_TOWDATE", "SEASON", "LAT", "LON", "DEPTH")]==new3[1,c("CRUISE6", "STATION", "STRATUM", "SVVESSEL", "YEAR", "EST_TOWDATE", "SEASON", "LAT", "LON", "DEPTH")]
+
+cog2=lapply(og2, class)
+cnew2=lapply(new2, class)
+
+## clean up
+og3=og2 %>% select(-mrgidx, date)
+og3$YEAR=as.integer(og3$YEAR)
+og3$SEASON=as.character(og3$SEASON)
+og3$SVVESSEL=as.character(og3$SVVESSEL)
+og3$EST_TOWDATE=as.character(og3$EST_TOWDATE)
+
+new3$EST_TOWDATE=as.character(new3$EST_TOWDATE)
+
+
+### 20210406 merge original FData.abn with new survdat
+test=FData.abn %>% left_join(svdwide.abn, by =c("CRUISE6", "STATION", 
+                                                "STRATUM", "SVVESSEL", "YEAR","LAT", "LON", "DEPTH"))
+# tunq=test %>% group_by(LAT, LON, MONTH, YEAR, SURFTEMP) %>% filter(n()==1) %>% mutate(num=n())
+# tdup=test %>% group_by(LAT, LON, MONTH, YEAR, SURFTEMP) %>% filter(n()>1) %>% mutate(num=n())
+
+tunq=test %>% group_by(CRUISE6, STATION, STRATUM, SVVESSEL, YEAR,LAT, LON, DEPTH) %>% filter(n()==1) %>% mutate(num=n())
+tdup=test %>% group_by(CRUISE6, STATION, STRATUM, SVVESSEL, YEAR,LAT, LON, DEPTH) %>% filter(n()>1) %>% mutate(num=n())
+
+tdupmn=tdup %>% mutate_if(is.numeric, mean) %>% mutate_if(is.character, funs(paste(unique(.), collapse = "_"))) %>% slice(1)
+test2=bind_rows(tunq, tdupmn) %>% ungroup() #reassign name
+test2[with(test2, order("EST_TOWDATE", "YEAR", "MONTH", "STATION", "STRATUM", "LAT", "LON")),]
+test2$EST_TOWDATE=as.character(test2$EST_TOWDATE)
+
+test4=test2[complete.cases(test2$`74_Adt.y`),] # 15619 long, but NAs for zoo taxa...
+test5=test4[complete.cases(test4$ctyp_100m3),] # 8183 long...not good
+test6=test2[complete.cases(test2$ctyp_100m3),] # 14219
+test7=test6[1:500,]
+test8=test7 %>% select(EST_TOWDATE.x, EST_TOWDATE.y, STATION, STRATUM, LAT, LON, `74_Juv.x`, `74_Juv.y`, `74_Adt.x`, `74_Adt.y`, `74_ich`)
+# why would some be different? NA values for stations
+CoreOffshoreStrata<-c(seq(1010,1300,10),1340, seq(1360,1400,10),seq(1610,1760,10))
+# inshore strata to use, still sampled by Bigelow
+CoreInshore73to12=c(3020, 3050, 3080 ,3110 ,3140 ,3170, 3200, 3230, 3260, 3290, 3320, 3350 ,3380, 3410 ,3440)
+# combine
+strata_used=c(CoreOffshoreStrata,CoreInshore73to12)
+sum(unique(test8$STRATUM[which(is.na(test8$`74_Juv.y`))]) %in% strata_used)
+
+### check on station numbers, lat lon, est_towdate
+load("/home/ryan/Downloads/survdat_lw.RData")# loads survdat.lw ; from Sean Lucey data into 2019
+nsdat2=nsdat %>% filter(SVSPP==74, YEAR>1976)
+nsdat3=survdat %>% filter(SVSPP==74, YEAR>1976)
+sdat=survdat.lw %>% filter(SVSPP==74, YEAR>1976)
+colnames(nsdat3)
+colnanes(sdat)
+nsdat3=ungroup(nsdat3)
+class(nsdat3)
+class(sdat)
+sdat=as_tibble(sdat)
+test=sdat%>% left_join(nsdat3, by =c("CRUISE6", "STATION", "STRATUM", "SVVESSEL", "YEAR","LAT", "LON", "DEPTH"))
+test2=test[1:100,]
+
+## clean up
+
+cnsdat3=lapply(nsdat3, class)
+csdat=lapply(sdat, class)
+
+sdat$YEAR=as.integer(sdat$YEAR)
+sdat$SEASON=as.character(sdat$SEASON)
+sdat$SVVESSEL=as.character(sdat$SVVESSEL)
+sdat$EST_TOWDATE=as.character(sdat$EST_TOWDATE)
+
+# nsdat3[,c('YEAR', 'SVSPP', 'TOW', 'STRATUM', 'STATION', 'CRUISE6', 'CATCHSEX', 'NUMLEN', 'DEPTH')]=as.integer(nsdat3[,c('YEAR', 'SVSPP', 'TOW', 'STRATUM', 'STATION', 'CRUISE6', 'CATCHSEX', 'NUMLEN', 'DEPTH')])
+# nsdat4=lapply(nsdat3[,c('YEAR', 'SVSPP', 'TOW', 'STRATUM', 'STATION', 'CRUISE6', 'CATCHSEX', 'NUMLEN', 'DEPTH')], as.integer)
+
+nsdat3$YEAR=as.integer(nsdat3$YEAR)
+nsdat3$SVSPP=as.integer(nsdat3$SVSPP)
+nsdat3$TOW=as.integer(nsdat3$TOW)
+nsdat3$STRATUM=as.integer(nsdat3$STRATUM)
+nsdat3$STATION=as.integer(nsdat3$STATION)
+nsdat3$CRUISE6=as.integer(nsdat3$CRUISE6)
+nsdat3$CATCHSEX=as.integer(nsdat3$CATCHSEX)
+nsdat3$NUMLEN=as.integer(nsdat3$NUMLEN)
+nsdat3$DEPTH=as.integer(nsdat3$DEPTH)
+nsdat3$SEASON=as.character(nsdat3$SEASON)
+nsdat3$SVVESSEL=as.character(nsdat3$SVVESSEL)
+nsdat3$EST_TOWDATE=as.character(nsdat3$EST_TOWDATE)
+# nsdat3$SIZECAT=as.character(nsdat3$SIZECAT)
+
+sdat$YEAR=as.integer(sdat$YEAR)
+sdat$SVSPP=as.integer(sdat$SVSPP)
+sdat$TOW=as.integer(sdat$TOW)
+sdat$STRATUM=as.integer(sdat$STRATUM)
+sdat$STATION=as.integer(sdat$STATION)
+sdat$CRUISE6=as.integer(sdat$CRUISE6)
+sdat$CATCHSEX=as.integer(sdat$CATCHSEX)
+sdat$NUMLEN=as.integer(sdat$NUMLEN)
+sdat$DEPTH=as.integer(sdat$DEPTH)
+sdat$SEASON=as.character(sdat$SEASON)
+sdat$SVVESSEL=as.character(sdat$SVVESSEL)
+sdat$EST_TOWDATE=as.character(sdat$EST_TOWDATE)
+sdat$SIZECAT=as.character(sdat$SIZECAT)
+
+sdat[with(sdat, order("EST_TOWDATE", "YEAR", "MONTH", "STATION", "STRATUM", "LAT", "LON")),]
+nsdat3[with(nsdat3, order("EST_TOWDATE", "YEAR", "MONTH", "STATION", "STRATUM", "LAT", "LON")),]
+
+
+### now create dataframe with unique tows only, separated by stage
+test=nsdat3[,c("CRUISE6","STATION","STRATUM","YEAR", "SVSPP", "stg")] # needs SVSPP...
+svdtunq=nsdat3[!duplicated(test),]
+
+sdat=survdat %>% filter(SVSPP==74, YEAR>1976)
+test=sdat[,c("CRUISE6","STATION","STRATUM","YEAR", "SVSPP", "stg")] # needs SVSPP...
+ogsvdtunq=sdat[!duplicated(test),]
+
+test=svdtunq[1:200,]
+test2=ogsvdtunq[1:200,]
+test3=left_join(test, test2, by =c("CRUISE6", "STATION", "STRATUM", "YEAR","LAT", "LON", "DEPTH"))
+
+test3=left_join(ogsvdtunq, svdtunq, by =c("CRUISE6", "STATION", "STRATUM", "YEAR","LAT", "LON", "DEPTH"))
+test3=inner_join(ogsvdtunq, svdtunq, by =c("CRUISE6", "STATION", "STRATUM", "YEAR","LAT", "LON", "DEPTH"))
+barplot(table(test3$YEAR[which(test3$SEASON.x=="SPRING")]))
+
+## other computer
 load('/home/ryan/Documents/Git/NEhabitat/Final_merged_fish_corABN_Zoo_Ich.Rda') # Abundance
 
 ### Select season for GAMs

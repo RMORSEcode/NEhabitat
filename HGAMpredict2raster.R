@@ -875,6 +875,10 @@ for (i in 2:length(btlist)){
   rastDF=loadRData(paste(wd3,'/',btlist[i], sep=''))
   rastBT=stack(rastBT, rastDF)
 }
+pdf(paste(wd3, '/BT_trends.pdf', sep=''), height=4, width=6)
+plotRasterTrends(rastBT)
+dev.off()
+
 BT_gbk=raster::extract(rastBT, gbk, fun=mean, na.rm=T)
 plot(BT_gbk[1,]~yrlist, type='l')
 BT_gom=raster::extract(rastBT, gom, fun=mean, na.rm=T)

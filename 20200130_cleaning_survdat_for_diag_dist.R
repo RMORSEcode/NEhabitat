@@ -1,4 +1,7 @@
 # Kevin's code to calculate center of biomass and movement for trawl survey data
+## RM using this to clean survdat to use in habitat models and merge with zooplankotn/ichtyoplankton data
+## must load zooplankton data prior to running this with {load_zoo_data.R}
+## RM updated 2021 to include haddock data corrected for catchability for the Bigelow time series from Sean Lucey (fixed Feb 2021)
 
 
 require(raster)
@@ -10,6 +13,12 @@ library(geosphere)
 library(lubridate)
 library(dplyr)
 library(tidyr)
+
+loadRData <- function(fileName){
+  #loads an RData file, and returns it
+  load(fileName)
+  get(ls()[ls() != "fileName"])
+}
 
 ## Subset survdat to only groundfish species with Length at maturity data
 # load("C:/Users/ryan.morse/Downloads/SurvdatBio (3).RData") #loads survdat.bio
@@ -226,17 +235,12 @@ svdate$index=seq(from=1, to=length(svdate$M), by=1)
 # svdate2=svdate[sdq2$index,]
 
 #clean up svdate to match zooplankton and Chl
-svdate1=svdate[which(svdate$Y>1976 & svdate$Y<1982),]
-
-svdate2=svdate[which(svdate$Y>1981 & svdate$Y<1987),]
-
-svdate3=svdate[which(svdate$Y>1986 & svdate$Y<1997),]
-
-svdate4=svdate[which(svdate$Y>1996 & svdate$Y<2006),]
-
-svdate5=svdate[which(svdate$Y>2005 & svdate$Y<2012),]
-
-svdate6=svdate[which(svdate$Y>2011 & svdate$Y<2020),]
+# svdate1=svdate[which(svdate$Y>1976 & svdate$Y<1982),]
+# svdate2=svdate[which(svdate$Y>1981 & svdate$Y<1987),]
+# svdate3=svdate[which(svdate$Y>1986 & svdate$Y<1997),]
+# svdate4=svdate[which(svdate$Y>1996 & svdate$Y<2006),]
+# svdate5=svdate[which(svdate$Y>2005 & svdate$Y<2012),]
+# svdate6=svdate[which(svdate$Y>2011 & svdate$Y<2020),]
 
 # library(geosphere)
 # distm(c(lon1, lat1), c(lon2, lat2), fun = distHaversine)
@@ -254,17 +258,12 @@ dfzdate=dfzdate[order(dfzdate$zY, dfzdate$zdoy),]
 dfzdate$zsdoy=dfzdate$zdoy
 dfzdate$zldoy=dfzdate$zdoy
 
-dfzdate1=dfzdate[which(dfzdate$zY>1976 & dfzdate$zY<1982),]
-
-dfzdate2=dfzdate[which(dfzdate$zY>1981 & dfzdate$zY<1987),]
-
-dfzdate3=dfzdate[which(dfzdate$zY>1986 & dfzdate$zY<1997),]
-
-dfzdate4=dfzdate[which(dfzdate$zY>1996 & dfzdate$zY<2006),]
-
-dfzdate5=dfzdate[which(dfzdate$zY>2005 & dfzdate$zY<2012),]
-
-dfzdate6=dfzdate[which(dfzdate$zY>2011 & dfzdate$zY<2020),]
+# dfzdate1=dfzdate[which(dfzdate$zY>1976 & dfzdate$zY<1982),]
+# dfzdate2=dfzdate[which(dfzdate$zY>1981 & dfzdate$zY<1987),]
+# dfzdate3=dfzdate[which(dfzdate$zY>1986 & dfzdate$zY<1997),]
+# dfzdate4=dfzdate[which(dfzdate$zY>1996 & dfzdate$zY<2006),]
+# dfzdate5=dfzdate[which(dfzdate$zY>2005 & dfzdate$zY<2012),]
+# dfzdate6=dfzdate[which(dfzdate$zY>2011 & dfzdate$zY<2020),]
 
 # try merge and filter (did this in 2 parts, before and after 1998, took long time...)
 # dfzdate2=dfzdate[which(dfzdate$zY<1997),]
@@ -276,36 +275,68 @@ colnames(svdate2)
 # ttx=left_join(svdate2, dfzdate2, by=c("lonbin"="zlonbin", "latbin"="zlatbin", "Y"="zY", "sdoy"="zdoy", "ldoy"="zdoy"))
 ### this works, just takes a long time
 library(fuzzyjoin)
-tt=fuzzy_left_join(svdate1, dfzdate1, by=c("lonbin"="zlonbin", "latbin"="zlatbin", "Y"="zY", "sdoy"="zdoy", "ldoy"="zdoy"),
-                    match_fun=list(`==`,`==`,`==`,`<=`,`>=`))
-tt1=fuzzy_left_join(svdate2, dfzdate2, by=c("lonbin"="zlonbin", "latbin"="zlatbin", "Y"="zY", "sdoy"="zdoy", "ldoy"="zdoy"),
-                   match_fun=list(`==`,`==`,`==`,`<=`,`>=`))
-tt2=fuzzy_left_join(svdate3, dfzdate3, by=c("lonbin"="zlonbin", "latbin"="zlatbin", "Y"="zY", "sdoy"="zdoy", "ldoy"="zdoy"), 
-                   match_fun=list(`==`,`==`,`==`,`<=`,`>=`))
-tt3=fuzzy_left_join(svdate4, dfzdate4, by=c("lonbin"="zlonbin", "latbin"="zlatbin", "Y"="zY", "sdoy"="zdoy", "ldoy"="zdoy"), 
-                   match_fun=list(`==`,`==`,`==`,`<=`,`>=`))
-tt4=fuzzy_left_join(svdate5, dfzdate5, by=c("lonbin"="zlonbin", "latbin"="zlatbin", "Y"="zY", "sdoy"="zdoy", "ldoy"="zdoy"), 
-                    match_fun=list(`==`,`==`,`==`,`<=`,`>=`))
-tt5=fuzzy_left_join(svdate6, dfzdate6, by=c("lonbin"="zlonbin", "latbin"="zlatbin", "Y"="zY", "sdoy"="zdoy", "ldoy"="zdoy"), 
-                    match_fun=list(`==`,`==`,`==`,`<=`,`>=`))
-# save(tt, file="survdat_zoo_merge_1977_1996.Rda")
-# save(tt2, file="survdat_zoo_merge_1997_2019.Rda")
+xdt=today()
+xdt=gsub('-','',xdt)
+setwd('/home/ryan/Git/NEhabitat/')
+# tt=fuzzy_left_join(svdate1, dfzdate1, by=c("lonbin"="zlonbin", "latbin"="zlatbin", "Y"="zY", "sdoy"="zdoy", "ldoy"="zdoy"),
+#                     match_fun=list(`==`,`==`,`==`,`<=`,`>=`))
+# save(tt, file="survdat_zoo_merge_1977_1981.Rda")
+# 
+# tt1=fuzzy_left_join(svdate2, dfzdate2, by=c("lonbin"="zlonbin", "latbin"="zlatbin", "Y"="zY", "sdoy"="zdoy", "ldoy"="zdoy"),
+#                    match_fun=list(`==`,`==`,`==`,`<=`,`>=`))
+# save(tt1, file="survdat_zoo_merge_1982_1986.Rda")
+# 
+# tt2=fuzzy_left_join(svdate3, dfzdate3, by=c("lonbin"="zlonbin", "latbin"="zlatbin", "Y"="zY", "sdoy"="zdoy", "ldoy"="zdoy"), 
+#                    match_fun=list(`==`,`==`,`==`,`<=`,`>=`))
+# save(tt2, file="survdat_zoo_merge_1987_1996.Rda")
+# 
+# tt3=fuzzy_left_join(svdate4, dfzdate4, by=c("lonbin"="zlonbin", "latbin"="zlatbin", "Y"="zY", "sdoy"="zdoy", "ldoy"="zdoy"), 
+#                    match_fun=list(`==`,`==`,`==`,`<=`,`>=`))
+# save(tt3, file="survdat_zoo_merge_1997_2005.Rda")
+# 
+# tt4=fuzzy_left_join(svdate5, dfzdate5, by=c("lonbin"="zlonbin", "latbin"="zlatbin", "Y"="zY", "sdoy"="zdoy", "ldoy"="zdoy"), 
+#                     match_fun=list(`==`,`==`,`==`,`<=`,`>=`))
+# save(tt4, file="survdat_zoo_merge_2006_2011.Rda")
+# 
+# tt5=fuzzy_left_join(svdate6, dfzdate6, by=c("lonbin"="zlonbin", "latbin"="zlatbin", "Y"="zY", "sdoy"="zdoy", "ldoy"="zdoy"), 
+#                     match_fun=list(`==`,`==`,`==`,`<=`,`>=`))
+# save(tt5, file="survdat_zoo_merge_2012_2019.Rda")
+
+for(i in 1:length(yrs)){
+  selyear=yrs[i]
+  svdatex=svdate %>% filter(Y==selyear)
+  dfzdatex=dfzdate %>% filter(zY==selyear)
+  tt=fuzzy_left_join(svdatex, dfzdatex, by=c("lonbin"="zlonbin", "latbin"="zlatbin", "Y"="zY", "sdoy"="zdoy", "ldoy"="zdoy"),
+                     match_fun=list(`==`,`==`,`==`,`<=`,`>=`))
+  save(tt, file=paste(xdt,"_survdat_zoo_merge_", selyear,"_.Rda", sep=""))
+}
+
+wd=getwd()
+mergelist=list.files(wd, pattern = glob2rx("*20210414_survdat_zoo_merge_*")) # 
+tt=loadRData(mergelist[[1]])
+for(i in 2:length(yrs)){
+  tt1=loadRData(mergelist[[i]])
+  tt=rbind(tt, tt1)
+}
+save(tt, file=paste(xdt, '_merged_survdat_zoo_1977_2019.Rda', sep=''))
+dmrg4=tt# [unique(tt$index),]
 
 # tt2=tt[complete.cases(tt$zY),]
 # tt2$index=seq(from=13952, to=(13951+length(tt2$M)), by=1)
 # merge 2 dataframes together
-dmrg=rbind(tt, tt1)
-dmrg1=rbind(dmrg, tt2)
-dmrg2=rbind(dmrg1, tt3)
-dmrg3=rbind(dmrg2, tt4)
-dmrg4=rbind(dmrg3, tt5)
+# dmrg=rbind(tt, tt1)
+# dmrg1=rbind(dmrg, tt2)
+# dmrg2=rbind(dmrg1, tt3)
+# dmrg3=rbind(dmrg2, tt4)
+# dmrg4=rbind(dmrg3, tt5)
 
-save(dmrg4, file='updated_final_merged_survdat_zoo_1977_2018.Rda')
+# save(dmrg4, file='updated_final_merged_survdat_zoo_1977_2018.Rda')
 
 ## now subset original dataframes before joining together
 fish1.bio=svdwide.bio[dmrg4$index,]
 fish1.abn=svdwide.abn[dmrg4$index,]
-zoo1=dfz2[dmrg4$zindex,]
+# zoo1=dfz2[dmrg4$zindex,]
+zoo1=dfz[dmrg4$zindex,]
 ich1=ich[dmrg4$zindex,]
 
 # Create index to merge on
@@ -313,28 +344,188 @@ fish1.bio$mrgidx=seq(from=1, to=length(fish1.bio$YEAR), by=1)
 fish1.abn$mrgidx=seq(from=1, to=length(fish1.abn$YEAR), by=1)
 zoo1$mrgidx=fish1.bio$mrgidx
 ich1$mrgidx=fish1.bio$mrgidx
-## choose 1
-FData=merge(fish1.bio, ich1, by="mrgidx")
-FData=merge(FData, zoo1, by="mrgidx")
-FData.bio=FData
-save(FData.bio, file="Final_merged_fish_corBIO_Zoo_Ich.Rda")
+
+## need to fix this, order is wrong from Lmf
+colnames(ich1)[1:13]
+colnames(ich1)[1:12]=c("77_ich","73_ich","74_ich","75_ich","72_ich","155_ich","192_ich","103_ich","106_ich","107_ich","108_ich","197_ich")
+colnames(ich1)[1:13]
+# colnames(ich1)[1:12]=svnms2$ichnm
+
+### now extract static variables from rasters
+# rug=loadRData('/home/ryan/Git/NEhabitat/rasters/scaledrugosity.RData') # will not load???
+# rug=loadRData("/home/ryan/1_habitat_analysis_2017/static_vars/rast_rugosity.rdata")
+### load bottom temp file to use as template for non conforming rasters (remove before load dynamic files)
+bt=loadRData('/home/ryan/Git/NEhabitat/rasters/test/RAST_NESREG_1977.04.03.BT.TEMP.YEAR.000066596.RData') #BT
+# bt=masked.raster
+## depth raster
+gz=loadRData('/home/ryan/Git/NEhabitat/rasters/test/depth.RData') #gdepth
+# gz=resample(gdepth, bt, 'bilinear')
+gz2=(gz*-1)
+# gd2=crop(gz2, bt)
+# gd2=mask(gd2, bt)
+gd3=gz2
+gd3[gd3>375]=NA # set values > 375 m to NA
+gd4=resample(gd3, bt, 'bilinear')
+gd4=crop(gd4, bt)
+gd4=mask(gd4, bt)
+## grain size raster
+phi2mm=loadRData('/home/ryan/Git/NEhabitat/rasters/test/grainsizeMM.RData') #phi2mm
+phi2=resample(phi2mm, bt)
+phi2=crop(phi2, bt)
+phi2=mask(phi2, bt)
+## sand_pct raster
+sandpct=loadRData('/home/ryan/1_habitat_analysis_2017/static_vars/rast_sand_fraction.rdata') #sand_pct
+sand2=resample(sandpct, bt)
+sand2=crop(sand2, bt)
+sand2=mask(sand2, bt)
+## mud_pct raster
+mudpct=loadRData('/home/ryan/1_habitat_analysis_2017/static_vars/rast_mud_fraction.rdata') #sand_pct
+mud2=resample(mudpct, bt)
+mud2=crop(mud2, bt)
+mud2=mask(mud2, bt)
+## rugosity raster
+# load('/home/ryan/Git/NEhabitat/rasters/test/scaledrugosity.RData') #rugscl
+rug=loadRData('/home/ryan/Git/NEhabitat/rast_rugosity.rdata')
+mmin=cellStats(rug, 'min')
+mmax=cellStats(rug, 'max')
+rugscl=calc(rug, fun=function(x){(x-mmin)/(mmax-mmin)}) # rescale from -4:2 -> 0:1
+rug2=resample(rugscl, bt)
+ex=extent(bt)
+rug2=crop(rug2, ex)
+rug2=mask(rug2, bt)
+# load Chlorophyll climatology rasters, resample, rename
+chllist=list.files('/home/ryan/1_habitat_analysis_2017/chl/NESREG/clim/', pattern='.RData')
+for (i in (c(2,4,10))){
+  load(paste('/home/ryan/1_habitat_analysis_2017/chl/NESREG/clim/', chllist[i], sep=''))
+  masked.raster=crop(masked.raster, bt)
+  masked.raster=resample(masked.raster, bt)
+  masked.raster=mask(masked.raster, bt)
+  newname=paste("chl.", i, sep='')
+  assign(newname, masked.raster)
+  rm(masked.raster)
+}
+
+# coords=sp::SpatialPoints(FData.abn[,c(10,9)])
+coords=FData.abn[,c(10,9)]
+extrug=raster::extract(rug2, coords)
+extz=raster::extract(gd4, coords)
+extphi=raster::extract(phi2, coords)
+extsand=raster::extract(sand2, coords)
+extmud=raster::extract(mud2, coords)
+extchl2=raster::extract(chl.2, coords)
+extchl4=raster::extract(chl.4, coords)
+extchl10=raster::extract(chl.10, coords)
+
+## choose 1 - Either biomass or abundance as unit of measure from survdat to use in GAMs ##
+FData=merge(fish1.bio, ich1[,c(1:12,19)], by="mrgidx"); fishtype='biomass'
+FData=merge(FData, zoo1[,c(15:27)], by="mrgidx")
+# OR #
+FData=merge(fish1.abn, ich1[,c(1:12,19)], by="mrgidx"); fishtype='abundance'
+FData=merge(FData, zoo1[,c(15:27)], by="mrgidx")
+
+
+### set up year list to match files with
+yrlist=seq(from=1977, to=2019, by=1)
+### SELECT SPR of FALL seasons to process
+# SEASONss=unique(FData$SEASON)
+# SEASONss # be sure...
+# SEASON='Spr'; season=SEASONss[1]
+# SEASON='Fall'; season=SEASONss[2]
+FDss=FData %>% dplyr::select(LON, LAT, YEAR, SEASON)
+FData$BT=NA
+FData$ST=NA
+FDss$BT=NA
+FDss$ST=NA
+SEASONss=unique(FData$SEASON)
+for (jj in 1:2){
+  # SEASONss=unique(FData$SEASON)
+  season=SEASONss[jj]
+  if (season=="SPRING"){
+    SEASON='Spr'}
+  if (season=="FALL"){
+    SEASON='Fall'
+  }
+  ## list data files in each folder
+  btlist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/BT2', sep=''), pattern = 'RAST_NESREG_')
+  stlist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/ST2', sep=''), pattern = 'RAST_NESREG_')
+  # zlist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/pseudo', sep=''))
+  # zlist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/ctyp', sep=''))
+  ## parse year from filenames e.g #"RAST_NESREG_1977.04.03.BT.TEMP.YEAR.000066596.RData"
+  tb=strsplit(btlist, split=('RAST_NESREG_'))
+  ttb=sapply(tb, function(x) strsplit(x, "[.]")[[2]][1], USE.NAMES=FALSE)
+  ttb2=as.numeric(ttb)
+  #Surface temp
+  ts=strsplit(stlist, split=('RAST_NESREG_'))
+  tts=sapply(ts, function(x) strsplit(x, "[.]")[[2]][1], USE.NAMES=FALSE)
+  tts2=as.numeric(tts)
+  # Zooplankton (pseudocal)
+  # tz=strsplit(zlist, split=('RAST_NESREG_')) #old one for PSE
+  # tz=strsplit(zlist, split=('RAST_ctypZZ_')) # for new 7-year series
+  # ttz=sapply(tz, function(x) strsplit(x, "[.]")[[2]][1], USE.NAMES=FALSE)
+  # ttz2=as.numeric(ttz)
+  ### NOW loop over files, load yearly dynamic raster files and extract
+  # FDss$BT=NA
+  for (i in 1:length(yrlist)){
+    bi=which(yrlist[i]==ttb2) # index of year
+    bt=loadRData(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/BT2/', btlist[[bi]], sep=''))
+    bi=which(yrlist[i]==tts2) # index of year
+    st=loadRData(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/ST2/', stlist[[bi]], sep=''))
+    # bi=which(yrlist[i]==ttz2) # index of year
+    # pse=loadRData(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/pseudo/', zlist[[bi]], sep=''))
+    # cty=loadRData(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/ctyp/', zlist[[bi]], sep=''))
+    FDss$BT[which(FDss$YEAR==yrlist[i])]=extract(bt, FDss[which(FDss$YEAR==yrlist[i]),c(1:2)])
+    FDss$ST[which(FDss$YEAR==yrlist[i])]=extract(st, FDss[which(FDss$YEAR==yrlist[i]),c(1:2)])
+  }
+  FData$BT[which(FData$SEASON==season)]=FDss$BT[which(FDss$SEASON==season)]
+  FData$ST[which(FData$SEASON==season)]=FDss$ST[which(FDss$SEASON==season)]
+}
+#### Verify and replace
+# plot(FData$BOTTEMP~FData$BT, type='p')
+# plot(FData$BOTTEMP[which(FData$SEASON=="SPRING")]~FData$BT[which(FData$SEASON=="SPRING")], type='p')
+# plot(FData$BOTTEMP[which(FData$SEASON=="FALL")]~FData$BT[which(FData$SEASON=="FALL")], type='p')
+FData$BOTTEMP[which(is.na(FData$BOTTEMP))]=FData$BT[which(is.na(FData$BOTTEMP))]
+FData$SURFTEMP[which(is.na(FData$SURFTEMP))]=FData$ST[which(is.na(FData$SURFTEMP))]
+
+### Now add extracted static variables
+FData$DEPTH2=extz
+FData$rug=extrug
+FData$grnszmm=extphi
+FData$sand_pct=extsand
+FData$mud_pct=extmud
+FData$chl2=extchl2
+FData$chl4=extchl4
+FData$chl10=extchl10
+# FData.bio=FData
+# save(FData.bio, file=paste(xdt, "_Final_merged_fish_corBIO_Zoo_Ich.Rda", sep=""))
 # FData.bio=FData %>% select(-mrgidx, -lat.x, -lat.y, -lon.x, -lon.y, -date.x, -cruise_name, -station, -depth, -sfc_temp, 
                         # -sfc_salt, -btm_temp, -btm_salt, -volume_1m2, -time, -date.x, -date.y)
 # FData.abn=FData %>% select(-mrgidx, -lat.x, -lat.y, -lon.x, -lon.y, -date.x, -cruise_name, -station, -depth, -sfc_temp, 
 #                            -sfc_salt, -btm_temp, -btm_salt, -volume_1m2, -time, -date.x, -date.y)
 # FData.bio=FData %>% select(-mrgidx, -lon, -lat, -date, -latbin, -lonbin)
 # FData.abn=FData %>% select(-mrgidx, -lon, -lat, -date, -latbin, -lonbin)
-FData=merge(fish1.abn, ich1, by="mrgidx")
-FData=merge(FData, zoo1, by="mrgidx")
-FData.abn=FData
-save(FData.abn, file="Final_merged_fish_corABN_Zoo_Ich.Rda")
+# FData=merge(fish1.abn, ich1[,c(1:12,19)], by="mrgidx")
+# FData=merge(FData, zoo1[,c(15:27)], by="mrgidx")
 
-# except ITS NOT CORRECT....
+### Finally, save output for either abundance or biomass
+if (fishtype=='biomass'){
+  FData.bio=FData
+save(FData.abn, file=paste(xdt, "_Final_merged_fish_corABN_Zoo_Ich.Rda", sep=""))}
+if (fishtype=='abundance'){
+  FData.abn=FData
+save(FData.bio, file=paste(xdt, "_Final_merged_fish_corBIO_Zoo_Ich.Rda", sep=""))
+}
+
+
+
 ### troubleshooting....###
+# FDspr=FData.abn[which(fish$SEASON==slctseason),] # subset to season
+# test=fish[complete.cases(fish$`74_ich`),]
+# test2=is.na(test)
+# colSums(test2)
 unique(FData.bio$YEAR) ## 1977-2019, 1963-1976 WTF
 # x=unique(dmrg$Y)
 # y=unique(dmrg$zY)
-z=seq(1977,2018,1) # years that SHOULD be included
+z=seq(1977,2019,1) # years that SHOULD be included
 z[!(z %in% unique(FData.bio$YEAR))]
 # [1] 1981 1986 1996
 

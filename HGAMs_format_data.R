@@ -212,6 +212,11 @@ barplot(table(test3$YEAR[which(test3$SEASON.x=="SPRING")]))
 ## other computer
 load('/home/ryan/Documents/Git/NEhabitat/Final_merged_fish_corABN_Zoo_Ich.Rda') # Abundance
 
+## LOAD ORIGINAL DATA
+ogFData.abn=loadRData('/home/ryan/Git/NEhabitat/Final_merged_fish_corABN_Zoo_Ich.Rda')
+## new data, testing to see what is missing....
+FData.abn=loadRData('/home/ryan/Git/NEhabitat/20210415_Final_merged_fish_corABN_Zoo_Ich.Rda')
+
 ### Select season for GAMs
 slctseason="FALL"; fishseas="Fall"
 slctseason="SPRING"; fishseas="Spr"
@@ -224,7 +229,8 @@ fishname='Haddock' #74
 # fishname='SilverHake' #72
 # fishname='Pollock' #75
 
-fish=FData.abn %>% dplyr::select(YEAR, SEASON, LAT:BOTTEMP, `74_Adt`, `74_Juv`, `74_ich`, volume_100m3:chl12)
+fish=FData.abn %>% dplyr::select(YEAR, SEASON, LAT:BOTTEMP, `74_Adt`, `74_Juv`, `74_ich`, volume_100m3:chl10)
+
 fish$MONTH=month(FData.abn$EST_TOWDATE)
 fish=fish[complete.cases(fish),]
 fish$`74_ich`=ceiling(fish$`74_ich`) # make integer from numbers per 100 m/3

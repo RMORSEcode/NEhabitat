@@ -120,7 +120,8 @@ svnms=svspplu[svspplu$SCINAME %in% gnms$spp,]
 svnms2=left_join(svnms, gnms, by=c("SCINAME"="spp"))
 svnms$ich=svnms2$V1
 rm(svnms2)
-svnms2=svnms[,c(1,5)]
+svnms2=svnms[,c(1,4)]
+svnms2$ichnm=paste(svnms2$SVSPP, "_ich", sep='')
 
 # add juv or adt factor to GFall based on Lmf
 # test1=GFall[c(seq(from=1,to=5000,by=1)),]

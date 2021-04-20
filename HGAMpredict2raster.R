@@ -222,7 +222,7 @@ gz=loadRData('/home/ryan/Git/NEhabitat/rasters/test/depth.RData') #gdepth
 gz2=(gz*-1)
 # gd2=crop(gz2, bt)
 # gd2=mask(gd2, bt)
-gd3=gd2
+gd3=gz2
 gd3[gd3>375]=NA # set values > 375 m to NA
 gd4=resample(gd3, bt, 'bilinear')
 gd4=crop(gd4, bt)
@@ -237,16 +237,21 @@ sandpct=loadRData('/home/ryan/1_habitat_analysis_2017/static_vars/rast_sand_frac
 sand2=resample(sandpct, bt)
 sand2=crop(sand2, bt)
 sand2=mask(sand2, bt)
+## mud_pct raster
+mudpct=loadRData('/home/ryan/1_habitat_analysis_2017/static_vars/rast_mud_fraction.rdata') #sand_pct
+mud2=resample(mudpct, bt)
+mud2=crop(mud2, bt)
+mud2=mask(mud2, bt)
 ## rugosity raster
 # load('/home/ryan/Git/NEhabitat/rasters/test/scaledrugosity.RData') #rugscl
-# rug=loadRData('/home/ryan/Git/NEhabitat/rast_rugosity.rdata')
-# mmin=cellStats(rug, 'min')
-# mmax=cellStats(rug, 'max')
-# rugscl=calc(rug, fun=function(x){(x-mmin)/(mmax-mmin)}) # rescale from -4:2 -> 0:1
-# rug2=resample(rugscl, bt)
-# ex=extent(bt)
-# rug2=crop(rug2, ex)
-# rug2=mask(rug2, bt)
+rug=loadRData('/home/ryan/Git/NEhabitat/rast_rugosity.rdata')
+mmin=cellStats(rug, 'min')
+mmax=cellStats(rug, 'max')
+rugscl=calc(rug, fun=function(x){(x-mmin)/(mmax-mmin)}) # rescale from -4:2 -> 0:1
+rug2=resample(rugscl, bt)
+ex=extent(bt)
+rug2=crop(rug2, ex)
+rug2=mask(rug2, bt)
 
 # load Chlorophyll climatology rasters, resample, rename
 chllist=list.files('/home/ryan/1_habitat_analysis_2017/chl/NESREG/clim/', pattern='.RData')

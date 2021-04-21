@@ -426,19 +426,15 @@ FData=merge(FData, zoo1[,c(15:27)], by="mrgidx")
 
 ### set up year list to match files with
 yrlist=seq(from=1977, to=2019, by=1)
-### SELECT SPR of FALL seasons to process
-# SEASONss=unique(FData$SEASON)
-# SEASONss # be sure...
-# SEASON='Spr'; season=SEASONss[1]
-# SEASON='Fall'; season=SEASONss[2]
 FDss=FData %>% dplyr::select(LON, LAT, YEAR, SEASON)
 FData$BT=NA
 FData$ST=NA
+FData$cty=NA
 FDss$BT=NA
 FDss$ST=NA
+FDss$cty=NA
 SEASONss=unique(FData$SEASON)
 for (jj in 1:2){
-  # SEASONss=unique(FData$SEASON)
   season=SEASONss[jj]
   if (season=="SPRING"){
     SEASON='Spr'}
@@ -449,7 +445,7 @@ for (jj in 1:2){
   btlist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/BT2', sep=''), pattern = 'RAST_NESREG_')
   stlist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/ST2', sep=''), pattern = 'RAST_NESREG_')
   # zlist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/pseudo', sep=''))
-  # zlist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/ctyp', sep=''))
+  zlist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/ctyp', sep=''))
   ## parse year from filenames e.g #"RAST_NESREG_1977.04.03.BT.TEMP.YEAR.000066596.RData"
   tb=strsplit(btlist, split=('RAST_NESREG_'))
   ttb=sapply(tb, function(x) strsplit(x, "[.]")[[2]][1], USE.NAMES=FALSE)
@@ -460,9 +456,9 @@ for (jj in 1:2){
   tts2=as.numeric(tts)
   # Zooplankton (pseudocal)
   # tz=strsplit(zlist, split=('RAST_NESREG_')) #old one for PSE
-  # tz=strsplit(zlist, split=('RAST_ctypZZ_')) # for new 7-year series
-  # ttz=sapply(tz, function(x) strsplit(x, "[.]")[[2]][1], USE.NAMES=FALSE)
-  # ttz2=as.numeric(ttz)
+  tz=strsplit(zlist, split=('RAST_ctypZZ_')) # for new 7-year series
+  ttz=sapply(tz, function(x) strsplit(x, "[.]")[[2]][1], USE.NAMES=FALSE)
+  ttz2=as.numeric(ttz)
   ### NOW loop over files, load yearly dynamic raster files and extract
   # FDss$BT=NA
   for (i in 1:length(yrlist)){
@@ -470,22 +466,27 @@ for (jj in 1:2){
     bt=loadRData(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/BT2/', btlist[[bi]], sep=''))
     bi=which(yrlist[i]==tts2) # index of year
     st=loadRData(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/ST2/', stlist[[bi]], sep=''))
-    # bi=which(yrlist[i]==ttz2) # index of year
+    bi=which(yrlist[i]==ttz2) # index of year
+    # /home/ryan/1_habitat_analysis_2017/new 7 yr zoo/spring_rasters_7yr/RAST_ctypZZ_2008.04.01.06.TEMP.YEAR.000066596.RData
     # pse=loadRData(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/pseudo/', zlist[[bi]], sep=''))
-    # cty=loadRData(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/ctyp/', zlist[[bi]], sep=''))
+    cty=loadRData(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/ctyp/', zlist[[bi]], sep=''))
     FDss$BT[which(FDss$YEAR==yrlist[i])]=extract(bt, FDss[which(FDss$YEAR==yrlist[i]),c(1:2)])
     FDss$ST[which(FDss$YEAR==yrlist[i])]=extract(st, FDss[which(FDss$YEAR==yrlist[i]),c(1:2)])
+    FDss$cty[which(FDss$YEAR==yrlist[i])]=extract(cty, FDss[which(FDss$YEAR==yrlist[i]),c(1:2)])
   }
   FData$BT[which(FData$SEASON==season)]=FDss$BT[which(FDss$SEASON==season)]
   FData$ST[which(FData$SEASON==season)]=FDss$ST[which(FDss$SEASON==season)]
+  FData$cty[which(FData$SEASON==season)]=FDss$cty[which(FDss$SEASON==season)]
 }
 #### Verify and replace
 # plot(FData$BOTTEMP~FData$BT, type='p')
 # plot(FData$BOTTEMP[which(FData$SEASON=="SPRING")]~FData$BT[which(FData$SEASON=="SPRING")], type='p')
+# plot(log10(FData$ctyp_100m3[which(FData$SEASON=="SPRING")]+1)~FData$cty[which(FData$SEASON=="SPRING")], type='p')
+FData$cty3=10^FData$cty # convert from log scale back to N per 100 m3
 # plot(FData$BOTTEMP[which(FData$SEASON=="FALL")]~FData$BT[which(FData$SEASON=="FALL")], type='p')
 FData$BOTTEMP[which(is.na(FData$BOTTEMP))]=FData$BT[which(is.na(FData$BOTTEMP))]
 FData$SURFTEMP[which(is.na(FData$SURFTEMP))]=FData$ST[which(is.na(FData$SURFTEMP))]
-
+FData$ctyp_100m3[which(is.na(FData$ctyp_100m3))]=FData$cty3[which(is.na(FData$ctyp_100m3))]
 ### Now add extracted static variables
 FData$DEPTH2=extz
 FData$rug=extrug
@@ -495,17 +496,6 @@ FData$mud_pct=extmud
 FData$chl2=extchl2
 FData$chl4=extchl4
 FData$chl10=extchl10
-# FData.bio=FData
-# save(FData.bio, file=paste(xdt, "_Final_merged_fish_corBIO_Zoo_Ich.Rda", sep=""))
-# FData.bio=FData %>% select(-mrgidx, -lat.x, -lat.y, -lon.x, -lon.y, -date.x, -cruise_name, -station, -depth, -sfc_temp, 
-                        # -sfc_salt, -btm_temp, -btm_salt, -volume_1m2, -time, -date.x, -date.y)
-# FData.abn=FData %>% select(-mrgidx, -lat.x, -lat.y, -lon.x, -lon.y, -date.x, -cruise_name, -station, -depth, -sfc_temp, 
-#                            -sfc_salt, -btm_temp, -btm_salt, -volume_1m2, -time, -date.x, -date.y)
-# FData.bio=FData %>% select(-mrgidx, -lon, -lat, -date, -latbin, -lonbin)
-# FData.abn=FData %>% select(-mrgidx, -lon, -lat, -date, -latbin, -lonbin)
-# FData=merge(fish1.abn, ich1[,c(1:12,19)], by="mrgidx")
-# FData=merge(FData, zoo1[,c(15:27)], by="mrgidx")
-
 ### Finally, save output for either abundance or biomass
 if (fishtype=='biomass'){
   FData.bio=FData
@@ -519,9 +509,15 @@ save(FData.bio, file=paste(xdt, "_Final_merged_fish_corBIO_Zoo_Ich.Rda", sep="")
 
 ### troubleshooting....###
 # FDspr=FData.abn[which(fish$SEASON==slctseason),] # subset to season
-# test=fish[complete.cases(fish$`74_ich`),]
-# test2=is.na(test)
-# colSums(test2)
+## check on overall NA counts
+test=is.na(FData)
+colSums(test)
+
+## check on NA in zoo where data exists for ich
+test2=FData.abn[complete.cases(FData.abn$`74_ich`),]
+test3=is.na(test2)
+colSums(test3)
+
 unique(FData.bio$YEAR) ## 1977-2019, 1963-1976 WTF
 # x=unique(dmrg$Y)
 # y=unique(dmrg$zY)

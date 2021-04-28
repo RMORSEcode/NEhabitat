@@ -46,9 +46,9 @@ SEASON='Spr' # Fall
 SEASON='Fall'
 
 ### NAME OF FISH
-# fishnm='Haddock' #74
+fishnm='Haddock' #74
 # fishnm='SilverHake' #72
-fishnm='Cod' #73
+# fishnm='Cod' #73
 
 ## get path and list of models
 path1=paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/', fishnm,'/', sep='') # Spr/Haddock'
@@ -74,7 +74,7 @@ modlistpa=modlistpa2
 modlistpb=modlistpb2
 
 ## draw GAM smooths, save to pdf
-# pdf(paste(path1, 'PAmodels_smooths.pdf', sep=''), height=8, width=12)
+# pdf(paste(path1, xdt, '_PAmodels_smooths.pdf', sep=''), height=8, width=12)
 for (i in (1:length(modlistpa))){
   modchoice=i
   usemodel=loadRData(paste(path1,modlistpa[modchoice], sep=''))
@@ -185,12 +185,12 @@ write.csv(modauc, file=paste(path1,'Ich_model_AUC.csv', sep=""), row.names = F)
 dev.off()
 
 ## list data files in each folder
-btlist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/BT2', sep=''))
-stlist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/ST2', sep=''))
-# zlist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/pseudo', sep=''))
-zlist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/ctyp', sep=''))
-sslist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/SS2', sep=''))
-bslist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/BS2', sep=''))
+btlist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/BT2', sep=''), pattern = 'RAST_NESREG_')
+stlist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/ST2', sep=''), pattern = 'RAST_NESREG_')
+# zlist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/pseudo', sep=''), pattern = 'RAST_NESREG_')
+zlist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/ctyp', sep=''), pattern = 'RAST_ctypZZ')
+sslist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/SS2', sep=''), pattern = 'RAST_NESREG_')
+bslist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/BS2', sep=''), pattern = 'RAST_NESREG_')
 ## parse year from filenames e.g #"RAST_NESREG_1977.04.03.BT.TEMP.YEAR.000066596.RData"
 tb=strsplit(btlist, split=('RAST_NESREG_'))
 ttb=sapply(tb, function(x) strsplit(x, "[.]")[[2]][1], USE.NAMES=FALSE)
@@ -270,8 +270,8 @@ fl=levels=c("Adt", "Juv", "ich")
 fl=levels=c("Adt", "Juv")
 # fishnm='SilverHake'
 wd2=paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/', fishnm, '/', sep='')
-modchoice=2
-modchoicepb=2
+modchoice=5
+modchoicepb=5
 usemodel=loadRData(paste(path1,modlistpa[modchoice], sep=''))
 usemodelbio=loadRData(paste(path1,modlistpb[modchoicepb], sep=''))
 ### NOW loop over files, load yearly dynamic raster files and predict habitat from HGAM models
@@ -433,12 +433,12 @@ for (i in 1:length(modlistpa)){
   modeval[i,11]=((df.residual(usemodelbio)+sum(usemodelbio$edf))/3)-sum(usemodelbio$edf)
 }
 colnames(modeval)=c('model', 'PA.dev.exp','BIO.dev.exp','PA.aic','BIO.aic','PA.edf','BIO.edf','PA.res.df','BIO.res.df', 'PA.corr.res.df','BIO.corr.res.df')
-write.csv(format(modeval, digits=2), file=paste(wd2,'model_evaluation_', SEASON, '_', fishnm, '_', '.csv', sep=""), row.names = F)
+write.csv(format(modeval, digits=2), file=paste(wd2,xdt,'_model_evaluation_', SEASON, '_', fishnm, '_', '.csv', sep=""), row.names = F)
 
 #### Save model hindcast output trends (mean, trend, variance)
 ## Load rasters
 p1=paste('/home/ryan/Git/NEhabitat/rasters/',SEASON,'/', fishnm, '/', sep='')
-p2='fish_modGI_Fall_cod' #fall_haddock' #'fish_modGI_spr_Haddock' 'fish_modGI_spr_Haddock_select_years_mod' 'fish_modGI_spr_Haddock_abundance'
+p2='fish_modGSe_Spr_20210421_haddock' #fall_haddock' #'fish_modGI_spr_Haddock' 'fish_modGI_spr_Haddock_select_years_mod' 'fish_modGI_spr_Haddock_abundance'
 p3=paste('/PA_only_stacked_', SEASON, '_', fishnm, '_', sep='') #'PA_only_stacked_Spr_Haddock_'
 p4=paste('/stacked_', SEASON, '_', fishnm, '_', sep='') #'stacked_Spr_Haddock_'
 ichpa=loadRData(paste(p1,p2,p3,'ich.RData', sep=''))
@@ -830,6 +830,20 @@ for (i in 3:length(fpaf)){
   r2=loadRData(paste(wd, fpaf[i], sep=''))
   kfpaf=stack(kfpaf, r2)
 }
+### plot raster trends for Kevins RF models
+path1='/home/ryan/Git/NEhabitat/habitat index/for ryan/PlotTrends/'
+pdf(paste(path1, 'KF_RF_PA_haddock_spr_hindcastTrends.pdf', sep=''), height=4, width=6)
+KFpaSpr=plotRasterTrends(kfpas)
+dev.off()
+pdf(paste(path1, 'KF_RF_PA_haddock_fall_hindcastTrends.pdf', sep=''), height=4, width=6)
+KFpaFall=plotRasterTrends(kfpaf)
+dev.off()
+pdf(paste(path1, 'KF_RF_BM_haddock_spr_hindcastTrends.pdf', sep=''), height=4, width=6)
+KFbmSpr=plotRasterTrends(kfbms)
+dev.off()
+pdf(paste(path1, 'KF_RF_BM_haddock_fall_hindcastTrends.pdf', sep=''), height=4, width=6)
+KFbmFall=plotRasterTrends(kfbmf)
+dev.off()
 
 #load spring stacked hindcasts select years only model
 adtpa=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/Haddock/fish_modGI_spr_Haddock_select_years_mod/PA_only_stacked_Spr_Haddock_Adt.RData')
@@ -1234,6 +1248,9 @@ plotRasterTrends=function(rastck){
   arg=list(at=rng, labels=round(rng,3))
   plot(newrast.v, main=paste(length(time),'yrs','\n', TITL),col=cl, breaks=br,axis.args=arg,las=1) # 
   maps::map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="black", add=T)
+  stck=stack(c(newrast.m, newrast, newrast.t, trend.sig, newrast.v))
+  names(stck)=c("TS.mean", "TS.slope", "TS.slopeXtime", "TS.pvalue", "TS.sigma.stdev")
+  return(stck)
 }
 
 

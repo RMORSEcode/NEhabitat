@@ -46,9 +46,9 @@ SEASON='Spr' # Fall
 SEASON='Fall'
 
 ### NAME OF FISH
-fishnm='Haddock' #74
+# fishnm='Haddock' #74
 # fishnm='SilverHake' #72
-# fishnm='Cod' #73
+fishnm='Cod' #73
 
 ## get path and list of models
 path1=paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/', fishnm,'/', sep='') # Spr/Haddock'
@@ -438,7 +438,7 @@ write.csv(format(modeval, digits=2), file=paste(wd2,xdt,'_model_evaluation_', SE
 #### Save model hindcast output trends (mean, trend, variance)
 ## Load rasters
 p1=paste('/home/ryan/Git/NEhabitat/rasters/',SEASON,'/', fishnm, '/', sep='')
-p2='fish_modGSe_Spr_20210421_haddock' #fall_haddock' #'fish_modGI_spr_Haddock' 'fish_modGI_spr_Haddock_select_years_mod' 'fish_modGI_spr_Haddock_abundance'
+p2='fish_modGSe_Fall_cod_20210518' #fall_haddock' #'fish_modGI_spr_Haddock' 'fish_modGI_spr_Haddock_select_years_mod' 'fish_modGI_spr_Haddock_abundance'
 p3=paste('/PA_only_stacked_', SEASON, '_', fishnm, '_', sep='') #'PA_only_stacked_Spr_Haddock_'
 p4=paste('/stacked_', SEASON, '_', fishnm, '_', sep='') #'stacked_Spr_Haddock_'
 ichpa=loadRData(paste(p1,p2,p3,'ich.RData', sep=''))
@@ -887,7 +887,8 @@ plot(kdiff[[i]], zlim=c(-1,1), col=colorRampPalette(brewer.pal(9,"RdBu"))(30), m
 plotRasterMeanNegBinom(kdiff)
 
 ### load and stack Bottom temperaure
-btlist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/BT2', sep=''))
+# btlist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/BT2', sep=''))
+btlist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/BT2', sep=''), pattern = 'RAST_NESREG_')
 wd3=paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/BT2', sep='')
 rastBT=loadRData(paste(wd3,'/',btlist[1], sep=''))
 for (i in 2:length(btlist)){
@@ -902,6 +903,8 @@ BT_gbk=raster::extract(rastBT, gbk, fun=mean, na.rm=T)
 plot(BT_gbk[1,]~yrlist, type='l')
 BT_gom=raster::extract(rastBT, gom, fun=mean, na.rm=T)
 plot(BT_gom[1,]~yrlist, type='l')
+BT_mab=raster::extract(rastBT, mab, fun=mean, na.rm=T)
+plot(BT_mab[1,]~yrlist, type='l')
 
 ### load and stack Bottom temperaure
 bslist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/BS2', sep=''))
@@ -1253,6 +1256,68 @@ plotRasterTrends=function(rastck){
   return(stck)
 }
 
+## calculate mean and subtract mean from measured to plot anomaly
+plotRasterAnom=function(rastck, pltmin, pltmax){
+  time <- 1:nlayers(rastck) 
+  newrast.m=calc(rastck, fun=mean, na.rm=T)
+  mn=cellStats(newrast.m, min)
+  mx=cellStats(newrast.m, max)
+  high=max(0, mx)
+  br <- seq(0, high, by = high/15) 
+  cl=colorRampPalette(brewer.pal(9,"Reds"))(length(br))
+  rng=range(newrast.m[],na.rm=T)
+  arg=list(at=rng, labels=round(rng,3))
+  plot(newrast.m, col=cl, breaks=br,axis.args=arg,las=1, main=paste(length(time),'yrs','\nmean value')) # Yearly slope
+  maps::map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="black", add=T)
+  for (ii in 1:nlayers(rastck)){
+    anom=rastck[[ii]]-newrast.m
+    if (missing(pltmin)){
+      mn=cellStats(anom, min)
+    } else {
+      mn=pltmin
+    }
+    if (missing(pltmax)){
+      mx=cellStats(anom, max)
+    } else{
+      mx=pltmax
+    }
+    # if (exists("pltmin")){
+    #   mn=pltmin
+    # }    else {
+    #   mn=cellStats(anom, min)
+    # }
+    # if (exists("pltmax")){
+    #   mx=pltmax
+    # }    else {
+    #   mx=cellStats(anom, max)
+    # }
+    high=max(abs(mn), mx)
+    br <- seq(-high, high, by = high/15)
+    cl <- colorspace::diverge_hcl(length(br) - 1, power = 1)
+    rng=range(anom[],na.rm=T)
+    arg=list(at=rng, labels=round(rng,3))
+    plot(anom, col=cl, breaks=br, axis.args=arg, las=1, main=paste(yrlist[ii],' anomaly'), sep='') 
+    maps::map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="black", add=T)
+  }
+}
+
+### Plot bottom temperature anomaly by year with standard zlim and fluctuating zlim
+pdf(file=paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/BT2/BTanomaly_std.pdf', sep=''))
+plotRasterAnom(rastBT, pltmin = -3, pltmax = 3)
+dev.off()
+
+pdf(file=paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/BT2/BTanomaly.pdf', sep=''))
+plotRasterAnom(rastBT)
+dev.off()
+
+## plot area of shelf with 6-8 degrees in square KM (each grid cell resolution is 0.1 x 0.1 degrees ~= 1.11km^2)
+tt=matrix(NA, ncol=2, nrow=length(yrlist))
+tt[,1]=yrlist
+for (i in 1:length(yrlist)){
+tt[i,2]=sum(rastBT[[i]][] >= 6 & rastBT[[i]][] <= 8, na.rm=T)*1.11
+# print(paste(yrlist[i], ' ', tt, ' km^2', sep=''))
+}
+plot(tt[,2]~tt[,1], type='b')
 
 
 time <- 1:nlayers(ichcod) 

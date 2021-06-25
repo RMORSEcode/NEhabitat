@@ -433,12 +433,12 @@ for (i in 1:length(modlistpa)){
   modeval[i,11]=((df.residual(usemodelbio)+sum(usemodelbio$edf))/3)-sum(usemodelbio$edf)
 }
 colnames(modeval)=c('model', 'PA.dev.exp','BIO.dev.exp','PA.aic','BIO.aic','PA.edf','BIO.edf','PA.res.df','BIO.res.df', 'PA.corr.res.df','BIO.corr.res.df')
-write.csv(format(modeval, digits=2), file=paste(wd2,xdt,'_model_evaluation_', SEASON, '_', fishnm, '_', '.csv', sep=""), row.names = F)
+write.csv(format(modeval, digits=2), file=paste(path1,xdt,'_model_evaluation_', SEASON, '_', fishnm, '_', '.csv', sep=""), row.names = F)
 
 #### Save model hindcast output trends (mean, trend, variance)
 ## Load rasters
 p1=paste('/home/ryan/Git/NEhabitat/rasters/',SEASON,'/', fishnm, '/', sep='')
-p2='fish_modGSe_Fall_cod_20210518' #fall_haddock' #'fish_modGI_spr_Haddock' 'fish_modGI_spr_Haddock_select_years_mod' 'fish_modGI_spr_Haddock_abundance'
+p2='fish_modGSe_Spr_cod_20210518' #fall_haddock' #'fish_modGI_spr_Haddock' 'fish_modGI_spr_Haddock_select_years_mod' 'fish_modGI_spr_Haddock_abundance'
 p3=paste('/PA_only_stacked_', SEASON, '_', fishnm, '_', sep='') #'PA_only_stacked_Spr_Haddock_'
 p4=paste('/stacked_', SEASON, '_', fishnm, '_', sep='') #'stacked_Spr_Haddock_'
 ichpa=loadRData(paste(p1,p2,p3,'ich.RData', sep=''))
@@ -605,6 +605,40 @@ plot(juvhab_tsGBK[1,]~yrlist, type='l', las=1, ylab='GBK juv habitat', xlab='')
 juvhab_tsGOM=raster::extract(juvpa, tsGOM, fun=mean, na.rm=T)
 plot(juvhab_tsGOM[1,]~yrlist, type='l', las=1, ylab='GOM juv habitat', xlab='')
 dev.off()
+
+#  PA models spring GSe haddock
+ich1=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/Haddock/fish_modGSe_Spr_20210421_haddock/PA_only_stacked_Spr_Haddock_ich.RData')
+juv1=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/Haddock/fish_modGSe_Spr_20210421_haddock/PA_only_stacked_Spr_Haddock_Juv.RData')
+adt1=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/Haddock/fish_modGSe_Spr_20210421_haddock/PA_only_stacked_Spr_Haddock_Adt.RData')
+ichhab_tsGBK=raster::extract(ich1, tsGBK, fun=mean, na.rm=T)
+plot(ichhab_tsGBK[1,]~yrlist, type='l', las=1, ylab='GBK ich habitat', xlab='')
+ichhab_tsGOM=raster::extract(ich1, tsGOM, fun=mean, na.rm=T)
+plot(ichhab_tsGOM[1,]~yrlist, type='l', las=1, ylab='GOM ich habitat', xlab='')
+adthab_tsGBK=raster::extract(adt1, tsGBK, fun=mean, na.rm=T)
+plot(adthab_tsGBK[1,]~yrlist, type='l', las=1, ylab='GBK adt habitat', xlab='')
+adthab_tsGOM=raster::extract(adt1, tsGOM, fun=mean, na.rm=T)
+plot(adthab_tsGOM[1,]~yrlist, type='l', las=1, ylab='GOM adt habitat', xlab='')
+juvhab_tsGBK=raster::extract(juv1, tsGBK, fun=mean, na.rm=T)
+plot(juvhab_tsGBK[1,]~yrlist, type='l', las=1, ylab='GBK juv habitat', xlab='')
+juvhab_tsGOM=raster::extract(juv1, tsGOM, fun=mean, na.rm=T)
+plot(juvhab_tsGOM[1,]~yrlist, type='l', las=1, ylab='GOM juv habitat', xlab='')
+# Number per tow biomass models spring GSe haddock number per cell (0.1 x 0.1 ~ 1.11 km)
+ich1=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/Haddock/fish_modGSe_Spr_20210421_haddock/stacked_Spr_Haddock_ich.RData')
+juv1=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/Haddock/fish_modGSe_Spr_20210421_haddock/stacked_Spr_Haddock_Juv.RData')
+adt1=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/Haddock/fish_modGSe_Spr_20210421_haddock/stacked_Spr_Haddock_Adt.RData')
+ichhab_tsGBK=raster::extract(ich1, tsGBK, fun=mean, na.rm=T)
+plot(ichhab_tsGBK[1,]/1.11~yrlist, type='l', las=1, ylab='GBK ich habitat', xlab='')
+ichhab_tsGOM=raster::extract(ich1, tsGOM, fun=sum, na.rm=T)
+plot(ichhab_tsGOM[1,]/1.11~yrlist, type='l', las=1, ylab='GOM ich habitat', xlab='')
+adthab_tsGBK=raster::extract(adt1, tsGBK, fun=sum, na.rm=T)
+plot(adthab_tsGBK[1,]/1.11~yrlist, type='l', las=1, ylab='GBK adt habitat', xlab='')
+adthab_tsGOM=raster::extract(adt1, tsGOM, fun=sum, na.rm=T)
+plot(adthab_tsGOM[1,]/1.11~yrlist, type='l', las=1, ylab='GOM adt habitat', xlab='')
+juvhab_tsGBK=raster::extract(juv1, tsGBK, fun=sum, na.rm=T)
+plot(juvhab_tsGBK[1,]/1.11~yrlist, type='l', las=1, ylab='GBK juv habitat', xlab='')
+juvhab_tsGOM=raster::extract(juv1, tsGOM, fun=sum, na.rm=T)
+plot(juvhab_tsGOM[1,]/1.11~yrlist, type='l', las=1, ylab='GOM juv habitat', xlab='')
+
 
 ### plot model residuals against variables
 modchoice=5 # possible different lengths for PA and BIO (e.g. haddock)
@@ -864,6 +898,15 @@ combr=stack(combr, a2)
 }
 kdiff=kfpas-combr
 
+r=stack(adt1[[1]], juv1[[1]])
+combr=(max(r))
+for (i in 2:dim(adt1)[[3]]){
+  r2=stack(adt1[[i]], juv1[[i]])
+  a2=(max(r2))
+  combr=stack(combr, a2)
+}
+kdiff=kfpas-combr
+
 plotRasterMeanNegBinom=function(rastck){
   time <- 1:nlayers(rastck) 
   newrast.m=calc(rastck, fun=mean, na.rm=T)
@@ -906,6 +949,16 @@ plot(BT_gom[1,]~yrlist, type='l')
 BT_mab=raster::extract(rastBT, mab, fun=mean, na.rm=T)
 plot(BT_mab[1,]~yrlist, type='l')
 
+BT_gbk=raster::extract(rastBT, tsGBK, fun=mean, na.rm=T)
+plot(BT_gbk[1,]~yrlist, type='l')
+BT_gom=raster::extract(rastBT, tsGOM, fun=mean, na.rm=T)
+plot(BT_gom[1,]~yrlist, type='l')
+# BT_mab=raster::extract(rastBT, mab, fun=mean, na.rm=T)
+# plot(BT_mab[1,]~yrlist, type='l')
+
+BT_nes.fall=raster::extract(rastBT, nes, fun=mean, na.rm=T)
+plot(BT_nes.fall[1,]~yrlist, type='l')
+
 ### load and stack Bottom temperaure
 bslist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/BS2', sep=''))
 wd3=paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/BS2', sep='')
@@ -940,9 +993,11 @@ for (i in 2:length(zlist)){
   rastDF=loadRData(paste(wd3,'/',zlist[i], sep=''))
   rastCTY=stack(rastCTY, rastDF)
 }
+CTY_gbk=raster::extract(rastCTY, tsGBK, fun=mean, na.rm=T)
+plot(CTY_gbk[1,]~yrlist, type='l', las=1, ylab='GBK strata Ctyp')
 CTY_gbk=raster::extract(rastCTY, gbk, fun=mean, na.rm=T)
-plot(CTY_gbk[1,]~yrlist, type='l')
-CTY_gom=raster::extract(rastCTY, gom, fun=mean, na.rm=T)
+plot(CTY_gbk[1,]~yrlist, type='l', las=1, ylab='GBK strata Ctyp')
+CTY_gom=raster::extract(rastCTY, tsGOM, fun=mean, na.rm=T)
 plot(CTY_gom[1,]~yrlist, type='l')
 
 ## check GAM pseudocal
@@ -981,6 +1036,11 @@ test2=polygons$STR2 %in% tsgom
 tsGOM=polygons[test2,]
 plot(tsGOM)
 
+## get area of TS polygons
+x=rgdal::readOGR('/home/ryan/Desktop/shapefiles/TrawlSurvey/strata.shp')
+test2=x$STR2 %in% tsgb
+raster::area(TSGB)/1000000
+sum(raster::area(TSGB)/1000000) # 73699.18 sq km
 
 # CoreOffshoreStrata<-c(seq(1010,1300,10),1340, seq(1360,1400,10),seq(1610,1760,10))
 # inshore strata to use, still sampled by Bigelow
@@ -1191,7 +1251,12 @@ plotRasterTrends=function(rastck){
   mn=cellStats(newrast.m, min)
   mx=cellStats(newrast.m, max)
   high=max(0, mx)
-  br <- seq(0, high, by = high/15) 
+  if (high <=1 ){
+    high2=1
+  } else {
+    high2=high
+  }
+  br <- seq(0, high2, by = high2/15) 
   cl=colorRampPalette(brewer.pal(9,"Reds"))(length(br))
   rng=range(newrast.m[],na.rm=T)
   arg=list(at=rng, labels=round(rng,3))
@@ -1302,13 +1367,31 @@ plotRasterAnom=function(rastck, pltmin, pltmax){
 }
 
 ### Plot bottom temperature anomaly by year with standard zlim and fluctuating zlim
-pdf(file=paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/BT2/BTanomaly_std.pdf', sep=''))
+pdf(file=paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/BT2/',SEASON,'_BTanomaly_std.pdf', sep=''))
 plotRasterAnom(rastBT, pltmin = -3, pltmax = 3)
 dev.off()
 
-pdf(file=paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/BT2/BTanomaly.pdf', sep=''))
+pdf(file=paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/BT2/',SEASON,'_BTanomaly.pdf', sep=''))
 plotRasterAnom(rastBT)
 dev.off()
+
+# rastBT.spr
+rastBT.spr.ss=rastBT.spr[[5:25]]
+newrast.m.spr=calc(rastBT.spr.ss, fun=mean, na.rm=T)
+BTspr.anom=rastBT-newrast.m.spr
+BTsprgbk.anom=raster::extract(BTspr.anom, tsGBK, fun=mean, na.rm=T)
+plot(colMeans(BTsprgbk.anom)~yrlist, type='l', las=1, ylab='BT anomaly', main="Spr")
+BTsprgbk.anom=raster::extract(BTspr.anom, gbk, fun=mean, na.rm=T)
+plot(BTsprgbk.anom[1,]~yrlist, type='l', las=1, ylab='BT anomaly', main="Spr")
+
+# rastBT.fall
+rastBT.fall.ss=rastBT.fall[[5:25]] #1981-2001
+newrast.m.fall=calc(rastBT.fall.ss, fun=mean, na.rm=T)
+BTfall.anom=rastBT.fall-newrast.m.fall
+BTfallgbk.anom=raster::extract(BTfall.anom, tsGBK, fun=mean, na.rm=T)
+plot(colMeans(BTfallgbk.anom)~yrlist, type='l', las=1, ylab='BT anomaly', main='Fall')
+BTfallgbk.anom=raster::extract(BTfall.anom, gbk, fun=mean, na.rm=T)
+plot(BTfallgbk.anom[1,]~yrlist, type='l', las=1, ylab='BT anomaly', main='Fall')
 
 ## plot area of shelf with 6-8 degrees in square KM (each grid cell resolution is 0.1 x 0.1 degrees ~= 1.11km^2)
 tt=matrix(NA, ncol=2, nrow=length(yrlist))

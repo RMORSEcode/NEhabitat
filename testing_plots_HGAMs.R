@@ -2,7 +2,8 @@ modchoice=i
 modlistpa[modchoice]
 usemodel=loadRData(paste(path1,modlistpa[modchoice], sep=''))
 
-
+par(oma=c(3,2,2,0))
+par(mar=c(2,4,2,1) + 0.1)
 
 ### plotting and fitting for haddock
 test=fish2
@@ -609,12 +610,16 @@ for(i in 1:length(yrlist)){
   adthads.area[i,1:3]=RasterClassAreaSum(adt1s[[i]], 0, 0.2, 0.5, 1)
 }
 plot(adthads.area[,3]~yrlist, type='b', las=1,xlab='',ylab='',main='adt had spr')
-
-plot(NULL, ylim=c(10000,45000), xlim=c(1977,2019), ylab='',main="Spr haddock habitat area", xlab="", las=1)
-lines(juvhads.area[,3]~yrlist, lty=1, col='blue')# las=1, ylab=paste(sellab,' GB habitat', xlab='')
-lines(adthads.area[,3]~yrlist, lty=1, col='red')# las=1, ylab=paste(sellab,' GB habitat', xlab='')
-lines(ichhads.area[,3]~yrlist, lty=1, col='green')# las=1, ylab=paste(sellab,' GB habitat', xlab='')
-legend('topleft', legend = c('adt', 'juv', 'ich'),lty=1, col=c('red', 'blue', 'green'), bty='n', horiz = T)
+# par(mar=c(1,1,1,1))
+par(oma=c(3,2,2,0))
+par(mar=c(2,4,2,1) + 0.1)
+ylab.txt=expression('Spring habitat area (km)'^2)
+plot(NULL, ylim=c(10000,45000), xlim=c(1977,2019), ylab='', xlab="", las=1)
+lines(juvhads.area[,3]~yrlist, lty=2, col='black')# las=1, ylab=paste(sellab,' GB habitat', xlab='')
+lines(adthads.area[,3]~yrlist, lty=1, col='black')# las=1, ylab=paste(sellab,' GB habitat', xlab='')
+lines(ichhads.area[,3]~yrlist, lty=3, col='black')# las=1, ylab=paste(sellab,' GB habitat', xlab='')
+mtext(ylab.txt,side=2, line =3.5)
+legend('topleft', legend = c('Ad had', 'Jv had', 'Ic had'),lty=c(1,2,3), col='black', bty='n', horiz = T)
 abline(v=c(2003,2010, 2013, 2016), lty=3)
 
 ## cod area extractions
@@ -636,11 +641,16 @@ for(i in 1:length(yrlist)){
 }
 plot(adtcods.area[,3]~yrlist, type='b', las=1,xlab='',ylab='',main='adt cod spr')
 
-plot(NULL, ylim=c(10000,65000), xlim=c(1977,2019), ylab='',main="Spr cod habitat area", xlab="", las=1)
-lines(juvcods.area[,3]~yrlist, lty=1, col='blue')# las=1, ylab=paste(sellab,' GB habitat', xlab='')
-lines(adtcods.area[,3]~yrlist, lty=1, col='red')# las=1, ylab=paste(sellab,' GB habitat', xlab='')
-lines(ichcods.area[,3]~yrlist, lty=1, col='green')# las=1, ylab=paste(sellab,' GB habitat', xlab='')
-legend('bottomleft', legend = c('adt', 'juv', 'ich'),lty=1, col=c('red', 'blue', 'green'), bty='n', horiz = T)
+par(oma=c(3,2,2,0))
+par(mar=c(2,4,2,1) + 0.1)
+ylab.txt=expression('Spring habitat area (km)'^2)
+plot(NULL, ylim=c(10000,65000), xlim=c(1977,2019), ylab='', xlab="", las=1)
+# plot(NULL, ylim=c(10000,65000), xlim=c(1977,2019), ylab='',main="Spr cod habitat area", xlab="", las=1)
+lines(juvcods.area[,3]~yrlist, lty=2, col='black')# las=1, ylab=paste(sellab,' GB habitat', xlab='')
+lines(adtcods.area[,3]~yrlist, lty=1, col='black')# las=1, ylab=paste(sellab,' GB habitat', xlab='')
+lines(ichcods.area[,3]~yrlist, lty=3, col='black')# las=1, ylab=paste(sellab,' GB habitat', xlab='')
+mtext(ylab.txt,side=2, line =3.5)
+legend('bottomleft', legend = c('Ad cod', 'Jv cod', 'Ic cod'),lty=c(1,2,3), col='black', bty='n', horiz = T)
 # abline(v=c(2003,2010, 2013, 2016), lty=3)
 plot(NULL, ylim=c(10000,110000), xlim=c(1977,2019), ylab='',main="Spr cod habitat area", xlab="", las=1)
 lines(juvcods.area[,3]~yrlist, lty=1, col='blue')# las=1, ylab=paste(sellab,' GB habitat', xlab='')
@@ -650,6 +660,22 @@ lines(juvcods.area[,2]~yrlist, lty=2, col='blue')# las=1, ylab=paste(sellab,' GB
 lines(adtcods.area[,2]~yrlist, lty=2, col='red')# las=1, ylab=paste(sellab,' GB habitat', xlab='')
 lines(ichcods.area[,2]~yrlist, lty=2, col='green')# las=1, ylab=paste(sellab,' GB habitat', xlab='')
 legend('bottomleft', legend = c('adt', 'juv', 'ich'),lty=1, col=c('red', 'blue', 'green'), bty='n', horiz = T)
+
+
+### looks bad... do 2 figs instead
+# par(oma=c(2,2,2,0))
+# par(mar=c(1,4,1,1) + 0.1)
+# ylab.txt=expression('Spring habitat area (km)'^2)
+# plot(NULL, ylim=c(10000,65000), xlim=c(1977,2019), ylab='', xlab="", las=1)
+# # plot(NULL, ylim=c(10000,65000), xlim=c(1977,2019), ylab='',main="Spr cod habitat area", xlab="", las=1)
+# lines(juvcods.area[,3]~yrlist, lty=2, col='red')# las=1, ylab=paste(sellab,' GB habitat', xlab='')
+# lines(adtcods.area[,3]~yrlist, lty=1, col='red')# las=1, ylab=paste(sellab,' GB habitat', xlab='')
+# lines(ichcods.area[,3]~yrlist, lty=3, col='red')# las=1, ylab=paste(sellab,' GB habitat', xlab='')
+# mtext(ylab.txt,side=2, line =3.5)
+# lines(juvhads.area[,3]~yrlist, lty=2, col='black')# las=1, ylab=paste(sellab,' GB habitat', xlab='')
+# lines(adthads.area[,3]~yrlist, lty=1, col='black')# las=1, ylab=paste(sellab,' GB habitat', xlab='')
+# lines(ichhads.area[,3]~yrlist, lty=3, col='black')# las=1, ylab=paste(sellab,' GB habitat', xlab='')
+# legend('bottomleft', legend = c('Ad cod', 'Jv cod', 'Ic cod'),lty=c(1,2,3), col='black', bty='n', horiz = T)
 
 
 ### Fall haddock
@@ -665,11 +691,15 @@ for(i in 1:length(yrlist)){
 }
 plot(adthadf.area[,3]~yrlist, type='b', las=1,xlab='',ylab='',main='adt had fall')
 
-plot(NULL, ylim=c(30000,70000), xlim=c(1977,2019), ylab='',main="Fall haddock habitat area", xlab="", las=1)
-lines(juvhadf.area[,3]~yrlist, lty=1, col='blue')# las=1, ylab=paste(sellab,' GB habitat', xlab='')
-lines(adthadf.area[,3]~yrlist, lty=1, col='red')# las=1, ylab=paste(sellab,' GB habitat', xlab='')
-legend('topleft', legend = c('adt', 'juv'),lty=1, col=c('red', 'blue'), bty='n', horiz = T)
-abline(v=c(2003,2010, 2013, 2016), lty=3)
+par(oma=c(3,2,2,0))
+par(mar=c(2,4,2,1) + 0.1)
+ylab.txt=expression('Fall habitat area (km)'^2)
+plot(NULL, ylim=c(30000,70000), xlim=c(1977,2019), ylab='', xlab="", las=1)
+lines(juvhadf.area[,3]~yrlist, lty=2, col='black')# las=1, ylab=paste(sellab,' GB habitat', xlab='')
+lines(adthadf.area[,3]~yrlist, lty=1, col='black')# las=1, ylab=paste(sellab,' GB habitat', xlab='')
+mtext(ylab.txt,side=2, line =3.5)
+legend('topleft', legend = c('Ad had', 'Jv had'),lty=c(1,2), col='black', bty='n', horiz = T)
+# abline(v=c(2003,2010, 2013, 2016), lty=3)
 
 ## Cod fall
 juvcodf.area=matrix(NA, ncol=3, nrow=length(yrlist))
@@ -684,17 +714,22 @@ for(i in 1:length(yrlist)){
 }
 plot(adtcodf.area[,3]~yrlist, type='b', las=1,xlab='',ylab='',main='adt cod fall')
 
-plot(NULL, ylim=c(0,55000), xlim=c(1977,2019), ylab='',main="Fall cod habitat area", xlab="", las=1)
-lines(juvcodf.area[,3]~yrlist, lty=2, col='blue')# las=1, ylab=paste(sellab,' GB habitat', xlab='')
-lines(adtcodf.area[,3]~yrlist, lty=2, col='red')# las=1, ylab=paste(sellab,' GB habitat', xlab='')
-legend('topleft', legend = c('adt', 'juv'),lty=1, col=c('red', 'blue'), bty='n', horiz = T)
+ylab.txt=expression('Fall habitat area (km)'^2)
+par(oma=c(3,2,2,0))
+par(mar=c(2,4,2,1) + 0.1)
+plot(NULL, ylim=c(0,55000), xlim=c(1977,2019), ylab='', xlab="", las=1)
+# plot(NULL, ylim=c(0,55000), xlim=c(1977,2019), ylab='',main="Fall cod habitat area", xlab="", las=1)
+lines(juvcodf.area[,3]~yrlist, lty=2, col='black')# las=1, ylab=paste(sellab,' GB habitat', xlab='')
+lines(adtcodf.area[,3]~yrlist, lty=1, col='black')# las=1, ylab=paste(sellab,' GB habitat', xlab='')
+mtext(ylab.txt,side=2, line =3.5)
+legend('bottomleft', legend = c('Ad cod', 'Jv cod'),lty=c(1,2), col=c('black', 'black'), bty='n', horiz = T)
 # abline(v=c(2003,2010, 2013, 2016), lty=3)
 plot(NULL, ylim=c(0,55000), xlim=c(1977,2019), ylab='',main="Fall cod habitat area", xlab="", las=1)
-lines(juvcodf.area[,2]~yrlist, lty=2, col='blue')# las=1, ylab=paste(sellab,' GB habitat', xlab='')
+lines(juvcodf.area[,2]~yrlist, lty=2, col='black')# las=1, ylab=paste(sellab,' GB habitat', xlab='')
 lines(adtcodf.area[,2]~yrlist, lty=2, col='red')# las=1, ylab=paste(sellab,' GB habitat', xlab='')
-lines(juvcodf.area[,3]~yrlist, lty=1, col='blue')# las=1, ylab=paste(sellab,' GB habitat', xlab='')
+lines(juvcodf.area[,3]~yrlist, lty=1, col='black')# las=1, ylab=paste(sellab,' GB habitat', xlab='')
 lines(adtcodf.area[,3]~yrlist, lty=1, col='red')# las=1, ylab=paste(sellab,' GB habitat', xlab='')
-legend('bottomleft', legend = c('adt', 'juv'),lty=1, col=c('red', 'blue'), bty='n', horiz = T)
+legend('bottomleft', legend = c('adt', 'juv'),lty=1, col=c('red', 'black'), bty='n', horiz = T)
 abline(v=2004, lty=3)
 
 nes=rgdal::readOGR('/home/ryan/Desktop/shapefiles/epu_shapes/EPU_NESPoly.shp')
@@ -734,6 +769,18 @@ for (i in 2:length(zlist)){
 ## save output
 # Zoospring=rastZT
 # Zoofall=rastZT
+
+### load and stack Surface temperaure
+stlist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/ST2', sep=''), pattern = 'RAST_NESREG_')
+wd3=paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/ST2', sep='')
+rastST=loadRData(paste(wd3,'/',stlist[1], sep=''))
+for (i in 2:length(stlist)){
+  rastDF=loadRData(paste(wd3,'/',stlist[i], sep=''))
+  rastST=stack(rastST, rastDF)
+}
+## save output
+STspring=rastST
+STfall=rastST
 
 ### load and stack Bottom temperaure
 # btlist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/BT2', sep=''))
@@ -829,6 +876,29 @@ lines(fBTjuvhadhab~yrlist, lty=3, col='red')
 legend('topleft', legend = c('Ad cod', 'Jv cod', 'Ad had', 'Jv had'),lty=c(1,3,1,3), col=c('black', 'black', 'red','red'), bty='n', horiz = T)
 
 
+sSTadtcodhab=extractrasterAbyrasterBvals(STspring, adt2s, Bval=0.5)
+sSTjuvcodhab=extractrasterAbyrasterBvals(STspring, juv2s, Bval=0.5)
+sSTadthadhab=extractrasterAbyrasterBvals(STspring, adt1s, Bval=0.5)
+sSTjuvhadhab=extractrasterAbyrasterBvals(STspring, juv1s, Bval=0.5)
+fSTadtcodhab=extractrasterAbyrasterBvals(STfall, adt2f, Bval=0.5)
+fSTjuvcodhab=extractrasterAbyrasterBvals(STfall, juv2f, Bval=0.5)
+fSTadthadhab=extractrasterAbyrasterBvals(STfall, adt1f, Bval=0.5)
+fSTjuvhadhab=extractrasterAbyrasterBvals(STfall, juv1f, Bval=0.5)
+
+## both spr cod and haddock on same plot
+plot(sSTadtcodhab~yrlist, type='l', ylim=c(2,7), main='Spr', ylab='ST', xlab='', las=1)
+lines(sSTjuvcodhab~yrlist, lty=3, col='black')
+lines(sSTadthadhab~yrlist, lty=1, col='red')
+lines(sSTjuvhadhab~yrlist, lty=3, col='red')
+legend('topleft', legend = c('Ad cod', 'Jv cod', 'Ad had', 'Jv had'),lty=c(1,3,1,3), col=c('black', 'black', 'red','red'), bty='n', horiz = T)
+## both fall cod and haddock on same plot
+plot(fSTadtcodhab~yrlist, type='l', ylim=c(11,16), main="Fall", ylab='ST', xlab='', las=1)
+lines(fSTjuvcodhab~yrlist, lty=3)
+lines(fSTadthadhab~yrlist, lty=1, col='red')
+lines(fSTjuvhadhab~yrlist, lty=3, col='red')
+legend('topleft', legend = c('Ad cod', 'Jv cod', 'Ad had', 'Jv had'),lty=c(1,3,1,3), col=c('black', 'black', 'red','red'), bty='n', horiz = T)
+
+
 sZooadtcodhab=extractrasterAbyrasterBvals(Zoospring, adt2s, Bval=0.5)
 sZoojuvcodhab=extractrasterAbyrasterBvals(Zoospring, juv2s, Bval=0.5)
 fZooadtcodhab=extractrasterAbyrasterBvals(Zoofall, adt2f, Bval=0.5)
@@ -856,4 +926,63 @@ lines(fZooadthadhab~yrlist, lty=1, col='red')
 lines(fZoojuvhadhab~yrlist, lty=3, col='red')
 legend('topleft', legend = c('Ad cod', 'Jv cod', 'Ad had', 'Jv had'),lty=c(1,3,1,3), col=c('black', 'black', 'red','red'), bty='n', horiz = T)
 
+### bottom temperature thermal habitat (C) area selections --
+## from values and plots above, use for range for (Spr/Fall):
+# Adt had 4.5-7 / 8-10
+# Juv had 4.5-7 / 9.5-11
+# Adt cod 4.5-6.5 / 8-10
+# Juv cod 3.0-7 / 9.5-11
+## spring 3-7
+## fall 8-11
+
+isEmpty <- function(x) {
+  return(identical(x, numeric(0)))
+}
+thermhabs.area=matrix(NA, ncol=3, nrow=length(yrlist))
+for(i in 1:length(yrlist)){
+  thermhabs.area2=RasterClassAreaSum(BTspring[[i]], 0, 3, 7, 30)
+  thermhabs.area[i,1]=ifelse(isEmpty(thermhabs.area2[which(as.numeric(rownames(thermhabs.area2))==1)]), NA, thermhabs.area2[which(as.numeric(rownames(thermhabs.area2))==1)])
+  thermhabs.area[i,2]=ifelse(isEmpty(thermhabs.area2[which(as.numeric(rownames(thermhabs.area2))==2)]), NA, thermhabs.area2[which(as.numeric(rownames(thermhabs.area2))==2)])
+  thermhabs.area[i,3]=ifelse(isEmpty(thermhabs.area2[which(as.numeric(rownames(thermhabs.area2))==3)]), NA, thermhabs.area2[which(as.numeric(rownames(thermhabs.area2))==3)])
+}
+plot(thermhabs.area[,2]~yrlist, type='b', las=1,xlab='',ylab='',main='spr 3-7 area')
+
+thermhabs.area=matrix(NA, ncol=3, nrow=length(yrlist))
+for(i in 1:length(yrlist)){
+  bbox=extent(-74, -65.45, 40, 44.65)
+  test=crop(BTspring[[i]], bbox)
+  thermhabs.area2=RasterClassAreaSum(test, 0, 3, 7, 30)
+  thermhabs.area[i,1]=ifelse(isEmpty(thermhabs.area2[which(as.numeric(rownames(thermhabs.area2))==1)]), NA, thermhabs.area2[which(as.numeric(rownames(thermhabs.area2))==1)])
+  thermhabs.area[i,2]=ifelse(isEmpty(thermhabs.area2[which(as.numeric(rownames(thermhabs.area2))==2)]), NA, thermhabs.area2[which(as.numeric(rownames(thermhabs.area2))==2)])
+  thermhabs.area[i,3]=ifelse(isEmpty(thermhabs.area2[which(as.numeric(rownames(thermhabs.area2))==3)]), NA, thermhabs.area2[which(as.numeric(rownames(thermhabs.area2))==3)])
+}
+plot(thermhabs.area[,2]~yrlist, type='b', las=1,xlab='',ylab='',main='Spr habitat area')
+
+thermhabf.area=matrix(NA, ncol=3, nrow=length(yrlist))
+for(i in 1:length(yrlist)){
+  thermhabf.area2=RasterClassAreaSum(BTspring[[i]], 0, 8, 11, 25)
+  thermhabf.area[i,1]=ifelse(isEmpty(thermhabf.area2[which(as.numeric(rownames(thermhabf.area2))==1)]), NA, thermhabf.area2[which(as.numeric(rownames(thermhabf.area2))==1)])
+  thermhabf.area[i,2]=ifelse(isEmpty(thermhabf.area2[which(as.numeric(rownames(thermhabf.area2))==2)]), NA, thermhabf.area2[which(as.numeric(rownames(thermhabf.area2))==2)])
+  thermhabf.area[i,3]=ifelse(isEmpty(thermhabf.area2[which(as.numeric(rownames(thermhabf.area2))==3)]), NA, thermhabf.area2[which(as.numeric(rownames(thermhabf.area2))==3)])
+}
+plot(thermhabf.area[,2]~yrlist, type='b', las=1,xlab='',ylab='',main='fall 8-11 area')
+
+thermhabf.area=matrix(NA, ncol=3, nrow=length(yrlist))
+for(i in 1:length(yrlist)){
+  bbox=extent(-74, -65.45, 40, 44.65)
+  test=crop(BTfall[[i]], bbox)
+  thermhabf.area2=RasterClassAreaSum(test, 0, 8, 11, 25)
+  thermhabf.area[i,1]=ifelse(isEmpty(thermhabf.area2[which(as.numeric(rownames(thermhabf.area2))==1)]), NA, thermhabf.area2[which(as.numeric(rownames(thermhabf.area2))==1)])
+  thermhabf.area[i,2]=ifelse(isEmpty(thermhabf.area2[which(as.numeric(rownames(thermhabf.area2))==2)]), NA, thermhabf.area2[which(as.numeric(rownames(thermhabf.area2))==2)])
+  thermhabf.area[i,3]=ifelse(isEmpty(thermhabf.area2[which(as.numeric(rownames(thermhabf.area2))==3)]), NA, thermhabf.area2[which(as.numeric(rownames(thermhabf.area2))==3)])
+}
+plot(thermhabf.area[,2]~yrlist, type='b', las=1,xlab='',ylab='',main='fall 8-11 area')
+
+par(oma=c(3,2,2,0))
+par(mar=c(2,4,2,1) + 0.1)
+ylab.txt=expression('Thermal habitat area (km)'^2)
+plot(thermhabs.area[,2]~yrlist, type='l', ylim=c(5e4, 1.8e5),las=1,xlab='',ylab='')#,main='Thermal habitat area')
+lines(thermhabf.area[,2]~yrlist, lty=2, las=1)
+mtext(ylab.txt,side=2, line =3.5)
+legend('bottomleft', legend = c('Spr: 3-7 C', 'Fall: 8-11 C'),lty=c(1,2), col=c('black', 'black'), bty='n', horiz = T)
 

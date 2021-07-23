@@ -864,15 +864,47 @@ legend('topleft', legend = c('adt', 'juv'),lty=c(1,3), bty='n', horiz = T)
 
 ## both spr cod and haddock on same plot
 plot(sBTadtcodhab~yrlist, type='l', ylim=c(3,8), main='Spr', ylab='BT', xlab='', las=1)
+m = lm(sBTadtcodhab~yrlist)
+if(summary(m)$coefficients[8] < 0.05){
+  abline(m, lty=1, col='black')
+}
 lines(sBTjuvcodhab~yrlist, lty=3, col='black')
+m = lm(sBTjuvcodhab~yrlist)
+if(summary(m)$coefficients[8] < 0.05){
+  abline(m, lty=3, col='black')
+}
 lines(sBTadthadhab~yrlist, lty=1, col='red')
+m = lm(sBTadthadhab~yrlist)
+if(summary(m)$coefficients[8] < 0.05){
+  abline(m, lty=1, col='red')
+}
 lines(sBTjuvhadhab~yrlist, lty=3, col='red')
+m = lm(sBTjuvhadhab~yrlist)
+if(summary(m)$coefficients[8] < 0.05){
+  abline(m, lty=3, col='red')
+}
 legend('topleft', legend = c('Ad cod', 'Jv cod', 'Ad had', 'Jv had'),lty=c(1,3,1,3), col=c('black', 'black', 'red','red'), bty='n', horiz = T)
 ## both fall cod and haddock on same plot
 plot(fBTadtcodhab~yrlist, type='l', ylim=c(7.5,11.5), main="Fall", ylab='BT', xlab='', las=1)
+m = lm(fBTadtcodhab~yrlist)
+if(summary(m)$coefficients[8] < 0.05){
+  abline(m, lty=1, col='black')
+}
 lines(fBTjuvcodhab~yrlist, lty=3)
+m = lm(fBTjuvcodhab~yrlist)
+if(summary(m)$coefficients[8] < 0.05){
+  abline(m, lty=3, col='black')
+}
 lines(fBTadthadhab~yrlist, lty=1, col='red')
+m = lm(fBTadthadhab~yrlist)
+if(summary(m)$coefficients[8] < 0.05){
+  abline(m, lty=1, col='red')
+}
 lines(fBTjuvhadhab~yrlist, lty=3, col='red')
+m = lm(fBTjuvhadhab~yrlist)
+if(summary(m)$coefficients[8] < 0.05){
+  abline(m, lty=3, col='red')
+}
 legend('topleft', legend = c('Ad cod', 'Jv cod', 'Ad had', 'Jv had'),lty=c(1,3,1,3), col=c('black', 'black', 'red','red'), bty='n', horiz = T)
 
 
@@ -932,8 +964,8 @@ legend('topleft', legend = c('Ad cod', 'Jv cod', 'Ad had', 'Jv had'),lty=c(1,3,1
 # Juv had 4.5-7 / 9.5-11
 # Adt cod 4.5-6.5 / 8-10
 # Juv cod 3.0-7 / 9.5-11
-## spring 3-7
-## fall 8-11
+## -> spring 3-7
+## -> fall 8-11
 
 isEmpty <- function(x) {
   return(identical(x, numeric(0)))
@@ -985,4 +1017,30 @@ plot(thermhabs.area[,2]~yrlist, type='l', ylim=c(5e4, 1.8e5),las=1,xlab='',ylab=
 lines(thermhabf.area[,2]~yrlist, lty=2, las=1)
 mtext(ylab.txt,side=2, line =3.5)
 legend('bottomleft', legend = c('Spr: 3-7 C', 'Fall: 8-11 C'),lty=c(1,2), col=c('black', 'black'), bty='n', horiz = T)
+
+### testing breakpoints for extracted BT
+library(strucchange)
+qlr <- Fstats(fBTadthadhab ~ yrlist) # 2007 sup.F = 14.528, p-value = 0.01485
+qlr <- Fstats(fBTjuvhadhab ~ yrlist) # 2007 sup.F = 17.777, p-value = 0.003497
+qlr <- Fstats(fBTadtcodhab ~ yrlist) # 2007 sup.F = 11.36, p-value = 0.05712
+qlr <- Fstats(fBTjuvcodhab ~ yrlist) # 2007 sup.F = 8.1339, p-value = 0.203
+
+x=breakpoints(qlr)
+yrlist[x[[1]]]
+sctest(qlr, type = "supF")
+plot(qlr)
+
+qlr <- Fstats(sBTadthadhab ~ yrlist) # 2002 sup.F = 11.864, p-value = 0.04636
+qlr <- Fstats(sBTjuvhadhab ~ yrlist) # 2002 sup.F = 9.5983, p-value = 0.1161
+qlr <- Fstats(sBTadtcodhab ~ yrlist) # 2002 sup.F = 8.92, p-value = 0.151
+qlr <- Fstats(sBTjuvcodhab ~ yrlist) # 2002 sup.F = 7.7629, p-value = 0.2325
+
+## plot regimes
+qlr <- Fstats(fBTadthadhab ~ yrlist) # 2007 sup.F = 14.528, p-value = 0.01485
+x=breakpoints(qlr)
+# yrlist[x[[1]]]
+# sctest(qlr, type = "supF")
+plot(fBTjuvhadhab ~ yrlist, type='b')
+fm1 <- lm(fBTjuvhadhab ~ breakfactor(x, breaks = 1))
+lines(ts(fitted(fm1), start = 1977), col = 'red')
 

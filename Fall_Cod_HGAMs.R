@@ -44,7 +44,9 @@ barplot(rev(sort(table(test3[1:5,]))))
 ## done
 
 impvarlist2=impvarlist[grepl("*Cod_full_FALL*", impvarlist)] # select all stages from a season
-xxi=2
+tt=matrix(NA, ncol=12, nrow=2)
+for(ii in 1:2){
+  xxi=ii
 test2=read.csv(paste(wd,'/',impvarlist[xxi],sep=''), stringsAsFactors = F, row.names = 1)
 test3=matrix(data=NA, nrow=dim(test2)[1], ncol=dim(test2)[2])
 for (i in 1:dim(test2)[2]){
@@ -60,7 +62,7 @@ test1=data.frame(im1) %>% filter(Freq>=3)
 test2=data.frame(im2) %>% filter(Freq>=3)
 test3=data.frame(im3) %>% filter(Freq>=3)
 
-Reduce(intersect, list(test1[,1], test3[,1], test2[,1])) # too limiting...
+# Reduce(intersect, list(test1[,1], test3[,1], test2[,1])) # too limiting...
 # [1] "grnszmm" "DEPTH"   "chl4"    "chl2"    "BOTTEMP"
 
 
@@ -74,6 +76,11 @@ x3=sort(as.character(test3$Var1))
 x3='Stg'
 xf=paste(c(x1,x2,x3))
 sort(unique(xf))
+tt[ii,1:length(unique(xf))]=unique(xf)
+fnm=strsplit(impvarlist2, split="_")[[ii]][1]
+rownames(tt)[ii]=fnm
+}
+write.csv(tt, file=paste(wd,'/cod_fall_variable_importance_final_selection.csv', sep=''))
 
 #  NEW MODEL 20210313:
 # [1] "BOTTEMP"    "chl10"      "chl2"       "chl4"       "ctyp_100m3" "DEPTH"      "grnszmm"    "sand_pct"  

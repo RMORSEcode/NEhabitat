@@ -22,8 +22,10 @@ impvarlist=list.files(wd, pattern="variable_importance.csv")
 
 
 impvarlist2=impvarlist[grepl("*Cod_full_SPRING*", impvarlist)] # select all stages from a season
-xxi=3
-test2=read.csv(paste(wd,'/',impvarlist[xxi],sep=''), stringsAsFactors = F, row.names = 1)
+tt=matrix(NA, ncol=12, nrow=3)
+for(ii in 1:3){
+  xxi=ii
+test2=read.csv(paste(wd,'/',impvarlist2[xxi],sep=''), stringsAsFactors = F, row.names = 1)
 test3=matrix(data=NA, nrow=dim(test2)[1], ncol=dim(test2)[2])
 for (i in 1:dim(test2)[2]){
   test3[,i]=rownames(test2)[rev(order(test2[,i]))]
@@ -38,8 +40,12 @@ test1=data.frame(im1) %>% filter(Freq>=3)
 test2=data.frame(im2) %>% filter(Freq>=3)
 test3=data.frame(im3) %>% filter(Freq>=3)
 
-Reduce(intersect, list(test1[,1], test3[,1], test2[,1])) # too limiting...
+# Reduce(intersect, list(test1[,1], test3[,1], test2[,1])) # too limiting...
 # [1] "grnszmm" "DEPTH"   "chl2"   
+# JUV [1] "grnszmm"    "DEPTH"      "chl4"       "chl10"      "BOTTEMP"    "ctyp_100m3" "sand_pct"
+# ADT [1] "grnszmm"    "DEPTH"      "chl2"       "chl10"      "BOTTEMP"    "chl4"       "ctyp_100m3"
+# ICH [1] "volume_100m3"     "chaeto_100m3"     "pseudo_100m3"     "chl10"            "cham_100m3"       "calfin_100m3"     "para_100m3"      
+# [8] "larvaceans_100m3"
 
 ## this isnt working right, need to sort first I think
 # t4=test1 %>% full_join(test2, keep=T, by = c("Var1", "Freq"))
@@ -49,7 +55,18 @@ x1=sort(as.character(test1$Var1))
 x2=sort(as.character(test2$Var1))
 x3=sort(as.character(test3$Var1))
 xf=paste(c(x1,x2,x3))
-unique(xf)
+# unique(xf)
+tt[ii,1:length(unique(xf))]=unique(xf)
+fnm=strsplit(impvarlist2, split="_")[[ii]][1]
+rownames(tt)[ii]=fnm
+}
+write.csv(tt, file=paste(wd,'/cod_spr_variable_importance_final_selection.csv', sep=''))
+
+### output from xf:
+# JUV [1] "BOTTEMP"    "chl10"      "chl4"       "ctyp_100m3" "DEPTH"      "grnszmm"    "sand_pct" 
+# ADT [1] "BOTTEMP"    "chl10"      "chl2"       "chl4"       "ctyp_100m3" "DEPTH"      "grnszmm" 
+# ICH [1] "calfin_100m3"     "chaeto_100m3"     "cham_100m3"       "chl10"            "larvaceans_100m3" "para_100m3"       "pseudo_100m3"    
+# [8] "volume_100m3"   
 
 ### variables to use for Spring Cod updated 20210313
 # [1] "BOTTEMP"    "chl2"       "chl4"       "DEPTH"      "grnszmm"    "sand_pct"   "SURFTEMP"   "chl10"      "ctyp_100m3" 

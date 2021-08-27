@@ -165,14 +165,28 @@ lbhad$r0ssb=lbhad$Age0.Fall/lbhad$ssb.yr.Spring
 lbhad$r1ssb=lbhad$`Age1.Spring(lagged)`/lbhad$ssb.yr.Spring
 
 lbhad2=lbhad[complete.cases(lbhad),]
-lbhad2$anom0=log10(lbhad2$r0ssb)-mean(log10(lbhad2$r0ssb))/sd(log10(lbhad2$r0ssb))
-lbhad2$anom1=log10(lbhad2$r1ssb)-mean(log10(lbhad2$r1ssb))/sd(log10(lbhad2$r1ssb))
-lbhad3=left_join(lbhad, lbhad2, by='years')
+lbhad2$anom0=(log10(lbhad2$r0ssb)-mean(log10(lbhad2$r0ssb)))/sd(log10(lbhad2$r0ssb))
+lbhad2$anom1=(log10(lbhad2$r1ssb)-mean(log10(lbhad2$r1ssb)))/sd(log10(lbhad2$r1ssb))
+lbhad3=left_join(lbhad, lbhad2, by=c('years', 'ssb.yr.Spring', 'Age0.Fall', 'Age1.Spring(lagged)', 'r0ssb', 'r1ssb'))
 
 # log10(hdts$recr)-mean(log10(hdts$recr))/sd(log10(hdts$recr))
 plot(log10(lbhad2$r0ssb)~lbhad2$years, type='l')
 plot(lbhad3$anom0~lbhad3$years, type='l', main='age0 rssb'); abline(h=0, lty=2)
 plot(lbhad3$anom1~lbhad3$years, type='l', main='age1 rssb'); abline(h=0, lty=2)
+
+plot(lbhad3$anom0~lbhad3$years, type='l', col='black', main='rssb'); abline(h=0, lty=2)
+lines(lbhad3$anom1~lbhad3$years, col='red')
+
+### read in modeled recruits spawners from GOM cod stock assessment update report 2019
+# M=0.2 for fixed mortality, or ramp from 0.2 to 0.4 for mramp
+# recruits are age1 numbers on Jan 1 (not lagged yet)
+codrssb=readxl::read_xlsx('/home/ryan/Desktop/GOM_cod_rssb_2019.xlsx', skip=2)
+# codrssb$rssb=codrssb$`Age1 (000s)`/codrssb$`SSB_mfix (mt)`
+# codrssb$anom=(log10(codrssb$rssb)-mean(log10(codrssb$rssb)))/sd(log10(codrssb$rssb))
+codrssb$anom2=(log10(codrssb$rssb_mramp_lag2)-mean(log10(codrssb$rssb_mramp_lag2), na.rm=T))/sd(log10(codrssb$rssb_mramp_lag2),na.rm=T)
+codrssb$anom=(log10(codrssb$rssb_mramp_lag1)-mean(log10(codrssb$rssb_mramp_lag1), na.rm=T))/sd(log10(codrssb$rssb_mramp_lag1),na.rm=T)
+plot(codrssb$anom ~codrssb$Yr, type='l', main='age1 rssb'); abline(h=0, lty=2)
+
 
 # trying dynamic time warping GOM RSSB vs Juv habitat
 library(dtw)
@@ -1035,12 +1049,73 @@ qlr <- Fstats(sBTjuvhadhab ~ yrlist) # 2002 sup.F = 9.5983, p-value = 0.1161
 qlr <- Fstats(sBTadtcodhab ~ yrlist) # 2002 sup.F = 8.92, p-value = 0.151
 qlr <- Fstats(sBTjuvcodhab ~ yrlist) # 2002 sup.F = 7.7629, p-value = 0.2325
 
+
+qlr <- Fstats(sSTadthadhab ~ yrlist) # 2011 sup.F = 5.0774, p-value = 0.5612
+qlr <- Fstats(sSTjuvhadhab ~ yrlist) # 1991 sup.F = 5.3306, p-value = 0.5215
+qlr <- Fstats(sSTadtcodhab ~ yrlist) # 1991 sup.F = 4.638, p-value = 0.6331
+qlr <- Fstats(sSTjuvcodhab ~ yrlist) # 2011 sup.F = 4.7803, p-value = 0.6095
+
+qlr <- Fstats(fSTadthadhab ~ yrlist) # 1987 sup.F = 21.124, p-value = 0.000753
+qlr <- Fstats(fSTjuvhadhab ~ yrlist) # 1987 sup.F = 22.131, p-value = 0.0004713
+qlr <- Fstats(fSTadtcodhab ~ yrlist) # 1987 sup.F = 25.765, p-value = 8.498e-05
+qlr <- Fstats(fSTjuvcodhab ~ yrlist) # 1987 sup.F = 27.3, p-value = 4.089e-05
+
+
 ## plot regimes
 qlr <- Fstats(fBTadthadhab ~ yrlist) # 2007 sup.F = 14.528, p-value = 0.01485
 x=breakpoints(qlr)
 # yrlist[x[[1]]]
 # sctest(qlr, type = "supF")
-plot(fBTjuvhadhab ~ yrlist, type='b')
-fm1 <- lm(fBTjuvhadhab ~ breakfactor(x, breaks = 1))
-lines(ts(fitted(fm1), start = 1977), col = 'red')
 
+## plot regimes Fall bottom temperature
+plot(fBTjuvhadhab ~ yrlist, type='l', lty=3, las=1, ylab='', xlab='', ylim=c(7.5,11.5), col='red')
+fm1 <- lm(fBTjuvhadhab ~ breakfactor(x, breaks = 1))
+lines(ts(fitted(fm1), start = 1977), col = 'red', lty=3, lwd=2)
+lines(fBTadthadhab ~ yrlist, type='l', lty=1, col='red')
+fm1 <- lm(fBTadthadhab ~ breakfactor(x, breaks = 1))
+lines(ts(fitted(fm1), start = 1977), lty=1, lwd=2, col = 'red')
+# legend('topleft', legend = c('Ad had', 'Jv had'),lty=c(1,3), col=c('black', 'black'), bty='n', horiz = T)
+lines(fBTadtcodhab ~ yrlist, type='l', lty=1, col='black')
+fm1 <- lm(fBTadtcodhab ~ breakfactor(x, breaks = 1))
+lines(ts(fitted(fm1), start = 1977), lwd=2, col = 'black')
+lines(fBTjuvcodhab ~ yrlist, type='l', lty=3, col='black')
+fm1 <- lm(fBTjuvcodhab ~ breakfactor(x, breaks = 1))
+# lines(ts(fitted(fm1), start = 1977), lwd=2, lty=3, col = 'black')
+legend('topleft', legend = c('Ad cod', 'Jv cod', 'Ad had', 'Jv had'),lty=c(1,3,1,3), col=c('black', 'black', 'red','red'), bty='n', horiz = T, cex=0.8)
+abline(v=2008, lty=2)
+
+qlr <- Fstats(fSTadthadhab ~ yrlist) # 1987 sup.F = 21.124, p-value = 0.000753
+t=matrix(data=fSTadthadhab)
+qlr <- Fstats(ts(t ~ yrlist)) # 1987 sup.F = 21.124, p-value = 0.000753
+
+plot(qlr)
+sctest(qlr)
+plot(fSTadthadhab~yrlist)
+lines(breakpoints(qlr))
+
+qlr <- Fstats(fSTjuvhadhab ~ yrlist)
+plot(qlr)
+x=breakpoints(fSTjuvhadhab~1)
+yrlist[x[[1]]]
+plot(x)
+plot(fSTjuvhadhab ~ yrlist, type='l', lty=3, las=1, ylab='', xlab='', ylim=c(11,16), col='red')
+fm1 <- lm(fSTjuvhadhab ~ breakfactor(x, breaks = 2))
+lines(ts(fitted(fm1), start = 1977), col = 'red', lty=3, lwd=2)
+lines(confint(fm1, breaks =3))
+
+
+plot(fSTjuvhadhab ~ yrlist, type='l', lty=3, las=1, ylab='', xlab='', ylim=c(11,16), col='red')
+fm1 <- lm(fSTjuvhadhab ~ breakfactor(x, breaks = 1))
+lines(ts(fitted(fm1), start = 1977), col = 'red', lty=3, lwd=2)
+lines(fBTadthadhab ~ yrlist, type='l', lty=1, col='red')
+fm1 <- lm(fBTadthadhab ~ breakfactor(x, breaks = 1))
+lines(ts(fitted(fm1), start = 1977), lty=1, lwd=2, col = 'red')
+# legend('topleft', legend = c('Ad had', 'Jv had'),lty=c(1,3), col=c('black', 'black'), bty='n', horiz = T)
+lines(fBTadtcodhab ~ yrlist, type='l', lty=1, col='black')
+fm1 <- lm(fBTadtcodhab ~ breakfactor(x, breaks = 1))
+lines(ts(fitted(fm1), start = 1977), lwd=2, col = 'black')
+lines(fBTjuvcodhab ~ yrlist, type='l', lty=3, col='black')
+fm1 <- lm(fBTjuvcodhab ~ breakfactor(x, breaks = 1))
+# lines(ts(fitted(fm1), start = 1977), lwd=2, lty=3, col = 'black')
+legend('topleft', legend = c('Ad cod', 'Jv cod', 'Ad had', 'Jv had'),lty=c(1,3,1,3), col=c('black', 'black', 'red','red'), bty='n', horiz = T, cex=0.8)
+abline(v=2008, lty=2)

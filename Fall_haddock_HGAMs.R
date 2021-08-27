@@ -44,7 +44,9 @@ barplot(rev(sort(table(test3[1:5,]))))
 ## done
 
 impvarlist2=impvarlist[grepl("*Haddock_full_FALL*", impvarlist)] # select all stages from a season
-xxi=2
+tt=matrix(NA, ncol=12, nrow=2)
+for(ii in 1:2){
+  xxi=ii
 test2=read.csv(paste(wd,'/',impvarlist[xxi],sep=''), stringsAsFactors = F, row.names = 1)
 test3=matrix(data=NA, nrow=dim(test2)[1], ncol=dim(test2)[2])
 for (i in 1:dim(test2)[2]){
@@ -69,7 +71,12 @@ x1=sort(as.character(test1$Var1))
 x2=sort(as.character(test2$Var1))
 x3=sort(as.character(test3$Var1))
 xf=paste(c(x1,x2,x3))
-unique(xf)
+# unique(xf)
+tt[ii,1:length(unique(xf))]=unique(xf)
+fnm=strsplit(impvarlist2, split="_")[[ii]][1]
+rownames(tt)[ii]=fnm
+}
+write.csv(tt, file=paste(wd,'/haddock_fall_variable_importance_final_selection.csv', sep=''))
 
 #  NEW MODEL 20210312:
 # [1] "BOTTEMP"    "chl2"       "chl4"       "DEPTH"      "grnszmm"    "sand_pct"   "SURFTEMP"   "chl10" "ctyp_100m3" ""   

@@ -20,8 +20,10 @@ rev(sort(table(test3[1:5,])))
 
 
 impvarlist2=impvarlist[grepl("*Haddock_full_SPRING*", impvarlist)] # select all stages from a season
-xxi=3
-test2=read.csv(paste(wd,'/',impvarlist[xxi],sep=''), stringsAsFactors = F, row.names = 1)
+tt=matrix(NA, ncol=12, nrow=3)
+for(ii in 1:3){
+xxi=ii
+test2=read.csv(paste(wd,'/',impvarlist2[xxi],sep=''), stringsAsFactors = F, row.names = 1)
 test3=matrix(data=NA, nrow=dim(test2)[1], ncol=dim(test2)[2])
 for (i in 1:dim(test2)[2]){
   test3[,i]=rownames(test2)[rev(order(test2[,i]))]
@@ -45,7 +47,19 @@ x1=sort(as.character(test1$Var1))
 x2=sort(as.character(test2$Var1))
 x3=sort(as.character(test3$Var1))
 xf=paste(c(x1,x2,x3))
-unique(xf)
+# unique(xf)
+tt[ii,1:length(unique(xf))]=unique(xf)
+fnm=strsplit(impvarlist2, split="_")[[ii]][1]
+rownames(tt)[ii]=fnm
+}
+write.csv(tt, file=paste(wd,'/haddock_variable_importance_final_selection.csv', sep=''))
+
+#### Output from xf on stages from full model variable importance:
+# JUV [1] "chl10"      "chl2"       "ctyp_100m3" "DEPTH"      "grnszmm"    "SURFTEMP" 
+# ADT [1] "calfin_100m3" "chl10"        "chl2"         "chl4"         "ctyp_100m3"   "DEPTH"        "grnszmm"      "SURFTEMP" 
+# ICH [1] "BOTTEMP"          "calfin_100m3"     "chaeto_100m3"     "chl10"            "ctyp_100m3"       "DEPTH"            "larvaceans_100m3"
+# [8] "pseudo_100m3"     "volume_100m3"  
+
 
 ### variables to use for Spring Haddock updated 20210312
 # "BOTTEMP"    "chl2"       "chl4"       "DEPTH"      "grnszmm"    "sand_pct"   "SURFTEMP"   "chl10"      "ctyp_100m3"

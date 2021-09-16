@@ -322,160 +322,162 @@ pdf(file=paste('/home/ryan/Git/NEhabitat/Niche_Overlap_plots_with_signif_slopes_
 
 load('/home/ryan/Git/NEhabitat/habitat index/Cod_Spr_stage_Niche_Overlap_GSe_20210518.rda')
 plot(NULL, ylim=c(0.85,1), xlim=c(1977,2019), ylab="Stage niche overlap", xlab="", las=1)
-lines(Cod.Stage.Niche.Overlap$adtjuv~yrlist, type='b', lty=1, pch=19, col='black')
+lines(Cod.Stage.Niche.Overlap$adtjuv~yrlist, type='l', lty=1, pch=19, col='black')
 # points(Cod.Stage.Niche.Overlap$adtjuv~yrlist, pch=19, col='black')
 m = lm(Cod.Stage.Niche.Overlap$adtjuv~yrlist)
 if(summary(m)$coefficients[8] < 0.05){
   abline(m, lty=1)
   # text(1980,0.95, paste('AdJv ', round(summary(m)$coefficients[8],4)))
 }
-lines(Cod.Stage.Niche.Overlap$adtich~yrlist, type='b', lty=2, pch=1, col='black')
+lines(Cod.Stage.Niche.Overlap$adtich~yrlist, type='l', lty=2, pch=1, col='black')
 # points(Cod.Stage.Niche.Overlap$adtich~yrlist, pch=1, col='black')
 m = lm(Cod.Stage.Niche.Overlap$adtich~yrlist)
 if(summary(m)$coefficients[8] < 0.05){
   abline(m, lty=2)
   # text(1980,0.91, paste('AdIc ', round(summary(m)$coefficients[8],4)))
 }
-lines(Cod.Stage.Niche.Overlap$juvich~yrlist, type='b', lty=3, pch=18, col='black')
+lines(Cod.Stage.Niche.Overlap$juvich~yrlist, type='l', lty=3, pch=18, col='black')
 # points(Cod.Stage.Niche.Overlap$juvich~yrlist, pch=18, col='black')
 m = lm(Cod.Stage.Niche.Overlap$juvich~yrlist)
 if(summary(m)$coefficients[8] < 0.05){
   abline(m, lty=3)
   # text(1980,0.87, paste('JvIc ', round(summary(m)$coefficients[8],4)))
 }
-legend('topleft', legend = c('Ad-Jv', 'Ad-Ic', 'Jv-Ic'), lty=c(1,2,3), pch=c(19,1,18), col='black', bty='n', horiz = T) #col=c('red', 'blue', 'green')
+legend('topleft', legend = c('Ad-Jv', 'Ad-Ic', 'Jv-Ic'), lty=c(1,2,3), col='black', bty='n', horiz = T) # pch=c(19,1,18), col=c('red', 'blue', 'green')
+legend('bottomleft', legend = c('Ad-Jv', 'Ad-Ic', 'Jv-Ic'), lty=c(1,2,3), col='black', bty='n', horiz = T) # pch=c(19,1,18), col=c('red', 'blue', 'green')
+
 text(2016,0.85, 'Spr cod')
 # Spr Haddock
 load('/home/ryan/Git/NEhabitat/habitat index/Haddock_Spr_stage_Niche_Overlap_GSe_20210518.rda')
 plot(NULL, ylim=c(0.85,1), xlim=c(1977,2019), ylab="Stage niche overlap", xlab="", las=1)
-lines(Haddock.Stage.Niche.Overlap$adtjuv~yrlist, type='b', lty=1, pch=19, col='black')
+lines(Haddock.Stage.Niche.Overlap$adtjuv~yrlist, type='l', lty=1, pch=19, col='black')
 # points(Haddock.Stage.Niche.Overlap$adtjuv~yrlist, pch=19, col='black')
 m = lm(Haddock.Stage.Niche.Overlap$adtjuv~yrlist)
 if(summary(m)$coefficients[8] < 0.05){
   abline(m, lty=1)
   # text(1980,0.97, paste('AdJv ', round(summary(m)$coefficients[8],4)))
 }
-lines(Haddock.Stage.Niche.Overlap$adtich~yrlist, type='b', lty=2, pch=1, col='black')
+lines(Haddock.Stage.Niche.Overlap$adtich~yrlist, type='l', lty=2, pch=1, col='black')
 # points(Haddock.Stage.Niche.Overlap$adtich~yrlist, pch=1, col='black')
 m = lm(Haddock.Stage.Niche.Overlap$adtich~yrlist)
 if(summary(m)$coefficients[8] < 0.05){
   abline(m, lty=2)
   # text(1980,0.85, paste('AdIc ', round(summary(m)$coefficients[8],4)))
 }
-lines(Haddock.Stage.Niche.Overlap$juvich~yrlist, type='b', lty=3, pch=18,col='black')
+lines(Haddock.Stage.Niche.Overlap$juvich~yrlist, type='l', lty=3, pch=18,col='black')
 # points(Haddock.Stage.Niche.Overlap$juvich~yrlist, pch=18, col='black')
 m = lm(Haddock.Stage.Niche.Overlap$juvich~yrlist)
 if(summary(m)$coefficients[8] < 0.05){
   abline(m, lty=3)
   # text(1980,0.92, paste('JvIc ', round(summary(m)$coefficients[8],4)))
 }
-legend('topleft', legend = c('Ad-Jv', 'Ad-Ic', 'Jv-Ic'), lty=c(1,2,3), pch=c(19,1,18), col='black', bty='n', horiz = T)
+legend('topleft', legend = c('Ad-Jv', 'Ad-Ic', 'Jv-Ic'), lty=c(1,2,3), col='black', bty='n', horiz = T) #pch=c(19,1,18)
 text(2016,0.85, 'Spr had')
 # Fall (both)
 load('/home/ryan/Git/NEhabitat/habitat index/Haddock_Fall_stage_Niche_Overlap_GSe_20210518.rda')
 load('/home/ryan/Git/NEhabitat/habitat index/Cod_Fall_stage_Niche_Overlap_GSe_20210518.rda')
 plot(NULL, ylim=c(0.88,0.95), xlim=c(1977,2019), ylab="Stage niche overlap", xlab="", las=1)
-lines(Cod.Stage.Niche.Overlap$adtjuv~yrlist, type='b', lty=1, pch=19,col='black')
+lines(Cod.Stage.Niche.Overlap$adtjuv~yrlist, type='l', lty=1, pch=19,col='black')
 # points(Cod.Stage.Niche.Overlap$adtjuv~yrlist, pch=19, col='black')
 m = lm(Cod.Stage.Niche.Overlap$adtjuv~yrlist)
 if(summary(m)$coefficients[8] < 0.05){
   abline(m, lty=1)
   # text(1980,0.93, paste('cod ', round(summary(m)$coefficients[8],4)))
 }
-lines(Haddock.Stage.Niche.Overlap$adtjuv~yrlist, type='b', lty=2, pch=1, col='black')
+lines(Haddock.Stage.Niche.Overlap$adtjuv~yrlist, type='l', lty=2, pch=1, col='black')
 # points(Haddock.Stage.Niche.Overlap$adtjuv~yrlist, pch=1, col='black')
 m = lm(Haddock.Stage.Niche.Overlap$adtjuv~yrlist)
 if(summary(m)$coefficients[8] < 0.05){
   abline(m, lty=2)
   text(1980,0.9, paste('had ', round(summary(m)$coefficients[8],4)))
 }
-legend('topleft', legend = c('cod','had'), lty=c(1,2), pch=c(19,1), col='black', bty='n', horiz = T)
+legend('bottomleft', legend = c('cod','had'), lty=c(1,2), col='black', bty='n', horiz = T) #pch=c(19,1),
 text(2016,0.88, 'Fall Ad-Jv')
 
 ### Niche Overlap between season (species, stage)
 # Haddock
 load('/home/ryan/Git/NEhabitat/habitat index/Haddock_Spr_Fall_Niche_Overlap_GSe_20210518.rda')
 plot(NULL, ylim=c(0.85,1), xlim=c(1977,2019), ylab="Seasonal niche overlap", xlab="", las=1)
-lines(Haddock.Niche.Overlap$adt~yrlist, type='b', lty=1, pch=19, col='black')
+lines(Haddock.Niche.Overlap$adt~yrlist, type='l', lty=1, pch=19, col='black')
 # points(Haddock.Niche.Overlap$adt~yrlist, pch=19, col='black')
 m = lm(Haddock.Niche.Overlap$adt~yrlist)
 if(summary(m)$coefficients[8] < 0.05){
   abline(m, lty=1)
   # text(1980,0.87, paste('Ad ', round(summary(m)$coefficients[8],4)))
 }
-lines(Haddock.Niche.Overlap$juv~yrlist, type='b', lty=2, pch=1, col='black')
+lines(Haddock.Niche.Overlap$juv~yrlist, type='l', lty=2, pch=1, col='black')
 # points(Haddock.Niche.Overlap$juv~yrlist, pch=1, col='black')
 m = lm(Haddock.Niche.Overlap$juv~yrlist)
 if(summary(m)$coefficients[8] < 0.05){
   abline(m, lty=2)
   # text(1980,0.96, paste('Jv ', round(summary(m)$coefficients[8],4)))
 }
-legend('topleft', legend = c('Ad','Jv'), lty=c(1,2), pch=c(19,1), col='black', bty='n', horiz = T)
+legend('topleft', legend = c('Ad','Jv'), lty=c(1,2), col='black', bty='n', horiz = T) #pch=c(19,1), 
 text(2016,0.85, 'haddock')
 # Cod
 load('/home/ryan/Git/NEhabitat/habitat index/Cod_Spr_Fall_Niche_Overlap_GSe_20210518.rda')
 plot(NULL, ylim=c(0.85,1), xlim=c(1977,2019), ylab="Seasonal niche overlap", xlab="", las=1)
-lines(Cod.Niche.Overlap$adt~yrlist, type='b', lty=1, pch=19, col='black')
+lines(Cod.Niche.Overlap$adt~yrlist, type='l', lty=1, pch=19, col='black')
 # points(Cod.Niche.Overlap$adt~yrlist, pch=19, col='black')
 m = lm(Cod.Niche.Overlap$adt~yrlist)
 if(summary(m)$coefficients[8] < 0.05){
   abline(m, lty=1)
   # text(1980,0.96, paste('Ad ', round(summary(m)$coefficients[8],4)))
 }
-lines(Cod.Niche.Overlap$juv~yrlist, type='b', lty=2, pch=1, col='black')
+lines(Cod.Niche.Overlap$juv~yrlist, type='l', lty=2, pch=1, col='black')
 # points(Cod.Niche.Overlap$juv~yrlist, pch=1, col='black')
 m = lm(Cod.Niche.Overlap$juv~yrlist)
 if(summary(m)$coefficients[8] < 0.05){
   abline(m, lty=2)
   # text(1980,0.9, paste('Jv ', round(summary(m)$coefficients[8],5)))
 }
-legend('topleft', legend = c('Ad','Jv'), lty=c(1,2), pch=c(19,1), col='black', bty='n', horiz = T)
+legend('topleft', legend = c('Ad','Jv'), lty=c(1,2), col='black', bty='n', horiz = T) #pch=c(19,1), 
 text(2016,0.85, 'cod')
 
 ### Niche Overlap between species (season, stage)
 # Spr
 load('/home/ryan/Git/NEhabitat/habitat index/Spring_Niche_Overlap_Cod_Haddock_GSe_20210518.rda')
-plot(NULL, ylim=c(0.8,1), xlim=c(1977,2019), ylab="Species niche overlap", xlab="", las=1)
-lines(Spr.Niche.Overlap$adt~yrlist, type='b', lty=1, pch=19,col='black')
+plot(NULL, ylim=c(0.83,.98), xlim=c(1977,2019), ylab="Species niche overlap", xlab="", las=1)
+lines(Spr.Niche.Overlap$adt~yrlist, type='l', lty=1, pch=19,col='black')
 # points(Spr.Niche.Overlap$adt~yrlist, pch=19, col='black')
 m = lm(Spr.Niche.Overlap$adt~yrlist)
 if(summary(m)$coefficients[8] < 0.05){
   abline(m, lty=1)
   # text(1980,0.9, paste('Ad ', round(summary(m)$coefficients[8],4)))
   }
-lines(Spr.Niche.Overlap$juv~yrlist, type='b', lty=2, pch=1, col='black')
+lines(Spr.Niche.Overlap$juv~yrlist, type='l', lty=2, pch=1, col='black')
 # points(Spr.Niche.Overlap$juv~yrlist, pch=1, col='black')
 m = lm(Spr.Niche.Overlap$juv~yrlist)
 if(summary(m)$coefficients[8] < 0.05){
   abline(m, lty=2)
   # text(1980,0.82, paste('Jv ', round(summary(m)$coefficients[8],4)))
 }
-lines(Spr.Niche.Overlap$ich~yrlist, type='b', lty=3, pch=18, col='black')
+lines(Spr.Niche.Overlap$ich~yrlist, type='l', lty=3, pch=18, col='black')
 # points(Spr.Niche.Overlap$ich~yrlist, pch=18, col='black')
 m = lm(Spr.Niche.Overlap$ich~yrlist)
 if(summary(m)$coefficients[8] < 0.05){
   abline(m, lty=3)
   # text(1980,0.96, paste('Ic ', round(summary(m)$coefficients[8],4)))
   }
-legend('topleft', legend = c('Ad', 'Jv','Ic'), lty=c(1,2,3), pch=c(19,1,18), col='black', bty='n', horiz = T)
-text(2016,0.8, 'Spr')
+legend('topleft', legend = c('Ad', 'Jv','Ic'), lty=c(1,2,3), col='black', bty='n', horiz = T)#pch=c(19,1,18), 
+text(2016,0.83, 'Spr')
 # Fall
 load('/home/ryan/Git/NEhabitat/habitat index/Fall_Niche_Overlap_Cod_Haddock_GSe_20210518.rda')
 plot(NULL, ylim=c(0.78,0.93), xlim=c(1977,2019), ylab="Species niche overlap", xlab="", las=1)
-lines(Fall.Niche.Overlap$adt~yrlist, type='b', lty=1, pch=19, col='black')
+lines(Fall.Niche.Overlap$adt~yrlist, type='l', lty=1, pch=19, col='black')
 # points(Fall.Niche.Overlap$adt~yrlist, pch=19, col='black')
 m = lm(Fall.Niche.Overlap$adt~yrlist)
 if(summary(m)$coefficients[8] < 0.05){
   abline(m, lty=1)
   # text(1980,0.9, paste('Ad ', round(summary(m)$coefficients[8],5)))
 }
-lines(Fall.Niche.Overlap$juv~yrlist, type='b', lty=2, pch=1, col='black')
+lines(Fall.Niche.Overlap$juv~yrlist, type='l', lty=2, pch=1, col='black')
 # points(Fall.Niche.Overlap$juv~yrlist, pch=1, col='black')
 m = lm(Fall.Niche.Overlap$juv~yrlist)
 if(summary(m)$coefficients[8] < 0.05){
   abline(m, lty=2)
   # text(1980,0.82, paste('Jv ', round(summary(m)$coefficients[8],5)))
 }
-legend('topleft', legend = c('Ad', 'Jv'), lty=c(1,2), pch=c(19,1), col='black', bty='n', horiz = T)
+legend('bottomleft', legend = c('Ad', 'Jv'), lty=c(1,2), col='black', bty='n', horiz = T)#pch=c(19,1), 
 text(2016,0.78, 'Fall')
-dev.off()
+# dev.off()

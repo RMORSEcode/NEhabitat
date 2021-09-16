@@ -1,3 +1,10 @@
+## plot variable importance summary
+varimp=readxl::read_xlsx('/home/ryan/Git/NEhabitat/Biomod_variable_importance_summary.xlsx')
+varlist=readxl::read_xlsx('/home/ryan/Git/NEhabitat/Biomod_variable_importance_list.xlsx', col_names =T)
+# table(unique(varlist))
+sort(table(varlist))
+
+
 modchoice=i
 modlistpa[modchoice]
 usemodel=loadRData(paste(path1,modlistpa[modchoice], sep=''))
@@ -331,6 +338,25 @@ adt1f=loadRData('/home/ryan/Git/NEhabitat/rasters/Fall/Haddock/fish_modGSe_Fall_
 juv2f=loadRData('/home/ryan/Git/NEhabitat/rasters/Fall/Cod/fish_modGSe_Fall_cod_20210518/PA_only_stacked_Fall_Cod_Juv.RData')
 adt2f=loadRData('/home/ryan/Git/NEhabitat/rasters/Fall/Cod/fish_modGSe_Fall_cod_20210518/PA_only_stacked_Fall_Cod_Adt.RData')
 
+# # Testing GI models GS models used for everything before Sep 2021! NOTE ALSO that ONLY GS models rerun after data issue in April/May 2021
+# this means that all model comparison output is not correct (models use different data) : checked habitat area plots for cod in spring and fall
+# and they were very similar to the updated model GSe, so no cause for concern as they are very similar
+# #spring GI haddock
+# ich1s=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/Haddock/fish_modGI_Spr_haddock/PA_only_stacked_Spr_Haddock_ich.RData')
+# juv1s=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/Haddock/fish_modGI_Spr_haddock/PA_only_stacked_Spr_Haddock_Juv.RData')
+# adt1s=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/Haddock/fish_modGI_Spr_haddock/PA_only_stacked_Spr_Haddock_Adt.RData')
+# #spring GI cod
+# ich2s=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/Cod/fish_modGI_Spr_cod/PA_only_stacked_Spr_Cod_ich.RData')
+# juv2s=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/Cod/fish_modGI_Spr_cod/PA_only_stacked_Spr_Cod_Juv.RData')
+# adt2s=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/Cod/fish_modGI_Spr_cod/PA_only_stacked_Spr_Cod_Adt.RData')
+# #fall GI haddock
+# juv1f=loadRData('/home/ryan/Git/NEhabitat/rasters/Fall/Haddock/fish_modGI_Fall_haddock/PA_only_stacked_Fall_Haddock_Juv.RData')
+# adt1f=loadRData('/home/ryan/Git/NEhabitat/rasters/Fall/Haddock/fish_modGI_Fall_haddock/PA_only_stacked_Fall_Haddock_Adt.RData')
+# #fall GI cod updated from above (new data from Sean survdat)
+# juv2f=loadRData('/home/ryan/Git/NEhabitat/rasters/Fall/Cod/fish_modGI_Fall_cod/PA_only_stacked_Fall_Cod_Juv.RData')
+# adt2f=loadRData('/home/ryan/Git/NEhabitat/rasters/Fall/Cod/fish_modGI_Fall_cod/PA_only_stacked_Fall_Cod_Adt.RData')
+
+
 selstg=ich1s; sellab='Ich'; selfis='haddock'
 selstg=juv1s; sellab='Juv'; selfis='haddock'
 selstg=adt1s; sellab='Adt'; selfis='haddock'
@@ -630,8 +656,29 @@ par(mar=c(2,4,2,1) + 0.1)
 ylab.txt=expression('Spring habitat area (km)'^2)
 plot(NULL, ylim=c(10000,45000), xlim=c(1977,2019), ylab='', xlab="", las=1)
 lines(juvhads.area[,3]~yrlist, lty=2, col='black')# las=1, ylab=paste(sellab,' GB habitat', xlab='')
+m = lm(juvhads.area[,3]~yrlist)
+if(summary(m)$coefficients[8] < 0.05){
+  abline(m, lty=2, col='black')
+  print(paste('slope= ', round(summary(m)$coefficients[2],3),sep=''))# slope
+  print(paste('stde= ', round(summary(m)$coefficients[4],3),sep='')) # std error
+  print(paste('p= ', round(summary(m)$coefficients[8],6), sep='')) # pvalue
+}
 lines(adthads.area[,3]~yrlist, lty=1, col='black')# las=1, ylab=paste(sellab,' GB habitat', xlab='')
+m = lm(adthads.area[,3]~yrlist)
+if(summary(m)$coefficients[8] < 0.05){
+  abline(m, lty=1, col='black')
+  print(paste('slope= ', round(summary(m)$coefficients[2],3),sep=''))# slope
+  print(paste('stde= ', round(summary(m)$coefficients[4],3),sep='')) # std error
+  print(paste('p= ', round(summary(m)$coefficients[8],6), sep='')) # pvalue
+}
 lines(ichhads.area[,3]~yrlist, lty=3, col='black')# las=1, ylab=paste(sellab,' GB habitat', xlab='')
+m = lm(ichhads.area[,3]~yrlist)
+if(summary(m)$coefficients[8] < 0.05){
+  abline(m, lty=3, col='black')
+  print(paste('slope= ', round(summary(m)$coefficients[2],3),sep=''))# slope
+  print(paste('stde= ', round(summary(m)$coefficients[4],3),sep='')) # std error
+  print(paste('p= ', round(summary(m)$coefficients[8],6), sep='')) # pvalue
+}
 mtext(ylab.txt,side=2, line =3.5)
 legend('topleft', legend = c('Ad had', 'Jv had', 'Ic had'),lty=c(1,2,3), col='black', bty='n', horiz = T)
 abline(v=c(2003,2010, 2013, 2016), lty=3)
@@ -661,10 +708,32 @@ ylab.txt=expression('Spring habitat area (km)'^2)
 plot(NULL, ylim=c(10000,65000), xlim=c(1977,2019), ylab='', xlab="", las=1)
 # plot(NULL, ylim=c(10000,65000), xlim=c(1977,2019), ylab='',main="Spr cod habitat area", xlab="", las=1)
 lines(juvcods.area[,3]~yrlist, lty=2, col='black')# las=1, ylab=paste(sellab,' GB habitat', xlab='')
+m = lm(juvcods.area[,3]~yrlist)
+if(summary(m)$coefficients[8] < 0.05){
+  abline(m, lty=2, col='black')
+  print(paste('slope= ', round(summary(m)$coefficients[2],3),sep=''))# slope
+  print(paste('stde= ', round(summary(m)$coefficients[4],3),sep='')) # std error
+  print(paste('p= ', round(summary(m)$coefficients[8],6), sep='')) # pvalue
+}
 lines(adtcods.area[,3]~yrlist, lty=1, col='black')# las=1, ylab=paste(sellab,' GB habitat', xlab='')
+m = lm(adtcods.area[,3]~yrlist)
+if(summary(m)$coefficients[8] < 0.05){
+  abline(m, lty=1, col='black')
+  print(paste('slope= ', round(summary(m)$coefficients[2],3),sep=''))# slope
+  print(paste('stde= ', round(summary(m)$coefficients[4],3),sep='')) # std error
+  print(paste('p= ', round(summary(m)$coefficients[8],6), sep='')) # pvalue
+}
 lines(ichcods.area[,3]~yrlist, lty=3, col='black')# las=1, ylab=paste(sellab,' GB habitat', xlab='')
+m = lm(ichcods.area[,3]~yrlist)
+if(summary(m)$coefficients[8] < 0.05){
+  abline(m, lty=3, col='black')
+  print(paste('slope= ', round(summary(m)$coefficients[2],3),sep=''))# slope
+  print(paste('stde= ', round(summary(m)$coefficients[4],3),sep='')) # std error
+  print(paste('p= ', round(summary(m)$coefficients[8],6), sep='')) # pvalue
+}
 mtext(ylab.txt,side=2, line =3.5)
 legend('bottomleft', legend = c('Ad cod', 'Jv cod', 'Ic cod'),lty=c(1,2,3), col='black', bty='n', horiz = T)
+
 # abline(v=c(2003,2010, 2013, 2016), lty=3)
 plot(NULL, ylim=c(10000,110000), xlim=c(1977,2019), ylab='',main="Spr cod habitat area", xlab="", las=1)
 lines(juvcods.area[,3]~yrlist, lty=1, col='blue')# las=1, ylab=paste(sellab,' GB habitat', xlab='')
@@ -710,7 +779,21 @@ par(mar=c(2,4,2,1) + 0.1)
 ylab.txt=expression('Fall habitat area (km)'^2)
 plot(NULL, ylim=c(30000,70000), xlim=c(1977,2019), ylab='', xlab="", las=1)
 lines(juvhadf.area[,3]~yrlist, lty=2, col='black')# las=1, ylab=paste(sellab,' GB habitat', xlab='')
+m = lm(juvhadf.area[,3]~yrlist)
+if(summary(m)$coefficients[8] < 0.05){
+  abline(m, lty=2, col='black')
+  print(paste('slope= ', round(summary(m)$coefficients[2],3),sep=''))# slope
+  print(paste('stde= ', round(summary(m)$coefficients[4],3),sep='')) # std error
+  print(paste('p= ', round(summary(m)$coefficients[8],6), sep='')) # pvalue
+}
 lines(adthadf.area[,3]~yrlist, lty=1, col='black')# las=1, ylab=paste(sellab,' GB habitat', xlab='')
+m = lm(adthadf.area[,3]~yrlist)
+if(summary(m)$coefficients[8] < 0.05){
+  abline(m, lty=1, col='black')
+  print(paste('slope= ', round(summary(m)$coefficients[2],3),sep=''))# slope
+  print(paste('stde= ', round(summary(m)$coefficients[4],3),sep='')) # std error
+  print(paste('p= ', round(summary(m)$coefficients[8],6), sep='')) # pvalue
+}
 mtext(ylab.txt,side=2, line =3.5)
 legend('topleft', legend = c('Ad had', 'Jv had'),lty=c(1,2), col='black', bty='n', horiz = T)
 # abline(v=c(2003,2010, 2013, 2016), lty=3)
@@ -734,9 +817,33 @@ par(mar=c(2,4,2,1) + 0.1)
 plot(NULL, ylim=c(0,55000), xlim=c(1977,2019), ylab='', xlab="", las=1)
 # plot(NULL, ylim=c(0,55000), xlim=c(1977,2019), ylab='',main="Fall cod habitat area", xlab="", las=1)
 lines(juvcodf.area[,3]~yrlist, lty=2, col='black')# las=1, ylab=paste(sellab,' GB habitat', xlab='')
+m = lm(juvcodf.area[,3]~yrlist)
+if(summary(m)$coefficients[8] < 0.05){
+  abline(m, lty=2, col='black')
+  print(paste('slope= ', round(summary(m)$coefficients[2],3),sep=''))# slope
+  print(paste('stde= ', round(summary(m)$coefficients[4],3),sep='')) # std error
+  print(paste('p= ', round(summary(m)$coefficients[8],6), sep='')) # pvalue
+}
+## plot regimes
+# qlr <- Fstats(juvcodf.area[,3]~yrlist) # 2007 sup.F = 14.528, p-value = 0.01485
+# x=breakpoints(qlr)
+# fm1 <- lm(juvcodf.area[,3] ~ breakfactor(x, breaks = 2))
+# lines(ts(fitted(fm1), start = 1977), col = 'black', lty=2, lwd=2)
 lines(adtcodf.area[,3]~yrlist, lty=1, col='black')# las=1, ylab=paste(sellab,' GB habitat', xlab='')
+m = lm(adtcodf.area[,3]~yrlist)
+if(summary(m)$coefficients[8] < 0.05){
+  abline(m, lty=1, col='black')
+  print(paste('slope= ', round(summary(m)$coefficients[2],3),sep=''))# slope
+  print(paste('stde= ', round(summary(m)$coefficients[4],3),sep='')) # std error
+  print(paste('p= ', round(summary(m)$coefficients[8],6), sep='')) # pvalue
+}
+# qlr <- Fstats(adtcodf.area[,3]~yrlist) # 2007 sup.F = 14.528, p-value = 0.01485
+# x=breakpoints(qlr)
+# fm1 <- lm(adtcodf.area[,3] ~ breakfactor(x, breaks = 1))
+# lines(ts(fitted(fm1), start = 1977), col = 'black', lty=2, lwd=2)
 mtext(ylab.txt,side=2, line =3.5)
 legend('bottomleft', legend = c('Ad cod', 'Jv cod'),lty=c(1,2), col=c('black', 'black'), bty='n', horiz = T)
+
 # abline(v=c(2003,2010, 2013, 2016), lty=3)
 plot(NULL, ylim=c(0,55000), xlim=c(1977,2019), ylab='',main="Fall cod habitat area", xlab="", las=1)
 lines(juvcodf.area[,2]~yrlist, lty=2, col='black')# las=1, ylab=paste(sellab,' GB habitat', xlab='')
@@ -783,6 +890,20 @@ for (i in 2:length(zlist)){
 ## save output
 # Zoospring=rastZT
 # Zoofall=rastZT
+
+## try calfin to use on extractions of ich
+zlist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/Spr/cfin/', sep=''), pattern = 'RAST_calfin_')
+wd3=paste('/home/ryan/Git/NEhabitat/rasters/Spr/cfin', sep='')
+zlist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/Fall/cfin/', sep=''), pattern = 'RAST_calfin_')
+wd3=paste('/home/ryan/Git/NEhabitat/rasters/Fall/cfin', sep='')
+rastZT=loadRData(paste(wd3,'/',zlist[1], sep=''))
+for (i in 2:length(zlist)){
+  rastDF=loadRData(paste(wd3,'/',zlist[i], sep=''))
+  rastZT=stack(rastZT, rastDF)
+}
+## save output
+Zoospring2=rastZT
+Zoofall2=rastZT
 
 ### load and stack Surface temperaure
 stlist=list.files(paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/ST2', sep=''), pattern = 'RAST_NESREG_')
@@ -852,8 +973,10 @@ return(matdata)
 
 sBTadtcodhab=extractrasterAbyrasterBvals(BTspring, adt2s, Bval=0.5)
 sBTjuvcodhab=extractrasterAbyrasterBvals(BTspring, juv2s, Bval=0.5)
+sBTichcodhab=extractrasterAbyrasterBvals(BTspring, ich2s, Bval=0.5)
 sBTadthadhab=extractrasterAbyrasterBvals(BTspring, adt1s, Bval=0.5)
 sBTjuvhadhab=extractrasterAbyrasterBvals(BTspring, juv1s, Bval=0.5)
+sBTichhadhab=extractrasterAbyrasterBvals(BTspring, ich1s, Bval=0.5)
 fBTadtcodhab=extractrasterAbyrasterBvals(BTfall, adt2f, Bval=0.5)
 fBTjuvcodhab=extractrasterAbyrasterBvals(BTfall, juv2f, Bval=0.5)
 fBTadthadhab=extractrasterAbyrasterBvals(BTfall, adt1f, Bval=0.5)
@@ -881,51 +1004,98 @@ plot(sBTadtcodhab~yrlist, type='l', ylim=c(3,8), main='Spr', ylab='BT', xlab='',
 m = lm(sBTadtcodhab~yrlist)
 if(summary(m)$coefficients[8] < 0.05){
   abline(m, lty=1, col='black')
+  print(paste('slope= ', round(summary(m)$coefficients[2],3),sep=''))# slope
+  print(paste('stde= ', round(summary(m)$coefficients[4],3),sep='')) # std error
+  print(paste('p= ', round(summary(m)$coefficients[8],6), sep='')) # pvalue
 }
-lines(sBTjuvcodhab~yrlist, lty=3, col='black')
+lines(sBTjuvcodhab~yrlist, lty=2, col='black')
 m = lm(sBTjuvcodhab~yrlist)
 if(summary(m)$coefficients[8] < 0.05){
+  abline(m, lty=2, col='black')
+  print(paste('slope= ', round(summary(m)$coefficients[2],3),sep=''))# slope
+  print(paste('stde= ', round(summary(m)$coefficients[4],3),sep='')) # std error
+  print(paste('p= ', round(summary(m)$coefficients[8],6), sep='')) # pvalue
+}
+lines(sBTichcodhab~yrlist, lty=3, col='black')
+m = lm(sBTichcodhab~yrlist)
+if(summary(m)$coefficients[8] < 0.05){
   abline(m, lty=3, col='black')
+  print(paste('slope= ', round(summary(m)$coefficients[2],3),sep=''))# slope
+  print(paste('stde= ', round(summary(m)$coefficients[4],3),sep='')) # std error
+  print(paste('p= ', round(summary(m)$coefficients[8],6), sep='')) # pvalue
 }
 lines(sBTadthadhab~yrlist, lty=1, col='red')
 m = lm(sBTadthadhab~yrlist)
 if(summary(m)$coefficients[8] < 0.05){
   abline(m, lty=1, col='red')
+  print(paste('slope= ', round(summary(m)$coefficients[2],3),sep=''))# slope
+  print(paste('stde= ', round(summary(m)$coefficients[4],3),sep='')) # std error
+  print(paste('p= ', round(summary(m)$coefficients[8],6), sep='')) # pvalue
 }
-lines(sBTjuvhadhab~yrlist, lty=3, col='red')
+lines(sBTjuvhadhab~yrlist, lty=2, col='red')
 m = lm(sBTjuvhadhab~yrlist)
 if(summary(m)$coefficients[8] < 0.05){
-  abline(m, lty=3, col='red')
+  abline(m, lty=2, col='red')
+  print(paste('slope= ', round(summary(m)$coefficients[2],3),sep=''))# slope
+  print(paste('stde= ', round(summary(m)$coefficients[4],3),sep='')) # std error
+  print(paste('p= ', round(summary(m)$coefficients[8],6), sep='')) # pvalue
 }
-legend('topleft', legend = c('Ad cod', 'Jv cod', 'Ad had', 'Jv had'),lty=c(1,3,1,3), col=c('black', 'black', 'red','red'), bty='n', horiz = T)
+lines(sBTichhadhab~yrlist, lty=3, col='red')
+m = lm(sBTichhadhab~yrlist)
+if(summary(m)$coefficients[8] < 0.05){
+  abline(m, lty=3, col='red')
+  print(paste('slope= ', round(summary(m)$coefficients[2],3),sep=''))# slope
+  print(paste('stde= ', round(summary(m)$coefficients[4],3),sep='')) # std error
+  print(paste('p= ', round(summary(m)$coefficients[8],6), sep='')) # pvalue
+}
+# legend('topleft', legend = c('Ad cod', 'Jv cod', 'Ad had', 'Jv had'),lty=c(1,3,1,3), col=c('black', 'black', 'red','red'), bty='n', horiz = T)
+# legend('topleft', legend = c('Ad cod', 'Jv cod', 'Ic cod', 'Ad had', 'Jv had', 'Ic had'),lty=c(1,2,3,1,2,3), col=c('black', 'black', 'black', 'red','red','red'), cex=0.7, bty='n', horiz = T)
+# legend('topleft', legend = c('Ad cod', 'Jv cod', 'Ic cod', 'Ad had', 'Jv had', 'Ic had'),lty=c(1,2,3,1,2,3), col=c('black', 'black', 'black', 'red','red','red'), cex=0.7, bty='n', ncol=3)
+legend('topleft', legend = c('Ad cod', 'Ad had', 'Jv cod', 'Jv had', 'Ic cod', 'Ic had'),lty=c(1,1,2,2,3,3), col=c('black', 'red', 'black', 'red','black', 'red'), bty='n', ncol=3)
+
 ## both fall cod and haddock on same plot
 plot(fBTadtcodhab~yrlist, type='l', ylim=c(7.5,11.5), main="Fall", ylab='BT', xlab='', las=1)
 m = lm(fBTadtcodhab~yrlist)
 if(summary(m)$coefficients[8] < 0.05){
   abline(m, lty=1, col='black')
-}
-lines(fBTjuvcodhab~yrlist, lty=3)
+  print(paste('slope= ', round(summary(m)$coefficients[2],3),sep=''))# slope
+  print(paste('stde= ', round(summary(m)$coefficients[4],3),sep='')) # std error
+  print(paste('p= ', round(summary(m)$coefficients[8],6), sep='')) # pvalue
+  }
+lines(fBTjuvcodhab~yrlist, lty=2)
 m = lm(fBTjuvcodhab~yrlist)
 if(summary(m)$coefficients[8] < 0.05){
-  abline(m, lty=3, col='black')
+  abline(m, lty=2, col='black')
+  print(paste('slope= ', round(summary(m)$coefficients[2],3),sep=''))# slope
+  print(paste('stde= ', round(summary(m)$coefficients[4],3),sep='')) # std error
+  print(paste('p= ', round(summary(m)$coefficients[8],6), sep='')) # pvalue
 }
 lines(fBTadthadhab~yrlist, lty=1, col='red')
 m = lm(fBTadthadhab~yrlist)
 if(summary(m)$coefficients[8] < 0.05){
   abline(m, lty=1, col='red')
+  print(paste('slope= ', round(summary(m)$coefficients[2],3),sep=''))# slope
+  print(paste('stde= ', round(summary(m)$coefficients[4],3),sep='')) # std error
+  print(paste('p= ', round(summary(m)$coefficients[8],6), sep='')) # pvalue
 }
-lines(fBTjuvhadhab~yrlist, lty=3, col='red')
+lines(fBTjuvhadhab~yrlist, lty=2, col='red')
 m = lm(fBTjuvhadhab~yrlist)
 if(summary(m)$coefficients[8] < 0.05){
-  abline(m, lty=3, col='red')
+  abline(m, lty=2, col='red')
+  print(paste('slope= ', round(summary(m)$coefficients[2],3),sep=''))# slope
+  print(paste('stde= ', round(summary(m)$coefficients[4],3),sep='')) # std error
+  print(paste('p= ', round(summary(m)$coefficients[8],6), sep='')) # pvalue
 }
-legend('topleft', legend = c('Ad cod', 'Jv cod', 'Ad had', 'Jv had'),lty=c(1,3,1,3), col=c('black', 'black', 'red','red'), bty='n', horiz = T)
+# legend('topleft', legend = c('Ad cod', 'Jv cod', 'Ad had', 'Jv had'),lty=c(1,2,1,2), col=c('black', 'black', 'red','red'), cex=0.7, bty='n', horiz = T)
+legend('topleft', legend = c('Ad cod', 'Ad had', 'Jv cod', 'Jv had'),lty=c(1,1,2,2), col=c('black', 'red', 'black', 'red'), bty='n', ncol=2)
 
 
 sSTadtcodhab=extractrasterAbyrasterBvals(STspring, adt2s, Bval=0.5)
 sSTjuvcodhab=extractrasterAbyrasterBvals(STspring, juv2s, Bval=0.5)
+sSTichcodhab=extractrasterAbyrasterBvals(STspring, ich2s, Bval=0.5)
 sSTadthadhab=extractrasterAbyrasterBvals(STspring, adt1s, Bval=0.5)
 sSTjuvhadhab=extractrasterAbyrasterBvals(STspring, juv1s, Bval=0.5)
+sSTichhadhab=extractrasterAbyrasterBvals(STspring, ich1s, Bval=0.5)
 fSTadtcodhab=extractrasterAbyrasterBvals(STfall, adt2f, Bval=0.5)
 fSTjuvcodhab=extractrasterAbyrasterBvals(STfall, juv2f, Bval=0.5)
 fSTadthadhab=extractrasterAbyrasterBvals(STfall, adt1f, Bval=0.5)
@@ -933,26 +1103,131 @@ fSTjuvhadhab=extractrasterAbyrasterBvals(STfall, juv1f, Bval=0.5)
 
 ## both spr cod and haddock on same plot
 plot(sSTadtcodhab~yrlist, type='l', ylim=c(2,7), main='Spr', ylab='ST', xlab='', las=1)
-lines(sSTjuvcodhab~yrlist, lty=3, col='black')
+m = lm(sSTadtcodhab~yrlist)
+if(summary(m)$coefficients[8] < 0.05){
+  abline(m, lty=1, col='black')
+  print(paste('slope= ', round(summary(m)$coefficients[2],3),sep=''))# slope
+  print(paste('stde= ', round(summary(m)$coefficients[4],3),sep='')) # std error
+  print(paste('p= ', round(summary(m)$coefficients[8],6), sep='')) # pvalue
+}
+lines(sSTjuvcodhab~yrlist, lty=2, col='black')
+m = lm(sSTjuvcodhab~yrlist)
+if(summary(m)$coefficients[8] < 0.05){
+  abline(m, lty=2, col='black')
+  print(paste('slope= ', round(summary(m)$coefficients[2],3),sep=''))# slope
+  print(paste('stde= ', round(summary(m)$coefficients[4],3),sep='')) # std error
+  print(paste('p= ', round(summary(m)$coefficients[8],6), sep='')) # pvalue
+}
+lines(sSTichcodhab~yrlist, lty=3, col='black')
+m = lm(sSTichcodhab~yrlist)
+if(summary(m)$coefficients[8] < 0.05){
+  abline(m, lty=3, col='black')
+  print(paste('slope= ', round(summary(m)$coefficients[2],3),sep=''))# slope
+  print(paste('stde= ', round(summary(m)$coefficients[4],3),sep='')) # std error
+  print(paste('p= ', round(summary(m)$coefficients[8],6), sep='')) # pvalue
+}
 lines(sSTadthadhab~yrlist, lty=1, col='red')
-lines(sSTjuvhadhab~yrlist, lty=3, col='red')
-legend('topleft', legend = c('Ad cod', 'Jv cod', 'Ad had', 'Jv had'),lty=c(1,3,1,3), col=c('black', 'black', 'red','red'), bty='n', horiz = T)
+m = lm(sSTadthadhab~yrlist)
+if(summary(m)$coefficients[8] < 0.05){
+  abline(m, lty=1, col='red')
+  print(paste('slope= ', round(summary(m)$coefficients[2],3),sep=''))# slope
+  print(paste('stde= ', round(summary(m)$coefficients[4],3),sep='')) # std error
+  print(paste('p= ', round(summary(m)$coefficients[8],6), sep='')) # pvalue
+}
+lines(sSTjuvhadhab~yrlist, lty=2, col='red')
+m = lm(sSTjuvhadhab~yrlist)
+if(summary(m)$coefficients[8] < 0.05){
+  abline(m, lty=2, col='red')
+  print(paste('slope= ', round(summary(m)$coefficients[2],3),sep=''))# slope
+  print(paste('stde= ', round(summary(m)$coefficients[4],3),sep='')) # std error
+  print(paste('p= ', round(summary(m)$coefficients[8],6), sep='')) # pvalue
+}
+lines(sSTichhadhab~yrlist, lty=3, col='red')
+m = lm(sSTichhadhab~yrlist)
+if(summary(m)$coefficients[8] < 0.05){
+  abline(m, lty=3, col='red')
+  print(paste('slope= ', round(summary(m)$coefficients[2],3),sep=''))# slope
+  print(paste('stde= ', round(summary(m)$coefficients[4],3),sep='')) # std error
+  print(paste('p= ', round(summary(m)$coefficients[8],6), sep='')) # pvalue
+}
+# legend('topleft', legend = c('Ad cod', 'Jv cod', 'Ic cod', 'Ad had', 'Jv had', 'Ic had'),lty=c(1,2,3,1,2,3), col=c('black', 'black', 'black', 'red', 'red','red'), cex=0.7, bty='n', horiz = T)
+legend('topleft', legend = c('Ad cod', 'Ad had', 'Jv cod', 'Jv had', 'Ic cod', 'Ic had'),lty=c(1,1,2,2,3,3), col=c('black', 'red', 'black', 'red','black', 'red'), bty='n', ncol=3)
+
+
+
 ## both fall cod and haddock on same plot
 plot(fSTadtcodhab~yrlist, type='l', ylim=c(11,16), main="Fall", ylab='ST', xlab='', las=1)
-lines(fSTjuvcodhab~yrlist, lty=3)
+m = lm(fSTadtcodhab~yrlist)
+if(summary(m)$coefficients[8] < 0.05){
+  abline(m, lty=1, col='black')
+  print(paste('slope= ', round(summary(m)$coefficients[2],3),sep=''))# slope
+  print(paste('stde= ', round(summary(m)$coefficients[4],3),sep='')) # std error
+  print(paste('p= ', round(summary(m)$coefficients[8],6), sep='')) # pvalue
+}
+lines(fSTjuvcodhab~yrlist, lty=2)
+m = lm(fSTjuvcodhab~yrlist)
+if(summary(m)$coefficients[8] < 0.05){
+  abline(m, lty=2, col='black')
+  print(paste('slope= ', round(summary(m)$coefficients[2],3),sep=''))# slope
+  print(paste('stde= ', round(summary(m)$coefficients[4],3),sep='')) # std error
+  print(paste('p= ', round(summary(m)$coefficients[8],6), sep='')) # pvalue
+}
 lines(fSTadthadhab~yrlist, lty=1, col='red')
-lines(fSTjuvhadhab~yrlist, lty=3, col='red')
-legend('topleft', legend = c('Ad cod', 'Jv cod', 'Ad had', 'Jv had'),lty=c(1,3,1,3), col=c('black', 'black', 'red','red'), bty='n', horiz = T)
+m = lm(fSTadthadhab~yrlist)
+if(summary(m)$coefficients[8] < 0.05){
+  abline(m, lty=1, col='red')
+  print(paste('slope= ', round(summary(m)$coefficients[2],3),sep=''))# slope
+  print(paste('stde= ', round(summary(m)$coefficients[4],3),sep='')) # std error
+  print(paste('p= ', round(summary(m)$coefficients[8],6), sep='')) # pvalue
+}
+lines(fSTjuvhadhab~yrlist, lty=2, col='red')
+m = lm(fSTjuvhadhab~yrlist)
+if(summary(m)$coefficients[8] < 0.05){
+  abline(m, lty=2, col='red')
+  print(paste('slope= ', round(summary(m)$coefficients[2],3),sep=''))# slope
+  print(paste('stde= ', round(summary(m)$coefficients[4],3),sep='')) # std error
+  print(paste('p= ', round(summary(m)$coefficients[8],6), sep='')) # pvalue
+}
+# legend('topleft', legend = c('Ad cod', 'Jv cod', 'Ad had', 'Jv had'),lty=c(1,2,1,2), col=c('black', 'black', 'red','red'), cex=0.7, bty='n', horiz = T)
+legend('topleft', legend = c('Ad cod', 'Ad had', 'Jv cod', 'Jv had'),lty=c(1,1,2,2), col=c('black', 'red', 'black', 'red'), bty='n', ncol=2)
 
 
 sZooadtcodhab=extractrasterAbyrasterBvals(Zoospring, adt2s, Bval=0.5)
 sZoojuvcodhab=extractrasterAbyrasterBvals(Zoospring, juv2s, Bval=0.5)
+sZooichcodhab=extractrasterAbyrasterBvals(Zoospring, ich2s, Bval=0.5)
 fZooadtcodhab=extractrasterAbyrasterBvals(Zoofall, adt2f, Bval=0.5)
 fZoojuvcodhab=extractrasterAbyrasterBvals(Zoofall, juv2f, Bval=0.5)
 sZooadthadhab=extractrasterAbyrasterBvals(Zoospring, adt1s, Bval=0.5)
 sZoojuvhadhab=extractrasterAbyrasterBvals(Zoospring, juv1s, Bval=0.5)
+sZooichhadhab=extractrasterAbyrasterBvals(Zoospring, ich1s, Bval=0.5)
 fZooadthadhab=extractrasterAbyrasterBvals(Zoofall, adt1f, Bval=0.5)
 fZoojuvhadhab=extractrasterAbyrasterBvals(Zoofall, juv1f, Bval=0.5)
+
+### testing extractions on cfin out of curiosity...
+# sZooadtcodhab=extractrasterAbyrasterBvals(Zoospring2, adt2s, Bval=0.5)
+# sZoojuvcodhab=extractrasterAbyrasterBvals(Zoospring2, juv2s, Bval=0.5)
+# sZooichcodhab=extractrasterAbyrasterBvals(Zoospring2, ich2s, Bval=0.5)
+# fZooadtcodhab=extractrasterAbyrasterBvals(Zoofall2, adt2f, Bval=0.5)
+# fZoojuvcodhab=extractrasterAbyrasterBvals(Zoofall2, juv2f, Bval=0.5)
+# sZooadthadhab=extractrasterAbyrasterBvals(Zoospring2, adt1s, Bval=0.5)
+# sZoojuvhadhab=extractrasterAbyrasterBvals(Zoospring2, juv1s, Bval=0.5)
+# sZooichhadhab=extractrasterAbyrasterBvals(Zoospring2, ich1s, Bval=0.5)
+# fZooadthadhab=extractrasterAbyrasterBvals(Zoofall2, adt1f, Bval=0.5)
+# fZoojuvhadhab=extractrasterAbyrasterBvals(Zoofall2, juv1f, Bval=0.5)
+# plot(sZooadtcodhab~yrlist, type='l', ylim=c(3.7,4.5), main="Spr", ylab='Cfin', xlab='', las=1)
+# lines(sZoojuvcodhab~yrlist, lty=2)
+# lines(sZooichcodhab~yrlist, lty=3)
+# lines(sZooadthadhab~yrlist, lty=1, col='red')
+# lines(sZoojuvhadhab~yrlist, lty=2, col='red')
+# lines(sZooichhadhab~yrlist, lty=3, col='red')
+# legend('topleft', legend = c('Ad cod', 'Jv cod', 'Ic cod', 'Ad had', 'Jv had', 'Ic had'),lty=c(1,2,3,1,2,3), col=c('black', 'black', 'black', 'red', 'red','red'), cex=0.7, bty='n', horiz = T)
+# plot(fZooadtcodhab~yrlist, type='l', ylim=c(2.5,4.5), main="Fall", ylab='Cfin', xlab='', las=1)
+# lines(fZoojuvcodhab~yrlist, lty=2)
+# lines(fZooadthadhab~yrlist, lty=1, col='red')
+# lines(fZoojuvhadhab~yrlist, lty=2, col='red')
+# legend('topleft', legend = c('Ad cod', 'Jv cod', 'Ad had', 'Jv had'),lty=c(1,2,1,2), col=c('black', 'black', 'red','red'), cex=0.7, bty='n', horiz = T)
+
+
 plot(sZooadtcodhab~yrlist, type='b')
 plot(sZoojuvcodhab~yrlist, type='b')
 plot(fZooadtcodhab~yrlist, type='b')
@@ -961,16 +1236,20 @@ abline(v=2008, lty=3)
 
 ### plot extracted Ctypicus abundance for habitat areas
 plot(sZooadtcodhab~yrlist, type='l', ylim=c(1,3.5), main="Spr", ylab='Ctyp', xlab='', las=1)
-lines(sZoojuvcodhab~yrlist, lty=3)
+lines(sZoojuvcodhab~yrlist, lty=2)
+lines(sZooichcodhab~yrlist, lty=3)
 lines(sZooadthadhab~yrlist, lty=1, col='red')
-lines(sZoojuvhadhab~yrlist, lty=3, col='red')
-legend('topleft', legend = c('Ad cod', 'Jv cod', 'Ad had', 'Jv had'),lty=c(1,3,1,3), col=c('black', 'black', 'red','red'), bty='n', horiz = T)
+lines(sZoojuvhadhab~yrlist, lty=2, col='red')
+lines(sZooichhadhab~yrlist, lty=3, col='red')
+# legend('topleft', legend = c('Ad cod', 'Jv cod', 'Ic cod', 'Ad had', 'Jv had', 'Ic had'),lty=c(1,2,3,1,2,3), col=c('black', 'black', 'black', 'red', 'red','red'), cex=0.7, bty='n', horiz = T)
+legend('topleft', legend = c('Ad cod', 'Ad had', 'Jv cod', 'Jv had', 'Ic cod',  'Ic had'),lty=c(1,1,2,2,3,3), col=c('black', 'red', 'black', 'red', 'black', 'red'), bty='n', ncol=3)
 
 plot(fZooadtcodhab~yrlist, type='l', ylim=c(3,5), main="Fall", ylab='Ctyp', xlab='', las=1)
-lines(fZoojuvcodhab~yrlist, lty=3)
+lines(fZoojuvcodhab~yrlist, lty=2)
 lines(fZooadthadhab~yrlist, lty=1, col='red')
-lines(fZoojuvhadhab~yrlist, lty=3, col='red')
-legend('topleft', legend = c('Ad cod', 'Jv cod', 'Ad had', 'Jv had'),lty=c(1,3,1,3), col=c('black', 'black', 'red','red'), bty='n', horiz = T)
+lines(fZoojuvhadhab~yrlist, lty=2, col='red')
+# legend('topleft', legend = c('Ad cod', 'Jv cod', 'Ad had', 'Jv had'),lty=c(1,2,1,2), col=c('black', 'black', 'red','red'), cex=0.7, bty='n', horiz = T)
+legend('topleft', legend = c('Ad cod', 'Ad had', 'Jv cod', 'Jv had'),lty=c(1,1,2,2), col=c('black','red', 'black', 'red'), bty='n', ncol=2)
 
 ### bottom temperature thermal habitat (C) area selections --
 ## from values and plots above, use for range for (Spr/Fall):

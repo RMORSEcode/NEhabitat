@@ -31,27 +31,34 @@ for (i in 1:dim(test2)[2]){
 colnames(test3)=colnames(test2)
 # table(test3[1:7,])
 im1=rev(sort(table(test3[1:7,])))
-im2=rev(sort(table(test3[1:7,])))
-im3=rev(sort(table(test3[1:7,])))
-
-test1=data.frame(im1) %>% filter(Freq>=3)
-test2=data.frame(im2) %>% filter(Freq>=3)
-test3=data.frame(im3) %>% filter(Freq>=3)
+# im2=rev(sort(table(test3[1:5,])))
+# im3=rev(sort(table(test3[1:3,])))
+# test1=data.frame(im1) %>% filter(Freq>=3)
+# test2=data.frame(im2) %>% filter(Freq>=3)
+# test3=data.frame(im3) %>% filter(Freq>=3)
 
 # Reduce(intersect, list(test1[,1], test3[,1], test2[,1])) # too limiting...
 ## this isnt working right, need to sort first I think
 # t4=test1 %>% full_join(test2, keep=T, by = c("Var1", "Freq"))
 # t5=t4 %>% full_join(test3, keep=T, by = c("Var1.x"="Var1", "Freq.x"="Freq"))
 
-x1=sort(as.character(test1$Var1))
-x2=sort(as.character(test2$Var1))
-x3=sort(as.character(test3$Var1))
-xf=paste(c(x1,x2,x3))
+# x1=sort(as.character(test1$Var1))
+# x2=sort(as.character(test2$Var1))
+# x3=sort(as.character(test3$Var1))
+# xf=paste(c(x1,x2,x3))
 # unique(xf)
+# tt[ii,1:length(unique(xf))]=unique(xf)
+
+test1=data.frame(im1) %>% filter(Freq>=3)
+xf=sort(as.character(test1$Var1))
 tt[ii,1:length(unique(xf))]=unique(xf)
 fnm=strsplit(impvarlist2, split="_")[[ii]][1]
 rownames(tt)[ii]=fnm
 }
+fnm1=strsplit(impvarlist2, split="_")[[1]][1]
+fnm2=strsplit(impvarlist2, split="_")[[2]][1]
+fnm3=strsplit(impvarlist2, split="_")[[3]][1]
+rownames(tt)=c(fnm1, fnm2, fnm3)
 write.csv(tt, file=paste(wd,'/haddock_variable_importance_final_selection.csv', sep=''))
 
 #### Output from xf on stages from full model variable importance:

@@ -46,9 +46,9 @@ SEASON='Spr' # Fall
 SEASON='Fall'
 
 ### NAME OF FISH
-# fishnm='Haddock' #74
+fishnm='Haddock' #74
 # fishnm='SilverHake' #72
-fishnm='Cod' #73
+# fishnm='Cod' #73
 
 ## get path and list of models
 path1=paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/', fishnm,'/', sep='') # Spr/Haddock'
@@ -438,7 +438,10 @@ write.csv(format(modeval, digits=2), file=paste(path1,xdt,'_model_evaluation_', 
 #### Save model hindcast output trends (mean, trend, variance)
 ## Load rasters
 p1=paste('/home/ryan/Git/NEhabitat/rasters/',SEASON,'/', fishnm, '/', sep='')
-p2='fish_modGSe_Spr_cod_20210518' #fall_haddock' #'fish_modGI_spr_Haddock' 'fish_modGI_spr_Haddock_select_years_mod' 'fish_modGI_spr_Haddock_abundance'
+p2='fish_modGSe_Fall_cod_20210518' #fall_haddock' #'fish_modGI_spr_Haddock' 'fish_modGI_spr_Haddock_select_years_mod' 'fish_modGI_spr_Haddock_abundance'
+# p2='fish_modGSe_Fall_haddock_20210421' #fall_haddock' #'fish_modGI_spr_Haddock' 'fish_modGI_spr_Haddock_select_years_mod' 'fish_modGI_spr_Haddock_abundance'
+# p2='fish_modGSe_Spr_cod_20210518' #fall_haddock' #'fish_modGI_spr_Haddock' 'fish_modGI_spr_Haddock_select_years_mod' 'fish_modGI_spr_Haddock_abundance'
+# p2='fish_modGSe_Spr_20210421_haddock' #spr_haddock'
 p3=paste('/PA_only_stacked_', SEASON, '_', fishnm, '_', sep='') #'PA_only_stacked_Spr_Haddock_'
 p4=paste('/stacked_', SEASON, '_', fishnm, '_', sep='') #'stacked_Spr_Haddock_'
 ichpa=loadRData(paste(p1,p2,p3,'ich.RData', sep=''))
@@ -490,21 +493,24 @@ for (i in (1:length(yrlist))){
 dev.off()
 
 ## Biomass (or abundance) models
+mxx=max(cellStats(adt, 'max'))
 pdf(paste(p1,p2,'/', 'Adt_abund_hindcast.pdf', sep=''), height=4, width=6)
 for (i in (1:length(yrlist))){
-  plot(adt[[i]], zlim=c(0,65), main=paste(yrlist[i], SEASON, fishnm, sep=" "))
+  plot(adt[[i]], zlim=c(0,mxx), main=paste(yrlist[i], SEASON, fishnm, sep=" "))
 }
 dev.off()
 ## Biomass (or abundance) models
+mxx=max(cellStats(juv, 'max'))
 pdf(paste(p1,p2,'/', 'Juv_abund_hindcast.pdf', sep=''), height=4, width=6)
 for (i in (1:length(yrlist))){
-  plot(juv[[i]], zlim=c(0,65), main=paste(yrlist[i], SEASON, fishnm, sep=" "))
+  plot(juv[[i]], zlim=c(0,mxx), main=paste(yrlist[i], SEASON, fishnm, sep=" "))
 }
 dev.off()
 ## Biomass (or abundance) models
+mxx=max(cellStats(ich, 'max'))
 pdf(paste(p1,p2,'/', 'Ich_abund_hindcast.pdf', sep=''), height=4, width=6)
 for (i in (1:length(yrlist))){
-  plot(ich[[i]], zlim=c(0,65), main=paste(yrlist[i], SEASON, fishnm, sep=" "))
+  plot(ich[[i]], zlim=c(0,mxx), main=paste(yrlist[i], SEASON, fishnm, sep=" "))
 }
 dev.off()
 
@@ -1319,6 +1325,99 @@ plotRasterTrends=function(rastck){
   stck=stack(c(newrast.m, newrast, newrast.t, trend.sig, newrast.v))
   names(stck)=c("TS.mean", "TS.slope", "TS.slopeXtime", "TS.pvalue", "TS.sigma.stdev")
   return(stck)
+}
+
+plotRasterTrends2=function(rastck){
+  time <- 1:nlayers(rastck)
+  ### 1. calc mean
+  newrast.m=calc(rastck, fun=mean, na.rm=T)
+  mn=cellStats(newrast.m, min)
+  mx=cellStats(newrast.m, max)
+  high=max(0, mx)
+  if (high <=1 ){
+    high2=1
+  } else {
+    high2=high
+  }
+  br <- seq(0, high2, by = high2/15) 
+  cl=colorRampPalette(brewer.pal(9,"Reds"))(length(br))
+  rng=range(newrast.m[],na.rm=T)
+  arg=list(at=rng, labels=round(rng,3))
+  plot(newrast.m, col=cl, breaks=br,axis.args=arg,las=1, main=paste(length(time),'yrs','\nmean distribution'), legend=F) # Yearly slope
+  plot(newrast.m, legend.only=TRUE, col=cl, breaks=br, axis.args=arg, las=1, legend.width=1, legend.shrink=0.75, smallplot=c(0.6, 0.61, 0.2, 0.5)); par(mar = par("mar"))
+  maps::map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="black", add=T)
+  ### 2. calc yearly slope
+  fun=function(x) { if (is.na(x[1])){ NA } else { m = lm(x ~ time); summary(m)$coefficients[2] }}
+  newrast=calc(rastck, fun)
+  mn=cellStats(newrast, min)
+  mx=cellStats(newrast, max)
+  high=max(abs(mn), mx)
+  br <- seq(-high, high, by = high/9) 
+  cl <- colorspace::diverge_hcl(length(br) - 1, power = 1) 
+  rng=range(newrast[],na.rm=T)
+  arg=list(at=rng, labels=round(rng,3))
+  plot(newrast, col=cl, breaks=br,axis.args=arg,las=1, main=paste(length(time),'yrs','\nYearly Slope'), legend=F) # Yearly slope
+  plot(newrast, legend.only=TRUE, col=cl, breaks=br, axis.args=arg, las=1, legend.width=1, legend.shrink=0.75, smallplot=c(0.6, 0.61, 0.2, 0.5)); par(mar = par("mar"))
+  maps::map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="black", add=T)
+  # plot slope times length of time
+  ### 3. calc X year change
+  newrast.t=newrast*length(time)
+  mn=cellStats(newrast.t, min) #min(newrast.t@data@values, na.rm = T)
+  mx=cellStats(newrast.t, max) #max(newrast.t@data@values, na.rm = T)
+  high=max(abs(mn), mx)
+  br <- seq(-high, high, by = high/9) 
+  cl <- colorspace::diverge_hcl(length(br) - 1, power = 1) 
+  rng=range(newrast.t[],na.rm=T)
+  arg=list(at=rng, labels=round(rng,3))
+  plot(newrast.t, col=cl, breaks=br,axis.args=arg,las=1, main=paste(length(time),'yr change'), legend=F) # Time series change
+  plot(newrast.t, legend.only=TRUE, col=cl, breaks=br, axis.args=arg, las=1, legend.width=1, legend.shrink=0.75, smallplot=c(0.6, 0.61, 0.2, 0.5)); par(mar = par("mar"))
+  maps::map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="black", add=T)
+  ### 4. Calc Significance
+  fun=function(x) { if (is.na(x[1])){ NA } else { m = lm(x ~ time); summary(m)$coefficients[8] }}
+  p <- calc(rastck, fun=fun)
+  m = c(0, 0.05, 1, 0.05, 1, 0)
+  rclmat = matrix(m, ncol=3, byrow=TRUE)
+  p.mask = reclassify(p, rclmat)
+  fun=function(x) { x[x<1] <- NA; return(x)}
+  p.mask.NA = calc(p.mask, fun)
+  trend.sig = mask(newrast.t, p.mask.NA)
+  mn=cellStats(newrast.t, min)
+  mx=cellStats(newrast.t, max)
+  high=max(abs(mn), mx)
+  br <- seq(-high, high, by = high/9) 
+  cl <- colorspace::diverge_hcl(length(br) - 1, power = 1) 
+  rng=range(newrast.t[],na.rm=T)
+  arg=list(at=rng, labels=round(rng,3))
+  plot(trend.sig, main=paste(length(time),'yrs','\nChange'),col=cl, breaks=br,axis.args=arg,las=1, legend=F) # Yearly slope
+  plot(trend.sig, legend.only=TRUE, col=cl, breaks=br,axis.args=arg,las=1, legend.width=1, legend.shrink=0.75, smallplot=c(0.6, 0.61, 0.2, 0.5)); par(mar = par("mar"))
+  maps::map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="black", add=T)
+  plot(nesbath,deep=-100, shallow=-100, step=1,add=T,lwd=1,col='gray50',lty=1)
+  ### for colorbrewer
+  br <- seq(-high, high, by = high/5)
+  cl=rev(brewer.pal(n = 11, name = 'RdYlBu'))
+  rng=range(newrast.t[],na.rm=T)
+  arg=list(at=rng, labels=round(rng,3))
+  plot(trend.sig, main=paste(length(time),'yrs','\nChange'),col=cl, breaks=br,axis.args=arg,las=1, legend=F) # Yearly slope
+  plot(trend.sig, legend.only=TRUE, col=cl, breaks=br,axis.args=arg,las=1, legend.width=1, legend.shrink=0.75, smallplot=c(0.6, 0.61, 0.2, 0.5)); par(mar = par("mar"))
+  maps::map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="black", add=T)
+  plot(nesbath,deep=-100, shallow=-100, step=1,add=T,lwd=1,col='gray50',lty=1)
+  # plot(nesbath,deep=-200, shallow=-200, step=1,add=T,lwd=1,col='gray60',lty=1)
+  ### 5. Plot Variance
+  fun=function(x) { if (is.na(x[1])){ NA } else { m = lm(x ~ time); (summary(m)$sigma)}} ; TITL='Std deviation of slope'
+  newrast.v=calc(rastck, fun)
+  mn=cellStats(newrast.v, min)
+  mx=cellStats(newrast.v, max)
+  high=max(abs(mn), mx)
+  br <- seq(0, high, by = high/15) 
+  cl=colorRampPalette(brewer.pal(9,"Reds"))(length(br))
+  rng=c(0, mx) #range(newrast.v[],na.rm=T)
+  arg=list(at=rng, labels=round(rng,3))
+  plot(newrast.v, main=paste(length(time),'yrs','\n', TITL),col=cl, breaks=br,axis.args=arg,las=1, legend=F) # 
+  plot(newrast.v, legend.only=TRUE, col=cl, breaks=br, axis.args=arg, las=1, legend.width=1, legend.shrink=0.75, smallplot=c(0.6, 0.61, 0.2, 0.5)); par(mar = par("mar"))
+  maps::map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="black", add=T)
+  # stck=stack(c(newrast.m, newrast, newrast.t, trend.sig, newrast.v))
+  # names(stck)=c("TS.mean", "TS.slope", "TS.slopeXtime", "TS.pvalue", "TS.sigma.stdev")
+  # return(stck)
 }
 
 ## calculate mean and subtract mean from measured to plot anomaly

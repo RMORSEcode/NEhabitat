@@ -48,7 +48,7 @@ SEASON='Fall'
 ### NAME OF FISH
 fishnm='Haddock' #74
 # fishnm='SilverHake' #72
-# fishnm='Cod' #73
+fishnm='Cod' #73
 
 ## get path and list of models
 path1=paste('/home/ryan/Git/NEhabitat/rasters/', SEASON,'/', fishnm,'/', sep='') # Spr/Haddock'
@@ -470,7 +470,83 @@ pdf(paste(path1, 'Bio_Hindcast_',p2,'_Adt.pdf', sep=''), height=4, width=6)
 plotRasterTrends(adt)
 dev.off()
 
+# SPRING HADDOCK
+adtpa=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/Haddock/fish_modGSe_Spr_20210421_haddock/PA_only_stacked_Spr_Haddock_Adt.RData')
+juvpa=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/Haddock/fish_modGSe_Spr_20210421_haddock/PA_only_stacked_Spr_Haddock_Juv.RData')
+ichpa=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/Haddock/fish_modGSe_Spr_20210421_haddock/PA_only_stacked_Spr_Haddock_ich.RData')
+adt=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/Haddock/fish_modGSe_Spr_20210421_haddock/stacked_Spr_Haddock_Adt.RData')
+juv=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/Haddock/fish_modGSe_Spr_20210421_haddock/stacked_Spr_Haddock_Juv.RData')
+ich=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/Haddock/fish_modGSe_Spr_20210421_haddock/stacked_Spr_Haddock_ich.RData')
 
+# SPRING COD
+adtpa=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/Cod/fish_modGSe_Spr_cod_20210518/PA_only_stacked_Spr_Cod_Adt.RData')
+juvpa=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/Cod/fish_modGSe_Spr_cod_20210518/PA_only_stacked_Spr_Cod_Juv.RData')
+ichpa=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/Cod/fish_modGSe_Spr_cod_20210518/PA_only_stacked_Spr_Cod_ich.RData')
+adt=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/Cod/fish_modGSe_Spr_cod_20210518/stacked_Spr_Cod_Adt.RData')
+juv=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/Cod/fish_modGSe_Spr_cod_20210518/stacked_Spr_Cod_Juv.RData')
+ich=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/Cod/fish_modGSe_Spr_cod_20210518/stacked_Spr_Cod_ich.RData')
+
+# FALL HADDOCK
+adtpa=loadRData('/home/ryan/Git/NEhabitat/rasters/Fall/Haddock/fish_modGSe_Fall_haddock_20210421/PA_only_stacked_Fall_Haddock_Adt.RData')
+juvpa=loadRData('/home/ryan/Git/NEhabitat/rasters/Fall/Haddock/fish_modGSe_Fall_haddock_20210421/PA_only_stacked_Fall_Haddock_Juv.RData')
+adt=loadRData('/home/ryan/Git/NEhabitat/rasters/Fall/Haddock/fish_modGSe_Fall_haddock_20210421/stacked_Fall_Haddock_Adt.RData')
+juv=loadRData('/home/ryan/Git/NEhabitat/rasters/Fall/Haddock/fish_modGSe_Fall_haddock_20210421/stacked_Fall_Haddock_Juv.RData')
+
+# FALL COD
+adtpa=loadRData('/home/ryan/Git/NEhabitat/rasters/Fall/Cod/fish_modGSe_Fall_cod_20210518/PA_only_stacked_Fall_Cod_Adt.RData')
+juvpa=loadRData('/home/ryan/Git/NEhabitat/rasters/Fall/Cod/fish_modGSe_Fall_cod_20210518/PA_only_stacked_Fall_Cod_Juv.RData')
+adt=loadRData('/home/ryan/Git/NEhabitat/rasters/Fall/Cod/fish_modGSe_Fall_cod_20210518/stacked_Fall_Cod_Adt.RData')
+juv=loadRData('/home/ryan/Git/NEhabitat/rasters/Fall/Cod/fish_modGSe_Fall_cod_20210518/stacked_Fall_Cod_Juv.RData')
+
+xdt=today()
+xdt=gsub('-','',xdt)
+
+pdf(paste(path1, xdt, 'PA_Hindcast_',p2,'_Ich.pdf', sep=''), height=6, width=6)
+plotRasterTrends2(ichpa)
+dev.off()
+pdf(paste(path1, xdt, 'PA_Hindcast_',p2,'_Juv.pdf', sep=''), height=6, width=6)
+plotRasterTrends2(juvpa)
+dev.off()
+pdf(paste(path1, xdt, 'PA_Hindcast_',p2,'_Adt.pdf', sep=''), height=6, width=6)
+plotRasterTrends2(adtpa)
+dev.off()
+pdf(paste(path1, xdt, 'Bio_Hindcast_',p2,'_Ich.pdf', sep=''), height=6, width=6)
+plotRasterTrends2(ich)
+dev.off()
+pdf(paste(path1, xdt, 'Bio_Hindcast_',p2,'_Juv.pdf', sep=''), height=6, width=6)
+plotRasterTrends2(juv)
+dev.off()
+pdf(paste(path1, xdt, 'Bio_Hindcast_',p2,'_Adt.pdf', sep=''), height=6, width=6)
+plotRasterTrends2(adt)
+dev.off()
+
+## using trawl suvey stata
+ichhab_tsGBK=raster::extract(ichpa, tsGBK, fun=mean, na.rm=T)
+plot(ichhab_tsGBK[1,]~yrlist, type='l', las=1)
+ichhab_tsGOM=raster::extract(ichpa, tsGOM, fun=mean, na.rm=T)
+plot(ichhab_tsGOM[1,]~yrlist, type='l', las=1)
+
+adthab_tsGBK=raster::extract(adtpa, tsGBK, fun=mean, na.rm=T)
+plot(colMeans(adthab_tsGBK)~yrlist, type='l', las=1)
+adthab_tsGOM=raster::extract(adtpa, tsGOM, fun=mean, na.rm=T)
+plot(adthab_tsGOM[1,]~yrlist, type='l', las=1)
+
+juvhab_tsGBK=raster::extract(juvpa, tsGBK, fun=mean, na.rm=T)
+plot(colMeans(juvhab_tsGBK)~yrlist, type='l', las=1)
+juvhab_tsGOM=raster::extract(juvpa, tsGOM, fun=mean, na.rm=T)
+plot(juvhab_tsGOM[1,]~yrlist, type='l', las=1)
+
+adthab_tsGBK=raster::extract(adt, tsGBK, fun=sum, na.rm=T)
+plot(colMeans(adthab_tsGBK)~yrlist, type='b')
+# plot(adthab_tsGBK[1,]~yrlist, type='l', las=1)
+adthab_tsGOM=raster::extract(adt, tsGOM, fun=mean, na.rm=T)
+plot(adthab_tsGOM[1,]~yrlist, type='l', las=1)
+
+juvhab_tsGBK=raster::extract(juv, tsGBK, fun=mean, na.rm=T)
+plot(colMeans(juvhab_tsGBK)~yrlist, type='b')
+# plot(juvhab_tsGBK[1,]~yrlist, type='l', las=1)
+juvhab_tsGOM=raster::extract(juv, tsGOM, fun=mean, na.rm=T)
+plot(juvhab_tsGOM[1,]~yrlist, type='l', las=1)
 
 
 ### plot out raster stacks to visualize changes
@@ -1352,7 +1428,7 @@ plotRasterTrends2=function(rastck){
   mn=cellStats(newrast, min)
   mx=cellStats(newrast, max)
   high=max(abs(mn), mx)
-  br <- seq(-high, high, by = high/9) 
+  br <- seq(-high, high, by = high/15) 
   cl <- colorspace::diverge_hcl(length(br) - 1, power = 1) 
   rng=range(newrast[],na.rm=T)
   arg=list(at=rng, labels=round(rng,3))
@@ -1365,7 +1441,7 @@ plotRasterTrends2=function(rastck){
   mn=cellStats(newrast.t, min) #min(newrast.t@data@values, na.rm = T)
   mx=cellStats(newrast.t, max) #max(newrast.t@data@values, na.rm = T)
   high=max(abs(mn), mx)
-  br <- seq(-high, high, by = high/9) 
+  br <- seq(-high, high, by = high/15) 
   cl <- colorspace::diverge_hcl(length(br) - 1, power = 1) 
   rng=range(newrast.t[],na.rm=T)
   arg=list(at=rng, labels=round(rng,3))
@@ -1384,7 +1460,7 @@ plotRasterTrends2=function(rastck){
   mn=cellStats(newrast.t, min)
   mx=cellStats(newrast.t, max)
   high=max(abs(mn), mx)
-  br <- seq(-high, high, by = high/9) 
+  br <- seq(-high, high, by = high/15) 
   cl <- colorspace::diverge_hcl(length(br) - 1, power = 1) 
   rng=range(newrast.t[],na.rm=T)
   arg=list(at=rng, labels=round(rng,3))

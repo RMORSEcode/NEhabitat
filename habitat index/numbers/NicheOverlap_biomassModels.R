@@ -437,7 +437,7 @@ text(2016,0.85, 'cod')
 ### Niche Overlap between species (season, stage)
 # Spr
 load('/home/ryan/Git/NEhabitat/habitat index/Spring_Niche_Overlap_Cod_Haddock_GSe_20210518.rda')
-plot(NULL, ylim=c(0.83,.98), xlim=c(1977,2019), ylab="Species niche overlap", xlab="", las=1)
+plot(NULL, ylim=c(0.78,.98), xlim=c(1977,2019), ylab="Species niche overlap", xlab="", las=1)
 lines(Spr.Niche.Overlap$adt~yrlist, type='l', lty=1, pch=19,col='black')
 # points(Spr.Niche.Overlap$adt~yrlist, pch=19, col='black')
 m = lm(Spr.Niche.Overlap$adt~yrlist)
@@ -460,10 +460,10 @@ if(summary(m)$coefficients[8] < 0.05){
   # text(1980,0.96, paste('Ic ', round(summary(m)$coefficients[8],4)))
   }
 legend('topleft', legend = c('Ad', 'Jv','Ic'), lty=c(1,2,3), col='black', bty='n', horiz = T)#pch=c(19,1,18), 
-text(2016,0.83, 'Spr')
+text(2016,0.78, 'Spr')
 # Fall
 load('/home/ryan/Git/NEhabitat/habitat index/Fall_Niche_Overlap_Cod_Haddock_GSe_20210518.rda')
-plot(NULL, ylim=c(0.78,0.93), xlim=c(1977,2019), ylab="Species niche overlap", xlab="", las=1)
+plot(NULL, ylim=c(0.78,0.98), xlim=c(1977,2019), ylab="Species niche overlap", xlab="", las=1)
 lines(Fall.Niche.Overlap$adt~yrlist, type='l', lty=1, pch=19, col='black')
 # points(Fall.Niche.Overlap$adt~yrlist, pch=19, col='black')
 m = lm(Fall.Niche.Overlap$adt~yrlist)

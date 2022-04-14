@@ -1307,9 +1307,25 @@ par(oma=c(3,2,2,0))
 par(mar=c(2,4,2,1) + 0.1)
 ylab.txt=expression('Thermal habitat area (km)'^2)
 plot(thermhabs.area[,2]~yrlist, type='l', ylim=c(5e4, 1.8e5),las=1,xlab='',ylab='')#,main='Thermal habitat area')
+m = lm(thermhabs.area[,2]~yrlist)
+if(summary(m)$coefficients[8] < 0.05){
+  abline(m, lty=1, col='black')
+  print(paste('slope= ', round(summary(m)$coefficients[2],3),sep=''))# slope
+  print(paste('stde= ', round(summary(m)$coefficients[4],3),sep='')) # std error
+  print(paste('p= ', round(summary(m)$coefficients[8],6), sep='')) # pvalue
+}
 lines(thermhabf.area[,2]~yrlist, lty=2, las=1)
+m = lm(thermhabf.area[,2]~yrlist)
+if(summary(m)$coefficients[8] < 0.05){
+  abline(m, lty=2, col='black')
+  print(paste('slope= ', round(summary(m)$coefficients[2],3),sep=''))# slope
+  print(paste('stde= ', round(summary(m)$coefficients[4],3),sep='')) # std error
+  print(paste('p= ', round(summary(m)$coefficients[8],6), sep='')) # pvalue
+}
 mtext(ylab.txt,side=2, line =3.5)
 legend('bottomleft', legend = c('Spr: 3-7 C', 'Fall: 8-11 C'),lty=c(1,2), col=c('black', 'black'), bty='n', horiz = T)
+
+
 
 ### testing breakpoints for extracted BT
 library(strucchange)

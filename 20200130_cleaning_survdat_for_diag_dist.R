@@ -19,6 +19,8 @@ loadRData <- function(fileName){
   load(fileName)
   get(ls()[ls() != "fileName"])
 }
+library(readxl)
+Lmf=read_excel('/home/ryan/Git/NEhabitat/Lm_included.xlsx')
 
 ## Subset survdat to only groundfish species with Length at maturity data
 # load("C:/Users/ryan.morse/Downloads/SurvdatBio (3).RData") #loads survdat.bio
@@ -124,7 +126,7 @@ survdat=survdat %>% group_by_at(vars(SVSPP,CRUISE6,STATION,STRATUM,ABUNDANCE, st
 
 # barplot(table(round(survdat$biodiff[(abs(survdat$biodiff>12))],1)))
 y=survdat$SVSPP
-x=abs(survdat$biodiff)
+x=abs(survdat$abndiff)
 y=y[x>120]
 x=x[x>120]
 barplot(table(round(y))) #which species have the highest mismatches in biomass
@@ -270,9 +272,52 @@ dfzdate$zldoy=dfzdate$zdoy
 # dfzdate3=dfzdate[which(dfzdate$zY>1996),]
 
 # ttx=merge(svdate2, dfzdate2, all=T)
-colnames(dfzdate2)
-colnames(svdate2)
+colnames(dfzdate)
+colnames(svdate)
 # ttx=left_join(svdate2, dfzdate2, by=c("lonbin"="zlonbin", "latbin"="zlatbin", "Y"="zY", "sdoy"="zdoy", "ldoy"="zdoy"))
+
+## 20220406 inner join to see exact matches
+# using rounded (nearest 0.5) latbins gives 15612, more than fuzzy at 14648, round function yields far less
+# using round (nearest 0.25) gives 7907 matches
+svdate=data.frame(month(svdwide.bio$EST_TOWDATE))
+colnames(svdate)[1]='M'
+svdate$Y=year(svdwide.bio$EST_TOWDATE)
+svdate$D=as.numeric(day(svdwide.bio$EST_TOWDATE))
+# svdate$lat=svdwide.bio$LAT
+# svdate$lon=svdwide.bio$LON
+svdate$lonbin=round(svdwide.bio$LON,0)
+svdate$latbin=round(svdwide.bio$LAT,0)
+# svdate$lonbin=round(svdwide.bio$LON/0.25)*0.25 ## quarter degree, 
+# svdate$latbin=round(svdwide.bio$LAT/0.25)*0.25
+svdate$doy=as.numeric(strftime(svdwide.bio$EST_TOWDATE, format = "%j"))
+# svdate$sdoy=svdate$doy-8
+# svdate$ldoy=svdate$doy+8
+svdate=svdate[order(svdate$Y, svdate$doy),]
+svdate$index=seq(from=1, to=length(svdate$M), by=1)
+svdate2=svdate %>% filter(Y>1976)
+
+### now for zoo and ich data
+dfzdate=data.frame(year(dfz$date))
+colnames(dfzdate)[1]='zY'
+dfzdate$zM=month(dfz$date)
+dfzdate$zD=as.numeric(day(dfz$date))
+dfzdate$zdoy=as.numeric(strftime(dfz$date, format = "%j"))
+# dfzdate$zlon=dfz$lon
+# dfzdate$zlat=dfz$lat
+# dfzdate$zlonbin=round(dfz$lon,2)
+# dfzdate$zlatbin=round(dfz$lat,2)
+dfzdate$zlonbin=round(dfz$lon/.25)*0.25
+dfzdate$zlatbin=round(dfz$lat/.25)*0.25
+# dfzdate=dfzdate[order(dfzdate$zY, dfzdate$zdoy),]
+dfzdate$zindex=seq(from=1, to=length(dfz$date), by=1) #add index of original order just to keep track before sorting on time
+dfzdate=dfzdate[order(dfzdate$zY, dfzdate$zdoy),]
+# dfzdate$zsdoy=dfzdate$zdoy
+# dfzdate$zldoy=dfzdate$zdoy
+
+ttx=dplyr::inner_join(svdate2, dfzdate, by=c("lonbin"="zlonbin", "latbin"="zlatbin", "Y"="zY", "M"="zM","D"="zD"))#, "D"="zD"
+# "lonbin"="zlonbin", "latbin"="zlatbin",
+# "lon"="zlon", "lat"="zlat"
+
 ### this works, just takes a long time
 library(fuzzyjoin)
 xdt=today()

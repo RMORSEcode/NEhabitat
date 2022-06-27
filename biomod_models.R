@@ -245,13 +245,33 @@ rev(sort(table(test3[1:5,])))
 
 
 ### open saved list of variable importance and select important factors:
-wd='/home/ryan/Biomod models' 
+wd2='/home/ryan/Biomod models' 
 wd='/home/ryan/Git/NEhabitat'
 varlist=list.files(wd, pattern="variable_importance.csv")
 varlist
-i=2
+## select certain runs more easily
+# library(stringr)
+# varlist2=str_detect(varlist, 'Cod')
+# varlist3=varlist[varlist2]
+i=13 # 2 10 14 | 1 13
+varlist[i]
 # test2=read.csv('/home/ryan/Biomod models/Ich_Haddock_SPRINGvariable_importance.csv', stringsAsFactors = F, row.names = 1)
 test2=read.csv(paste(wd,'/',varlist[i],sep=''), stringsAsFactors = F, row.names = 1)
+# standardize values
+min_max_norm <- function(x) {
+  (x - min(x)) / (max(x) - min(x))
+}
+test2_norm <- as.data.frame(lapply(test2[1:6], min_max_norm))
+test2sn=test2_norm
+test2sn[test2_norm<.5]=NA
+rowSums(test2sn,na.rm=T)
+m=length(rownames(test2)[order(rowSums(test2sn,na.rm=T), decreasing=T)][ sort(rowSums(test2sn,na.rm=T), decreasing=T)>0])
+m2=matrix(ncol=2, nrow=m)
+m2=data.frame(m2)
+m2[,1]=rownames(test2)[order(rowSums(test2sn,na.rm=T), decreasing=T)][ sort(rowSums(test2sn,na.rm=T), decreasing=T)>0]
+m2[,2]=sort(rowSums(test2sn,na.rm=T), decreasing=T)[ sort(rowSums(test2sn,na.rm=T), decreasing=T)>0]
+colnames(m2)=c('Var', 'St_Mean_6')
+write.csv(m2, file=paste(wd2,'/','FINAL_SUMMARY_', varlist[i], sep=''))
 
 test3=matrix(data=NA, nrow=dim(test2)[1], ncol=dim(test2)[2])
 for (i in 1:dim(test2)[2]){
@@ -261,6 +281,9 @@ colnames(test3)=colnames(test2)
 # table(test3[1:7,])
 rev(sort(table(test3[1:7,])))
 rev(sort(table(test3[1:5,])))
+
+
+
 
 ### Plot model performance:
 ### by models

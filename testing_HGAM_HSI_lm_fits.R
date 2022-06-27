@@ -127,9 +127,9 @@ hist(x.res[j,])
 hist(x.fit[j,]); abline(v=0.5, col='red'); abline(v=quantile(x.fit[j,], na.rm=T), col='blue')
 
 
-## plot spatial residuals
+## plot spatial residuals by year
 # plot(x.resid[[1]])
-wd="/home/ryan/Git/NEhabitat"
+wd="/home/ryan/Git/NEhabitat/"
 pdf(file=paste(wd,SEASON,fishnm,'Yearly_Spatial_Residuals.pdf', sep='_'))
 for(i in 1:dim(x.resid)[[3]]){
 newrast=x.resid[[i]]
@@ -144,3 +144,10 @@ plot(newrast, col=cl, breaks=br,axis.args=arg,las=1, main=paste(yrlist[i], 'spat
 maps::map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="black", add=T)
 }
 dev.off()
+
+## take mean of all spatial residuals and plot -> basically zero (by design)
+newrast.m=calc(x.resid, fun=mean, na.rm=T)
+plot(newrast.m)
+
+
+

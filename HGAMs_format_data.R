@@ -39,7 +39,7 @@ loadRData <- function(fileName){
 # ogFData.abn=loadRData('/home/ryan/Git/NEhabitat/Final_merged_fish_corABN_Zoo_Ich.Rda')
 ## LOAD NEW DATA
 FData.abn=loadRData('/home/ryan/Git/NEhabitat/20210415_Final_merged_fish_corABN_Zoo_Ich.Rda')
-
+FData.abn=loadRData('C:/Users/ryan.morse/Documents/GitHub/NEhabitat/20210415_Final_merged_fish_corABN_Zoo_Ich.Rda')
 ### Select season for GAMs
 slctseason="FALL"; fishseas="Fall"
 slctseason="SPRING"; fishseas="Spr"
@@ -47,7 +47,8 @@ slctseason="SPRING"; fishseas="Spr"
 ### Choose fish to run, adjust by searching on and changing " `74_ " to new ID **** ###
 ### Subset the formatted data for a single species (see Lmf)
 # Lmf=read_excel('/home/ryan/Git/NEhabitat/Lm_included.xlsx')
-# fishname='Cod' #73
+
+fishname='Cod' #73
 fishname='Haddock' #74
 # fishname='SilverHake' #72
 # fishname='Pollock' #75
@@ -129,7 +130,9 @@ testBIO=testBIO %>% filter(Stg!='ich') %>% droplevels(exclude="ich")
 ###______________________________________________________________________-
 ### IF USING BIOMASS AS SECOND PART SKIP ABOVE SECTION AND RUN BELOW:
 # Do likewise for biomass data, to be combined with PA later for final model
-fish.b=FData.bio %>% dplyr::select(YEAR, SEASON, LAT:BOTTEMP, `74_Adt`, `74_Juv`, `74_ich`, volume_100m3:chl12)
+FData.bio=loadRData('C:/Users/ryan.morse/Documents/GitHub/NEhabitat/20210415_Final_merged_fish_corBIO_Zoo_Ich.Rda')
+
+fish.b=FData.bio %>% dplyr::select(YEAR, SEASON, LAT:BOTTEMP, `74_Adt`, `74_Juv`, `74_ich`, volume_100m3:chl10)
 fish.b$MONTH=month(FData.bio$EST_TOWDATE)
 fish.b=fish.b[complete.cases(fish.b),]
 fish.b$`74_ich`=ceiling(fish.b$`74_ich`) # make integer from numbers per 100 m/3

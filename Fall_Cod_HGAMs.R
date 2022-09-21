@@ -207,6 +207,8 @@ fish_modGI_pb =  gam(logbio ~ s(SURFTEMP, k=30, m=2, bs='ts') + s(SURFTEMP, by=S
                        s(Stg, k=30, bs='re'), data=trainBIO, method = "REML", family="gaussian", select=T)
 save(fish_modGI_pa, file=paste(wd,fishseas,'/',fishname,'/fish_modGI_pa_',fishseas,'_',fishname,'_',xdt,'.Rdata',sep=''))
 save(fish_modGI_pb, file=paste(wd,fishseas,'/',fishname,'/fish_modGI_pb_',fishseas,'_',fishname,'_',xdt,'.Rdata',sep=''))
+save(fish_modGI_pa, file=paste('C:/Users/ryan.morse/Documents/GitHub/NEhabitat/rasters/',fishseas,'/',fishname,'/fish_modGI_pa_',fishseas,'_',fishname,'_',xdt,'.Rdata',sep=''))
+save(fish_modGI_pb, file=paste('C:/Users/ryan.morse/Documents/GitHub/NEhabitat/rasters/',fishseas,'/',fishname,'/fish_modGI_pb_',fishseas,'_',fishname,'_',xdt,'.Rdata',sep=''))
 
 # + s(ctyp_100m3, Stg, k=20, bs="fs") + s(sand_pct, Stg, k=15, bs='fs')
 # S model

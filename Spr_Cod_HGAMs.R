@@ -187,6 +187,8 @@ fish_modGI_pb =  gam(logbio ~ s(SURFTEMP, k=15, m=2, bs='ts') + s(SURFTEMP, by=S
                        s(chl10, m=2, k=20, bs='ts') +s(chl10, by=Stg, k=20, m=1, bs='ts') +s(Stg, k=10, bs='re'), data=trainBIO, method = "REML", family="gaussian", select=T)
 save(fish_modGI_pa, file=paste('/home/ryan/Git/NEhabitat/rasters/',fishseas,'/',fishname,'/fish_modGI_pa_',fishseas,'_',fishname,'_',xdt,'.Rdata',sep=''))
 save(fish_modGI_pb, file=paste('/home/ryan/Git/NEhabitat/rasters/',fishseas,'/',fishname,'/fish_modGI_pb_',fishseas,'_',fishname,'_',xdt,'.Rdata',sep=''))
+save(fish_modGI_pa, file=paste('C:/Users/ryan.morse/Documents/GitHub/NEhabitat/rasters/',fishseas,'/',fishname,'/fish_modGI_pa_',fishseas,'_',fishname,'_',xdt,'.Rdata',sep=''))
+save(fish_modGI_pb, file=paste('C:/Users/ryan.morse/Documents/GitHub/NEhabitat/rasters/',fishseas,'/',fishname,'/fish_modGI_pb_',fishseas,'_',fishname,'_',xdt,'.Rdata',sep=''))
 
 # To add to S model:
 # + s(BOTTEMP, Stg, k=15, bs='fs') +s(sand_pct, Stg, k=15, bs='fs') +s(chl4, Stg, k=20, bs='fs')

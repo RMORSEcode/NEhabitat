@@ -50,6 +50,10 @@ loadRData <- function(fileName){
   get(ls()[ls() != "fileName"])
 }
 
+## check what data is formatted for:
+fishname
+slctseason
+
 ### SELECT SPR of FALL seasons to process
 SEASON='Spr' # Fall
 SEASON='Fall'
@@ -74,7 +78,7 @@ path1=paste(wdhome, SEASON,'/', fishnm,'/', sep='') # Spr/Haddock'
 # usemodel=loadRData(paste(path1,modlist[modchoice], sep='')) #fish_modS #_spr_had
 
 #### VERIFY MODEL SPECIES AND SEASON ####
-trainPA$SVSPP[1] #verify species
+trainPA$SVSPP[1] #verify species 73=cod 74=haddock
 trainPA$SEASON[1] #verify season
 modlistpa=list.files(path1, pattern = glob2rx("*_pa_*Rdata")) # presence-absence models
 modlistpb=list.files(path1, pattern = glob2rx("*_pb_*Rdata")) # positive biomass models
@@ -82,6 +86,8 @@ modlistpb=list.files(path1, pattern = glob2rx("*_pb_*Rdata")) # positive biomass
 ## subset to newest models - (added date to sort)
 modlistpa2=modlistpa[grepl("*2021*", modlistpa)]
 modlistpb2=modlistpb[grepl("*2021*", modlistpb)]
+modlistpa2=modlistpa[grepl("*202*", modlistpa)]
+modlistpb2=modlistpb[grepl("*202*", modlistpb)]
 modlistpa2=modlistpa[grepl("*202207*", modlistpa)]
 modlistpb2=modlistpb[grepl("*202207*", modlistpb)]
 modlistpa=modlistpa2
@@ -150,6 +156,28 @@ dev.off()
 #   plotROC(preds.obs2$observed,preds.obs2$predicted, colorize = TRUE, main=paste('All Stages ', modlistpa[i], sep=''))
 # }
 # dev.off()
+
+### SAVE out model performance data to CSV file - deviance explained, AIC
+modeval=data.frame(matrix(nrow=length(modlistpa), ncol=11, data=NA))
+for (i in 1:length(modlistpa)){
+  modchoice=i
+  usemodel=loadRData(paste(path1,modlistpa[modchoice], sep=''))
+  usemodelbio=loadRData(paste(path1,modlistpb[modchoice], sep=''))
+  modeval[i,1]=modlistpa[modchoice]
+  modeval[i,2]=summary(usemodel)$dev.expl
+  modeval[i,3]=summary(usemodelbio)$dev.expl
+  modeval[i,4]=usemodel$aic
+  modeval[i,5]=usemodelbio$aic
+  modeval[i,6]=sum(usemodel$edf)
+  modeval[i,7]=sum(usemodelbio$edf)
+  modeval[i,8]=df.residual(usemodel)
+  modeval[i,9]=df.residual(usemodelbio)
+  modeval[i,10]=((df.residual(usemodel)+sum(usemodel$edf))/3)-sum(usemodel$edf)
+  modeval[i,11]=((df.residual(usemodelbio)+sum(usemodelbio$edf))/3)-sum(usemodelbio$edf)
+}
+colnames(modeval)=c('model', 'PA.dev.exp','BIO.dev.exp','PA.aic','BIO.aic','PA.edf','BIO.edf','PA.res.df','BIO.res.df', 'PA.corr.res.df','BIO.corr.res.df')
+write.csv(format(modeval, digits=2), file=paste(path1,xdt,'_model_evaluation_', SEASON, '_', fishnm, '_', '.csv', sep=""), row.names = F)
+
 
 modauc=data.frame(matrix(nrow=length(modlistpa), ncol=2, data=NA))
 # pdf(paste(path1, 'PA_models_by_Stg_Adt_AUC.pdf', sep=''), height=4, width=6)
@@ -460,26 +488,6 @@ modlistpa[modchoice]
 
 
 
-### SAVE out model performance data to CSV file - deviance explained, AIC
-modeval=data.frame(matrix(nrow=length(modlistpa), ncol=11, data=NA))
-for (i in 1:length(modlistpa)){
-  modchoice=i
-  usemodel=loadRData(paste(path1,modlistpa[modchoice], sep=''))
-  usemodelbio=loadRData(paste(path1,modlistpb[modchoice], sep=''))
-  modeval[i,1]=modlistpa[modchoice]
-  modeval[i,2]=summary(usemodel)$dev.expl
-  modeval[i,3]=summary(usemodelbio)$dev.expl
-  modeval[i,4]=usemodel$aic
-  modeval[i,5]=usemodelbio$aic
-  modeval[i,6]=sum(usemodel$edf)
-  modeval[i,7]=sum(usemodelbio$edf)
-  modeval[i,8]=df.residual(usemodel)
-  modeval[i,9]=df.residual(usemodelbio)
-  modeval[i,10]=((df.residual(usemodel)+sum(usemodel$edf))/3)-sum(usemodel$edf)
-  modeval[i,11]=((df.residual(usemodelbio)+sum(usemodelbio$edf))/3)-sum(usemodelbio$edf)
-}
-colnames(modeval)=c('model', 'PA.dev.exp','BIO.dev.exp','PA.aic','BIO.aic','PA.edf','BIO.edf','PA.res.df','BIO.res.df', 'PA.corr.res.df','BIO.corr.res.df')
-write.csv(format(modeval, digits=2), file=paste(path1,xdt,'_model_evaluation_', SEASON, '_', fishnm, '_', '.csv', sep=""), row.names = F)
 
 #### Save model hindcast output trends (mean, trend, variance)
 ## Load rasters
@@ -524,7 +532,6 @@ ichpa=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/Haddock/fish_modGSe_Spr_20
 adt=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/Haddock/fish_modGSe_Spr_20210421_haddock/stacked_Spr_Haddock_Adt.RData')
 juv=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/Haddock/fish_modGSe_Spr_20210421_haddock/stacked_Spr_Haddock_Juv.RData')
 ich=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/Haddock/fish_modGSe_Spr_20210421_haddock/stacked_Spr_Haddock_ich.RData')
-
 # SPRING COD
 adtpa=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/Cod/fish_modGSe_Spr_cod_20210518/PA_only_stacked_Spr_Cod_Adt.RData')
 juvpa=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/Cod/fish_modGSe_Spr_cod_20210518/PA_only_stacked_Spr_Cod_Juv.RData')
@@ -532,18 +539,42 @@ ichpa=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/Cod/fish_modGSe_Spr_cod_20
 adt=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/Cod/fish_modGSe_Spr_cod_20210518/stacked_Spr_Cod_Adt.RData')
 juv=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/Cod/fish_modGSe_Spr_cod_20210518/stacked_Spr_Cod_Juv.RData')
 ich=loadRData('/home/ryan/Git/NEhabitat/rasters/Spr/Cod/fish_modGSe_Spr_cod_20210518/stacked_Spr_Cod_ich.RData')
-
 # FALL HADDOCK
 adtpa=loadRData('/home/ryan/Git/NEhabitat/rasters/Fall/Haddock/fish_modGSe_Fall_haddock_20210421/PA_only_stacked_Fall_Haddock_Adt.RData')
 juvpa=loadRData('/home/ryan/Git/NEhabitat/rasters/Fall/Haddock/fish_modGSe_Fall_haddock_20210421/PA_only_stacked_Fall_Haddock_Juv.RData')
 adt=loadRData('/home/ryan/Git/NEhabitat/rasters/Fall/Haddock/fish_modGSe_Fall_haddock_20210421/stacked_Fall_Haddock_Adt.RData')
 juv=loadRData('/home/ryan/Git/NEhabitat/rasters/Fall/Haddock/fish_modGSe_Fall_haddock_20210421/stacked_Fall_Haddock_Juv.RData')
-
 # FALL COD
 adtpa=loadRData('/home/ryan/Git/NEhabitat/rasters/Fall/Cod/fish_modGSe_Fall_cod_20210518/PA_only_stacked_Fall_Cod_Adt.RData')
 juvpa=loadRData('/home/ryan/Git/NEhabitat/rasters/Fall/Cod/fish_modGSe_Fall_cod_20210518/PA_only_stacked_Fall_Cod_Juv.RData')
 adt=loadRData('/home/ryan/Git/NEhabitat/rasters/Fall/Cod/fish_modGSe_Fall_cod_20210518/stacked_Fall_Cod_Adt.RData')
 juv=loadRData('/home/ryan/Git/NEhabitat/rasters/Fall/Cod/fish_modGSe_Fall_cod_20210518/stacked_Fall_Cod_Juv.RData')
+
+#### windows machine
+# SPRING HADDOCK
+adtpa=loadRData('C:/Users/ryan.morse/Documents/GitHub/NEhabitat/rasters/Spr/Haddock/fish_modGSe_Spr_20210421_haddock/PA_only_stacked_Spr_Haddock_Adt.RData')
+juvpa=loadRData('C:/Users/ryan.morse/Documents/GitHub/NEhabitat/rasters/Spr/Haddock/fish_modGSe_Spr_20210421_haddock/PA_only_stacked_Spr_Haddock_Juv.RData')
+ichpa=loadRData('C:/Users/ryan.morse/Documents/GitHub/NEhabitat/rasters/Spr/Haddock/fish_modGSe_Spr_20210421_haddock/PA_only_stacked_Spr_Haddock_ich.RData')
+adt=loadRData('C:/Users/ryan.morse/Documents/GitHub/NEhabitat/rasters/Spr/Haddock/fish_modGSe_Spr_20210421_haddock/stacked_Spr_Haddock_Adt.RData')
+juv=loadRData('C:/Users/ryan.morse/Documents/GitHub/NEhabitat/rasters/Spr/Haddock/fish_modGSe_Spr_20210421_haddock/stacked_Spr_Haddock_Juv.RData')
+ich=loadRData('C:/Users/ryan.morse/Documents/GitHub/NEhabitat/rasters/Spr/Haddock/fish_modGSe_Spr_20210421_haddock/stacked_Spr_Haddock_ich.RData')
+# SPRING COD
+adtpa=loadRData('C:/Users/ryan.morse/Documents/GitHub/NEhabitat/rasters/Spr/Cod/fish_modGSe_Spr_cod_20210518/PA_only_stacked_Spr_Cod_Adt.RData')
+juvpa=loadRData('C:/Users/ryan.morse/Documents/GitHub/NEhabitat/rasters/Spr/Cod/fish_modGSe_Spr_cod_20210518/PA_only_stacked_Spr_Cod_Juv.RData')
+ichpa=loadRData('C:/Users/ryan.morse/Documents/GitHub/NEhabitat/rasters/Spr/Cod/fish_modGSe_Spr_cod_20210518/PA_only_stacked_Spr_Cod_ich.RData')
+adt=loadRData('C:/Users/ryan.morse/Documents/GitHub/NEhabitat/rasters/Spr/Cod/fish_modGSe_Spr_cod_20210518/stacked_Spr_Cod_Adt.RData')
+juv=loadRData('C:/Users/ryan.morse/Documents/GitHub/NEhabitat/rasters/Spr/Cod/fish_modGSe_Spr_cod_20210518/stacked_Spr_Cod_Juv.RData')
+ich=loadRData('C:/Users/ryan.morse/Documents/GitHub/NEhabitat/rasters/Spr/Cod/fish_modGSe_Spr_cod_20210518/stacked_Spr_Cod_ich.RData')
+# FALL HADDOCK
+adtpa=loadRData('C:/Users/ryan.morse/Documents/GitHub/NEhabitat/rasters/Fall/Haddock/fish_modGSe_Fall_haddock_20210421/PA_only_stacked_Fall_Haddock_Adt.RData')
+juvpa=loadRData('C:/Users/ryan.morse/Documents/GitHub/NEhabitat/rasters/Fall/Haddock/fish_modGSe_Fall_haddock_20210421/PA_only_stacked_Fall_Haddock_Juv.RData')
+adt=loadRData('C:/Users/ryan.morse/Documents/GitHub/NEhabitat/rasters/Fall/Haddock/fish_modGSe_Fall_haddock_20210421/stacked_Fall_Haddock_Adt.RData')
+juv=loadRData('C:/Users/ryan.morse/Documents/GitHub/NEhabitat/rasters/Fall/Haddock/fish_modGSe_Fall_haddock_20210421/stacked_Fall_Haddock_Juv.RData')
+# FALL COD
+adtpa=loadRData('C:/Users/ryan.morse/Documents/GitHub/NEhabitat/rasters/Fall/Cod/fish_modGSe_Fall_cod_20210518/PA_only_stacked_Fall_Cod_Adt.RData')
+juvpa=loadRData('C:/Users/ryan.morse/Documents/GitHub/NEhabitat/rasters/Fall/Cod/fish_modGSe_Fall_cod_20210518/PA_only_stacked_Fall_Cod_Juv.RData')
+adt=loadRData('C:/Users/ryan.morse/Documents/GitHub/NEhabitat/rasters/Fall/Cod/fish_modGSe_Fall_cod_20210518/stacked_Fall_Cod_Adt.RData')
+juv=loadRData('C:/Users/ryan.morse/Documents/GitHub/NEhabitat/rasters/Fall/Cod/fish_modGSe_Fall_cod_20210518/stacked_Fall_Cod_Juv.RData')
 
 xdt=today()
 xdt=gsub('-','',xdt)
@@ -769,11 +800,48 @@ juvhab_tsGOM=raster::extract(juv1, tsGOM, fun=sum, na.rm=T)
 plot(juvhab_tsGOM[1,]/1.11~yrlist, type='l', las=1, ylab='GOM juv habitat', xlab='')
 
 
+### plotting residuals
+install.packages("countreg", repos="http://R-Forge.R-project.org")
+
+library(statmod) #This has functions for randomized quantile residuals
+rqresiduals = function (gam.obj) {
+  if(!"gam" %in% attr(gam.obj,"class")){
+    stop('"gam.obj has to be of class "gam"')
+  }
+  if (!grepl("^Tweedie|^Negative Binomial|^poisson|^binomial|^gaussian|^Gamma|^inverse.gaussian",
+             gam.obj$family$family)){
+    stop(paste("family " , gam.obj$family$family, 
+               " is not currently supported by the statmod library, 
+                 and any randomized quantile residuals would be inaccurate.",
+               sep=""))
+  }
+  if (grepl("^Tweedie", gam.obj$family$family)) {
+    if (is.null(environment(gam.obj$family$variance)$p)) {
+      p.val <- gam.obj$family$getTheta(TRUE)
+      environment(gam.obj$family$variance)$p <- p.val
+    }
+    qres <- qres.tweedie(gam.obj)
+  }
+  else if (grepl("^Negative Binomial", gam.obj$family$family)) {
+    if ("extended.family" %in% class(gam.obj$family)) {
+      gam.obj$theta <- gam.obj$family$getTheta(TRUE)
+    }
+    else {
+      gam.obj$theta <- gam.obj$family$getTheta()
+    }
+    qres <- qres.nbinom(gam.obj)
+  }
+  else {
+    qres <- qresid(gam.obj)
+  }
+  return(qres)
+}
 ### plot model residuals against variables
 modchoice=5 # possible different lengths for PA and BIO (e.g. haddock)
 modlistpb[modchoice]
 usemodelbio=loadRData(paste(path1,modlistpb[modchoice], sep=''))
 x=resid(usemodelbio, type = 'deviance')
+x=rqresiduals(usemodelbio)
 test1 <- predict.gam(usemodelbio, trainBIO, type='response')
 plot(x~test1)
 plot(x~trainBIO$SURFTEMP)
@@ -1464,14 +1532,16 @@ plotRasterTrends2=function(rastck){
   if (high <=1 ){
     high2=1
   } else {
-    high2=high
+    high2=round(high,1)
   }
   br <- seq(0, high2, by = high2/15) 
   cl=colorRampPalette(brewer.pal(9,"Reds"))(length(br))
-  rng=range(newrast.m[],na.rm=T)
-  arg=list(at=rng, labels=round(rng,3))
+  xrng=c(0,high2)
+  xarg=list(at=xrng, labels=xrng)
+  # rng=range(newrast.m[],na.rm=T)
+  # arg=list(at=rng, labels=round(rng,3))
   plot(newrast.m, col=cl, breaks=br,axis.args=arg,las=1, main=paste(length(time),'yrs','\nmean distribution'), legend=F) # Yearly slope
-  plot(newrast.m, legend.only=TRUE, col=cl, breaks=br, axis.args=arg, las=1, legend.width=1, legend.shrink=0.75, smallplot=c(0.6, 0.61, 0.2, 0.5)); par(mar = par("mar"))
+  plot(newrast.m, legend.only=TRUE, col=cl, breaks=br, axis.args=xarg, las=1, legend.width=1, legend.shrink=0.75, smallplot=c(0.6, 0.61, 0.2, 0.5)); par(mar = par("mar"))
   maps::map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="black", add=T)
   ### 2. calc yearly slope
   fun=function(x) { if (is.na(x[1])){ NA } else { m = lm(x ~ time); summary(m)$coefficients[2] }}
@@ -1482,7 +1552,8 @@ plotRasterTrends2=function(rastck){
   br <- seq(-high, high, by = high/15) 
   cl <- colorspace::diverge_hcl(length(br) - 1, power = 1) 
   rng=range(newrast[],na.rm=T)
-  arg=list(at=rng, labels=round(rng,3))
+  xrng=c(rng,0)
+  arg=list(at=xrng, labels=round(xrng,2))
   plot(newrast, col=cl, breaks=br,axis.args=arg,las=1, main=paste(length(time),'yrs','\nYearly Slope'), legend=F) # Yearly slope
   plot(newrast, legend.only=TRUE, col=cl, breaks=br, axis.args=arg, las=1, legend.width=1, legend.shrink=0.75, smallplot=c(0.6, 0.61, 0.2, 0.5)); par(mar = par("mar"))
   maps::map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="black", add=T)
@@ -1495,7 +1566,8 @@ plotRasterTrends2=function(rastck){
   br <- seq(-high, high, by = high/15) 
   cl <- colorspace::diverge_hcl(length(br) - 1, power = 1) 
   rng=range(newrast.t[],na.rm=T)
-  arg=list(at=rng, labels=round(rng,3))
+  xrng=c(rng, 0)
+  arg=list(at=xrng, labels=round(xrng,2))
   plot(newrast.t, col=cl, breaks=br,axis.args=arg,las=1, main=paste(length(time),'yr change'), legend=F) # Time series change
   plot(newrast.t, legend.only=TRUE, col=cl, breaks=br, axis.args=arg, las=1, legend.width=1, legend.shrink=0.75, smallplot=c(0.6, 0.61, 0.2, 0.5)); par(mar = par("mar"))
   maps::map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="black", add=T)
@@ -1514,7 +1586,8 @@ plotRasterTrends2=function(rastck){
   br <- seq(-high, high, by = high/15) 
   cl <- colorspace::diverge_hcl(length(br) - 1, power = 1) 
   rng=range(newrast.t[],na.rm=T)
-  arg=list(at=rng, labels=round(rng,3))
+  xrng=c(rng,0)
+  arg=list(at=xrng, labels=round(xrng,2))
   plot(trend.sig, main=paste(length(time),'yrs','\nChange'),col=cl, breaks=br,axis.args=arg,las=1, legend=F) # Yearly slope
   plot(trend.sig, legend.only=TRUE, col=cl, breaks=br,axis.args=arg,las=1, legend.width=1, legend.shrink=0.75, smallplot=c(0.6, 0.61, 0.2, 0.5)); par(mar = par("mar"))
   maps::map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="black", add=T)
@@ -1523,7 +1596,8 @@ plotRasterTrends2=function(rastck){
   br <- seq(-high, high, by = high/5)
   cl=rev(brewer.pal(n = 11, name = 'RdYlBu'))
   rng=range(newrast.t[],na.rm=T)
-  arg=list(at=rng, labels=round(rng,3))
+  xrng=c(rng,0)
+  arg=list(at=xrng, labels=round(xrng,2))
   plot(trend.sig, main=paste(length(time),'yrs','\nChange'),col=cl, breaks=br,axis.args=arg,las=1, legend=F) # Yearly slope
   plot(trend.sig, legend.only=TRUE, col=cl, breaks=br,axis.args=arg,las=1, legend.width=1, legend.shrink=0.75, smallplot=c(0.6, 0.61, 0.2, 0.5)); par(mar = par("mar"))
   maps::map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="black", add=T)
@@ -1538,7 +1612,7 @@ plotRasterTrends2=function(rastck){
   br <- seq(0, high, by = high/15) 
   cl=colorRampPalette(brewer.pal(9,"Reds"))(length(br))
   rng=c(0, mx) #range(newrast.v[],na.rm=T)
-  arg=list(at=rng, labels=round(rng,3))
+  arg=list(at=rng, labels=round(rng,2))
   plot(newrast.v, main=paste(length(time),'yrs','\n', TITL),col=cl, breaks=br,axis.args=arg,las=1, legend=F) # 
   plot(newrast.v, legend.only=TRUE, col=cl, breaks=br, axis.args=arg, las=1, legend.width=1, legend.shrink=0.75, smallplot=c(0.6, 0.61, 0.2, 0.5)); par(mar = par("mar"))
   maps::map("worldHires", xlim=c(-77,-65),ylim=c(35,45), fill=T,border=0,col="black", add=T)

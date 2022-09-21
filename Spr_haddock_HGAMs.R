@@ -252,6 +252,31 @@ fish_modGS_pb.4 =  gam(logbio ~ s(SURFTEMP, k=15, bs='ts') + s(SURFTEMP, Stg, k=
 save(fish_modGS_pa.4, file=paste(wdhome,fishseas,'/',fishname,'/fish_modGS_pa4_',fishseas,'_',fishname,'_',xdt,'.Rdata',sep=''))
 save(fish_modGS_pb.4, file=paste(wdhome,fishseas,'/',fishname,'/fish_modGS_pb4_',fishseas,'_',fishname,'_',xdt,'.Rdata',sep=''))
 
+### 5) now testing concurvity reduction measures
+# a) m=2 for global and m=1 for group level smoothers
+# b) set K to 2*global for group level
+fish_modGS_pa.5a =  gam(pa ~ s(SURFTEMP, k=15, bs='ts', m=2) + s(SURFTEMP, Stg, k=15, bs='fs', m=1) + s(BOTTEMP, k=15, bs='ts', m=2) + s(BOTTEMP, Stg, k=15, bs='fs', m=1) +s(sand_pct, k=15, bs='ts', m=2) + 
+                       s(sand_pct, Stg, k=15,bs='fs', m=1) +s(chl4, k=20, bs='cs', m=2) +s(chl4, Stg, k=20,bs='fs', m=1)+ s(DEPTH, k=10, bs='ts', m=2) + s(DEPTH, Stg, k=10, bs="fs") + 
+                       s(ctyp_100m3, k=20, bs='ts', m=2) + s(ctyp_100m3, Stg, k=20, bs="fs") + s(grnszmm, k=15, bs='ts', m=2) + s(grnszmm, Stg, k=15,bs='fs', m=1) + s(chl2, k=20, bs='ts', m=2) + 
+                       s(chl2, Stg, k=20,bs='fs', m=1) +s(chl10, k=20, bs='ts', m=2) + s(chl10, Stg, k=20,bs='fs', m=1), data=trainPA, method = "REML", family="binomial", select=T)
+fish_modGS_pb.5a =  gam(logbio ~ s(SURFTEMP, k=15,bs='ts', m=2) + s(SURFTEMP, Stg, k=15,bs='fs', m=1) + s(BOTTEMP, k=15,bs='ts', m=2) + s(BOTTEMP, Stg, k=15,bs='fs', m=1) +s(sand_pct, k=15,bs='ts', m=2) +
+                       s(sand_pct, Stg, k=15,bs='fs', m=1) +s(chl4, k=20, bs='cs') +s(chl4, Stg, k=20,bs='fs', m=1)+ s(DEPTH, k=10,bs='ts', m=2) + s(DEPTH, Stg, k=10, bs="fs") + s(ctyp_100m3, k=20,bs='ts', m=2) +
+                       s(ctyp_100m3, Stg, k=20, bs="fs") + s(grnszmm, k=15,bs='ts', m=2) + s(grnszmm, Stg, k=15,bs='fs', m=1) + s(chl2, k=20,bs='ts', m=2) + s(chl2, Stg, k=20,bs='fs', m=1) + 
+                       s(chl10, k=20,bs='ts', m=2) + s(chl10, Stg, k=20,bs='fs', m=1), data=trainBIO, method = "REML", family="gaussian", select=T)
+save(fish_modGS_pa.5a, file=paste(wdhome,fishseas,'/',fishname,'/fish_modGS_pa5a_',fishseas,'_',fishname,'_',xdt,'.Rdata',sep=''))
+save(fish_modGS_pb.5a, file=paste(wdhome,fishseas,'/',fishname,'/fish_modGS_pb5a_',fishseas,'_',fishname,'_',xdt,'.Rdata',sep=''))
+
+fish_modGS_pa.5b =  gam(pa ~ s(SURFTEMP, k=15, bs='ts') + s(SURFTEMP, Stg, k=15, bs='fs') + s(BOTTEMP, k=15, bs='ts') + s(BOTTEMP, Stg, k=15, bs='fs') +s(sand_pct, k=15, bs='ts') + 
+                       s(sand_pct, Stg, k=15, bs='fs') +s(chl4, k=20, bs='cs') +s(chl4, Stg, k=20, bs='fs')+ s(DEPTH, k=10, bs='ts') + s(DEPTH, Stg, k=10, bs="fs") + 
+                       s(ctyp_100m3, k=20, bs='ts') + s(ctyp_100m3, Stg, k=20, bs="fs") + s(grnszmm, k=15, bs='ts') + s(grnszmm, Stg, k=15, bs='fs') + s(chl2, k=20, bs='ts') + 
+                       s(chl2, Stg, k=20, bs='fs') +s(chl10, k=20, bs='ts') + s(chl10, Stg, k=20, bs='fs'), data=trainPA, method = "REML", family="binomial", select=T)
+fish_modGS_pb.5b =  gam(logbio ~ s(SURFTEMP, k=15, bs='ts') + s(SURFTEMP, Stg, k=15, bs='fs') + s(BOTTEMP, k=15, bs='ts') + s(BOTTEMP, Stg, k=15, bs='fs') +s(sand_pct, k=15, bs='ts') +
+                       s(sand_pct, Stg, k=15, bs='fs') +s(chl4, k=20, bs='cs') +s(chl4, Stg, k=20, bs='fs')+ s(DEPTH, k=10, bs='ts') + s(DEPTH, Stg, k=10, bs="fs") + s(ctyp_100m3, k=20, bs='ts') +
+                       s(ctyp_100m3, Stg, k=20, bs="fs") + s(grnszmm, k=15, bs='ts') + s(grnszmm, Stg, k=15, bs='fs') + s(chl2, k=20, bs='ts') + s(chl2, Stg, k=20, bs='fs') + 
+                       s(chl10, k=20, bs='ts') + s(chl10, Stg, k=20, bs='fs'), data=trainBIO, method = "REML", family="gaussian", select=T)
+save(fish_modGS_pa.5b, file=paste(wdhome,fishseas,'/',fishname,'/fish_modGS_pa5b_',fishseas,'_',fishname,'_',xdt,'.Rdata',sep=''))
+save(fish_modGS_pb.5b, file=paste(wdhome,fishseas,'/',fishname,'/fish_modGS_pb5b_',fishseas,'_',fishname,'_',xdt,'.Rdata',sep=''))
+
 # fish_modGS_pa =  gam(pa ~ s(SURFTEMP, k=15, bs='ts') + s(SURFTEMP, Stg, k=15, bs='fs') + s(BOTTEMP, k=15, bs='ts') + s(BOTTEMP, Stg, k=15, bs='fs') +s(sand_pct, k=15, bs='ts') + 
 #                        s(sand_pct, Stg, k=15, bs='fs') +s(chl4, k=20, bs='cs') +s(chl4, Stg, k=20, bs='fs')+ s(DEPTH, k=10, bs='ts') + s(DEPTH, Stg, k=10, bs="fs") + 
 #                        s(ctyp_100m3, k=20, bs='ts') + s(ctyp_100m3, Stg, k=20, bs="fs") + s(grnszmm, k=15, bs='ts') + s(grnszmm, Stg, k=15, bs='fs') + s(chl2, k=20, bs='ts') + 

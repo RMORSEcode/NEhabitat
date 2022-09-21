@@ -110,14 +110,14 @@ for( i in 1:dim(adt1)[3]){
 adtno[i,1]=nicheOverlap(adt1[[i]], adt2[[i]], stat='I', mask=TRUE, checkNegatives=TRUE)
 }
 tadt=as.matrix(unlist(adtno))
-plot(tadt~yrlist, type='b',ylim=c(.85,1), ylab='adult niche overlap', xlab='')
+plot(tadt~yrlist, type='b',ylim=c(.75,1), ylab='adult niche overlap', xlab='')
 
 juvno=data.frame(matrix(NA, ncol=1, nrow=dim(juv1)[3])); colnames(juvno)='I'
 for( i in 1:dim(juv1)[3]){
   juvno[i,1]=nicheOverlap(juv1[[i]], juv2[[i]], stat='I', mask=TRUE, checkNegatives=TRUE)
 }
 tjuv=as.matrix(unlist(juvno))
-plot(tjuv~yrlist, type='b', ylim=c(.85,1), ylab='juvenile niche overlap', xlab='')
+plot(tjuv~yrlist, type='b', ylim=c(.75,1), ylab='juvenile niche overlap', xlab='')
 
 ichno=data.frame(matrix(NA, ncol=1, nrow=dim(ich1)[3])); colnames(ichno)='I'
 for( i in 1:dim(ich1)[3]){
